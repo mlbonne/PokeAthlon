@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { SIZE_TABLE } from '@pokeathlon/data';
+import { analyzeRoster } from '@pokeathlon/data/analyze';
 import { Button, createWorld, hashWorld, parseLineup, quantizeInput, randFloat, randInt, runHeadless, step, type PlayerInput } from '../src/index';
 import { idle, run, sandbox } from './helpers';
 
@@ -110,5 +112,34 @@ describe('headless runner', () => {
     const h = hashWorld(w);
     randInt(w.ai, 0, 0, 9);
     expect(hashWorld(w)).not.toBe(h);
+  });
+});
+
+describe('analyzer vs sim', () => {
+  it("the analyzer's damage and reach match what the sim does", () => {
+    const sphere = analyzeRoster(['lucario'])[0]!.moves.find((m) => m.id === 'aura-sphere')!;
+    const hurt = SIZE_TABLE['very-large'].hurtRadius;
+    // Target's hurtbox edge just inside the reach: hit, for exactly the predicted damage.
+    const inside = sandbox(
+      [
+        { pokemonId: 'lucario', team: 0, pos: { x: 0, y: 0 } },
+        { pokemonId: 'snorlax', team: 1, pos: { x: sphere.reach + hurt - 10, y: 0 } },
+      ],
+      { x: 0, y: -850 },
+    );
+    step(inside, [quantizeInput(0, 0, 1, 0, Button.Move1), idle]);
+    run(inside, 60, [idle, idle]);
+    expect(inside.telemetry.players[0]!.moves['aura-sphere']!.damage).toBeCloseTo(sphere.damagePerCast);
+    // Well outside (more than one tick of projectile travel past the reach): miss.
+    const outside = sandbox(
+      [
+        { pokemonId: 'lucario', team: 0, pos: { x: 0, y: 0 } },
+        { pokemonId: 'snorlax', team: 1, pos: { x: sphere.reach + hurt + 60, y: 0 } },
+      ],
+      { x: 0, y: -850 },
+    );
+    step(outside, [quantizeInput(0, 0, 1, 0, Button.Move1), idle]);
+    run(outside, 60, [idle, idle]);
+    expect(outside.telemetry.players[0]!.moves['aura-sphere']!.playerHits).toBe(0);
   });
 });
