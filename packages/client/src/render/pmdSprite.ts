@@ -65,6 +65,8 @@ export class PmdSprite {
   private current: LoadedAnim | undefined;
   private currentName = '';
   private ticks = 0;
+  private oneShot = false;
+  private oneShotRate = 1;
   dex = '';
 
   constructor() {
@@ -103,7 +105,23 @@ export class PmdSprite {
     this.play('Idle');
   }
 
+  /** True while a one-shot animation (e.g. Attack) is playing. */
+  get busy(): boolean {
+    return this.oneShot;
+  }
+
+  /** Play an animation once at `rate`, then fall back to whatever `play()` asks for next. */
+  playOnce(name: string, rate = 1): void {
+    if (!this.anims.has(name)) return;
+    this.oneShot = false; // allow restarting over a running one-shot
+    this.currentName = '';
+    this.play(name);
+    this.oneShot = true;
+    this.oneShotRate = rate;
+  }
+
   play(name: string): void {
+    if (this.oneShot) return;
     if (name === this.currentName) return;
     const a = this.anims.get(name) ?? this.anims.get('Idle');
     if (!a) return;
@@ -121,7 +139,16 @@ export class PmdSprite {
   update(dtSeconds: number, row: number, rate = 1): void {
     const a = this.current;
     if (!a) return;
-    this.ticks = (this.ticks + dtSeconds * 60 * rate) % a.totalTicks;
+    if (this.oneShot) {
+      this.ticks += dtSeconds * 60 * this.oneShotRate;
+      if (this.ticks >= a.totalTicks) {
+        this.oneShot = false;
+        this.currentName = '';
+        this.ticks = a.totalTicks - 1e-6; // hold last frame until the next play()
+      }
+    } else {
+      this.ticks = (this.ticks + dtSeconds * 60 * rate) % a.totalTicks;
+    }
     let t = this.ticks;
     let frame = 0;
     for (; frame < a.def.durations.length - 1; frame++) {
