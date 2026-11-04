@@ -22,7 +22,8 @@
     "check": "npm run typecheck && npm run lint && npm run test",
     "import-sprites": "tsx tools/import-sprites.ts",
     "record": "tsx tools/record-match.ts",
-    "sim": "tsx tools/sim-batch.ts"
+    "sim": "tsx tools/sim-batch.ts",
+    "kits": "tsx tools/kits.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
