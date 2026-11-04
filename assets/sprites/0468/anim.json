@@ -1,0 +1,229 @@
+{
+  "dex": "0468",
+  "shadowSize": 1,
+  "anims": {
+    "Idle": {
+      "frameWidth": 32,
+      "frameHeight": 48,
+      "durations": [
+        8,
+        4,
+        6,
+        8,
+        8,
+        8,
+        8,
+        12
+      ],
+      "file": "Idle-Anim.png",
+      "shadowFile": "Idle-Shadow.png"
+    },
+    "Walk": {
+      "frameWidth": 32,
+      "frameHeight": 48,
+      "durations": [
+        6,
+        4,
+        4,
+        4,
+        6,
+        6,
+        4,
+        6
+      ],
+      "file": "Walk-Anim.png",
+      "shadowFile": "Walk-Shadow.png"
+    },
+    "Attack": {
+      "frameWidth": 72,
+      "frameHeight": 72,
+      "durations": [
+        2,
+        2,
+        6,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "file": "Attack-Anim.png",
+      "shadowFile": "Attack-Shadow.png",
+      "rushFrame": 1,
+      "hitFrame": 2,
+      "returnFrame": 7
+    },
+    "Hurt": {
+      "frameWidth": 48,
+      "frameHeight": 64,
+      "durations": [
+        2,
+        8
+      ],
+      "file": "Hurt-Anim.png",
+      "shadowFile": "Hurt-Shadow.png"
+    },
+    "Charge": {
+      "frameWidth": 40,
+      "frameHeight": 40,
+      "durations": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "file": "Charge-Anim.png",
+      "shadowFile": "Charge-Shadow.png",
+      "hitFrame": 5,
+      "returnFrame": 9
+    },
+    "Swing": {
+      "frameWidth": 80,
+      "frameHeight": 80,
+      "durations": [
+        2,
+        1,
+        2,
+        2,
+        3,
+        2,
+        2,
+        1,
+        1
+      ],
+      "file": "Swing-Anim.png",
+      "shadowFile": "Swing-Shadow.png",
+      "hitFrame": 5,
+      "returnFrame": 5
+    },
+    "Shoot": {
+      "frameWidth": 40,
+      "frameHeight": 48,
+      "durations": [
+        2,
+        2,
+        8,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "file": "Shoot-Anim.png",
+      "shadowFile": "Shoot-Shadow.png",
+      "hitFrame": 2,
+      "returnFrame": 5
+    },
+    "Hop": {
+      "frameWidth": 40,
+      "frameHeight": 88,
+      "durations": [
+        2,
+        1,
+        2,
+        3,
+        4,
+        4,
+        3,
+        2,
+        1,
+        2
+      ],
+      "file": "Hop-Anim.png",
+      "shadowFile": "Hop-Shadow.png",
+      "hitFrame": 9
+    },
+    "Rotate": {
+      "frameWidth": 32,
+      "frameHeight": 40,
+      "durations": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "file": "Rotate-Anim.png",
+      "shadowFile": "Rotate-Shadow.png",
+      "hitFrame": 8
+    },
+    "Double": {
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "durations": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        3,
+        3,
+        3,
+        2,
+        3,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "file": "Double-Anim.png",
+      "shadowFile": "Double-Shadow.png"
+    },
+    "QuickStrike": {
+      "frameWidth": 120,
+      "frameHeight": 120,
+      "durations": [
+        2,
+        2,
+        6,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "file": "QuickStrike-Anim.png",
+      "shadowFile": "QuickStrike-Shadow.png",
+      "hitFrame": 2,
+      "returnFrame": 7
+    }
+  },
+  "portraits": [
+    "Normal",
+    "Happy",
+    "Determined",
+    "Pain",
+    "Angry",
+    "Surprised",
+    "Dizzy",
+    "Joyous"
+  ]
+}
