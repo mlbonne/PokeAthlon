@@ -1,33 +1,85 @@
-import { gameplay, getPokemon, getStage, SIZE_TABLE } from '@pokeathlon/data';
-import { arenaFromStage, type Arena } from './arena';
+import { gameplay, getPokemon, SIZE_TABLE } from '@pokeathlon/data';
 import { stepBall } from './ball';
+import { stepCombatTimers } from './combat';
+import { ticks } from './constants';
+import { stepEnergy } from './energy';
 import type { SimEvent } from './events';
 import type { PlayerInput } from './input';
+import { beginKickoff, stepMatchEnd, stepMatchStart } from './match';
 import { stepMovement } from './movement';
+import { stepOrbs } from './orbs';
+import { stepPassiveXp } from './progression';
+import { buildStage, type Stage, type Team } from './stage';
 import { stepStrike } from './strike';
 import type { Vec2 } from './vec';
+
+export type Role = 'forward' | 'goalie';
 
 export interface Player {
   id: number;
   pokemonId: string;
-  team: 0 | 1;
+  team: Team;
+  role: Role;
+  /** Spawn slot within the role (forwards 0/1). */
+  slot: number;
   pos: Vec2;
   vel: Vec2;
   /** Last movement or strike direction (unit). Used for sprite facing and default aim. */
   facing: Vec2;
+  /** Body (movement) radius. */
   radius: number;
+  /** Hurtbox radius (where hits land). */
+  hurtRadius: number;
   /** Max move speed, world units per second. */
   speed: number;
   power: number;
-  /** Strike reach (circle radius around the player). */
+  staggerGrowth: number;
+  baseStagger: number;
+
+  // Strike
   strikeRadius: number;
-  /** Ticks until Strike is ready again. */
   strikeCooldown: number;
-  /** Ticks the current Strike hitbox stays active. */
   strikeActive: number;
   strikeDir: Vec2;
-  /** The current Strike already connected with the ball. */
   strikeConnected: boolean;
+
+  // Combat state
+  stagger: number;
+  maxStagger: number;
+  staggered: boolean;
+  /** Ticks until passive Stagger regen starts. */
+  regenDelay: number;
+  /** Current knockback slide (velocity decays linearly to 0 over knockTicks). */
+  knockVel: Vec2;
+  knockDecel: number;
+  knockTicks: number;
+  stunTicks: number;
+  slowTicks: number;
+  /** Untargetable/immune from Evade or Energy Burst. */
+  elusiveTicks: number;
+  /** Untargetable after respawn. */
+  immuneTicks: number;
+  /** Ticks until respawn; > 0 means knocked out (off the field). */
+  koTicks: number;
+  /** Who last hit this player, and when (for KO credit). */
+  lastHitBy: number;
+  lastHitTick: number;
+
+  // Energy
+  energy: number;
+  evadeCooldown: number;
+  /** Buttons held last tick (edge detection for Evade). */
+  prevButtons: number;
+  /** Ticks left on the Energy Burst "next Core hit +50 %" boost. */
+  burstBoostTicks: number;
+
+  // Progression
+  xp: number;
+  level: number;
+  xpTickAccumulator: number;
+  /** Last tick this player touched the ball (assists). */
+  lastBallTouchTick: number;
+  stats: { goals: number; assists: number; kos: number; deaths: number; barriers: number };
 }
 
 export interface Ball {
@@ -40,62 +92,197 @@ export interface Ball {
   lastHitBy: number;
   /** Ticks left of Red Core friction immunity. */
   redTicks: number;
+  /** Player holding exclusive control after an Energy Burst (−1 = none). */
+  controlBy: number;
+  controlTicks: number;
+  /** True while the ball sits in a goal after scoring (hidden, inert). */
+  scored: boolean;
+}
+
+export interface Barrier {
+  team: Team;
+  box: { x: number; y: number; hx: number; hy: number };
+  alive: boolean;
+}
+
+export interface Gate {
+  team: Team;
+  open: boolean;
+  /** Ticks until the gate opens (−1 = not scheduled). */
+  openTimer: number;
+}
+
+export interface Orb {
+  id: number;
+  pos: Vec2;
+  /** Spawn group: 'mid', 'arc0' or 'arc1' (one live orb per group). */
+  group: string;
+}
+
+export type Phase = 'kickoff' | 'play' | 'goal' | 'setOver' | 'matchOver';
+
+export interface MatchState {
+  phase: Phase;
+  /** Ticks left in the current timed phase (kickoff/goal/setOver). */
+  phaseTicks: number;
+  /** Ticks of live play in this round (overtime clock). */
+  roundTicks: number;
+  goals: [number, number];
+  sets: [number, number];
+  setIndex: number;
+  roundIndex: number;
+  overtime: boolean;
+  winner: Team | -1;
+  /** Team that scored last (for between-round UI). */
+  lastScoringTeam: Team | -1;
+  orbTimer: number;
+  orbCycle: number;
+  nextOrbId: number;
+  /** When false (sandbox), goals and phases are ignored. */
+  rulesEnabled: boolean;
 }
 
 export interface World {
   tick: number;
-  stageId: string;
-  arena: Arena;
+  stage: Stage;
   players: Player[];
   ball: Ball;
+  barriers: Barrier[];
+  gates: [Gate, Gate];
+  orbs: Orb[];
+  match: MatchState;
   /** Events produced by the most recent step. */
   events: SimEvent[];
 }
 
 export interface PlayerSpawn {
   pokemonId: string;
-  team: 0 | 1;
-  pos: Vec2;
+  team: Team;
+  role?: Role;
+  slot?: number;
+  /** Explicit start position (sandbox/tests). Defaults to the stage spawn for role/slot. */
+  pos?: Vec2;
 }
 
-export function createWorld(spawns: PlayerSpawn[], stageId = 'viridian-pitch'): World {
-  const stage = getStage(stageId);
-  return {
+export interface WorldOptions {
+  terrain?: string;
+  /**
+   * 'match' starts with a kickoff and runs the full rules.
+   * 'sandbox' starts in live play with rules (goals, barriers) active but no kickoff; ball at `ballPos`.
+   */
+  mode?: 'match' | 'sandbox';
+  /** Sandbox only: ball start (default centre). */
+  ballPos?: Vec2;
+}
+
+export function createWorld(spawns: PlayerSpawn[], opts: WorldOptions = {}): World {
+  const stage = buildStage(opts.terrain ?? 'viridian-pitch');
+  const mode = opts.mode ?? 'sandbox';
+  const world: World = {
     tick: 0,
-    stageId,
-    arena: arenaFromStage(stage),
-    players: spawns.map((s, i) => makePlayer(i, s)),
+    stage,
+    players: spawns.map((s, i) => makePlayer(i, s, stage)),
     ball: {
-      pos: { ...stage.spawns.ball },
+      pos: { ...(opts.ballPos ?? { x: 0, y: 0 }) },
       vel: { x: 0, y: 0 },
       radius: gameplay.ball.radius,
       hitstop: 0,
       launchVel: { x: 0, y: 0 },
       lastHitBy: -1,
       redTicks: 0,
+      controlBy: -1,
+      controlTicks: 0,
+      scored: false,
+    },
+    barriers: stage.barriers.map((b) => ({ team: b.team, box: { ...b.box }, alive: true })),
+    gates: [
+      { team: 0, open: false, openTimer: -1 },
+      { team: 1, open: false, openTimer: -1 },
+    ],
+    orbs: [],
+    match: {
+      phase: 'play',
+      phaseTicks: 0,
+      roundTicks: 0,
+      goals: [0, 0],
+      sets: [0, 0],
+      setIndex: 0,
+      roundIndex: 0,
+      overtime: false,
+      winner: -1,
+      lastScoringTeam: -1,
+      orbTimer: ticks(gameplay.orbs.first),
+      orbCycle: 0,
+      nextOrbId: 1,
+      rulesEnabled: true,
     },
     events: [],
   };
+  if (mode === 'match') beginKickoff(world, false);
+  return world;
 }
 
-function makePlayer(id: number, s: PlayerSpawn): Player {
+/** Start position for a player from the stage spawns. */
+export function spawnPosition(stage: Stage, team: Team, role: Role, slot: number): Vec2 {
+  const s = stage.spawns[team];
+  if (role === 'goalie') return { ...s.goalie };
+  return { ...s.forwards[slot % s.forwards.length]! };
+}
+
+export function maxStaggerAt(p: Pick<Player, 'baseStagger' | 'staggerGrowth'>, level: number): number {
+  return p.baseStagger + (p.staggerGrowth * (level - 1)) / 9;
+}
+
+function makePlayer(id: number, s: PlayerSpawn, stage: Stage): Player {
+  const role = s.role ?? 'forward';
+  const slot = s.slot ?? 0;
+  const pos = s.pos ? { ...s.pos } : spawnPosition(stage, s.team, role, slot);
   const p: Player = {
     id,
     pokemonId: '',
     team: s.team,
-    pos: { x: s.pos.x, y: s.pos.y },
+    role,
+    slot,
+    pos,
     vel: { x: 0, y: 0 },
     facing: { x: s.team === 0 ? 1 : -1, y: 0 },
     radius: 0,
+    hurtRadius: 0,
     speed: 0,
     power: 0,
+    staggerGrowth: 0,
+    baseStagger: 0,
     strikeRadius: 0,
     strikeCooldown: 0,
     strikeActive: 0,
-    strikeDir: { x: 1, y: 0 },
+    strikeDir: { x: s.team === 0 ? 1 : -1, y: 0 },
     strikeConnected: false,
+    stagger: 0,
+    maxStagger: 0,
+    staggered: false,
+    regenDelay: 0,
+    knockVel: { x: 0, y: 0 },
+    knockDecel: 0,
+    knockTicks: 0,
+    stunTicks: 0,
+    slowTicks: 0,
+    elusiveTicks: 0,
+    immuneTicks: 0,
+    koTicks: 0,
+    lastHitBy: -1,
+    lastHitTick: -1,
+    energy: gameplay.energy.start,
+    evadeCooldown: 0,
+    prevButtons: 0,
+    burstBoostTicks: 0,
+    xp: 0,
+    level: 1,
+    xpTickAccumulator: 0,
+    lastBallTouchTick: -1,
+    stats: { goals: 0, assists: 0, kos: 0, deaths: 0, barriers: 0 },
   };
   applyPokemon(p, s.pokemonId);
+  p.stagger = p.maxStagger;
   return p;
 }
 
@@ -104,40 +291,46 @@ function applyPokemon(p: Player, pokemonId: string): void {
   const size = SIZE_TABLE[def.stats.size];
   p.pokemonId = def.id;
   p.radius = size.radius;
+  p.hurtRadius = size.hurtRadius;
   p.speed = def.stats.speed;
   p.power = def.stats.power;
   p.strikeRadius = size.strikeWidth / 2;
+  p.baseStagger = def.stats.stagger;
+  p.staggerGrowth = def.stats.staggerGrowth;
+  const frac = p.maxStagger > 0 ? p.stagger / p.maxStagger : 1;
+  p.maxStagger = maxStaggerAt(p, p.level);
+  p.stagger = p.maxStagger * frac;
 }
 
-/** Swap a player's Pokémon in place (sandbox helper), keeping position. */
+/** Swap a player's Pokémon in place (sandbox helper), keeping position and state. */
 export function setPokemon(world: World, playerId: number, pokemonId: string): void {
   const p = world.players[playerId];
   if (p) applyPokemon(p, pokemonId);
 }
 
-/** Put the ball back on its spawn, at rest. */
-export function resetBall(world: World): void {
-  const b = world.ball;
-  b.pos = { ...getStage(world.stageId).spawns.ball };
-  b.vel = { x: 0, y: 0 };
-  b.hitstop = 0;
-  b.launchVel = { x: 0, y: 0 };
-  b.lastHitBy = -1;
-  b.redTicks = 0;
-}
+/** Is this player on the field and able to act? */
+export const isActive = (p: Player): boolean => p.koTicks === 0;
+/** Can this player be hit right now? */
+export const isTargetable = (p: Player): boolean => p.koTicks === 0 && p.elusiveTicks === 0 && p.immuneTicks === 0;
 
 /**
  * Advance the world by one tick. `inputs[i]` belongs to `world.players[i]`;
  * missing entries count as neutral. Mutates and returns `world`.
  *
- * Order: movement → strikes → ball. Strikes see this tick's positions; the ball
- * moves last so a hit and its hitstop start on the same tick.
+ * Order: match start-of-tick → timers → movement → strikes → energy actions → ball →
+ * orbs → passive XP → match end-of-tick (goals, phases, overtime).
  */
 export function step(world: World, inputs: readonly (PlayerInput | undefined)[]): World {
   world.events = [];
+  stepMatchStart(world);
+  for (const p of world.players) stepCombatTimers(world, p);
   for (const p of world.players) stepMovement(world, p, inputs[p.id]);
   for (const p of world.players) stepStrike(world, p, inputs[p.id]);
+  for (const p of world.players) stepEnergy(world, p, inputs[p.id]);
   stepBall(world);
+  stepOrbs(world);
+  stepPassiveXp(world);
+  stepMatchEnd(world);
   world.tick++;
   return world;
 }

@@ -27,6 +27,12 @@ export function hashWorld(w: World): string {
     mixF64(p.vel.y);
     mixU32(p.strikeCooldown);
     mixU32(p.strikeActive);
+    mixF64(p.stagger);
+    mixF64(p.energy);
+    mixU32(p.knockTicks);
+    mixU32(p.koTicks);
+    mixU32(p.xp);
+    mixU32(p.level);
   }
   const b = w.ball;
   mixF64(b.pos.x);
@@ -36,5 +42,15 @@ export function hashWorld(w: World): string {
   mixU32(b.hitstop);
   mixU32(b.lastHitBy + 1);
   mixU32(b.redTicks);
+  mixU32(b.controlTicks);
+  for (const bar of w.barriers) mixU32(bar.alive ? 1 : 0);
+  for (const g of w.gates) mixU32(g.open ? 1 : 0);
+  for (const o of w.orbs) mixU32(o.id);
+  const m = w.match;
+  mixU32(m.goals[0]);
+  mixU32(m.goals[1]);
+  mixU32(m.sets[0]);
+  mixU32(m.sets[1]);
+  mixU32(m.roundTicks);
   return (h >>> 0).toString(16).padStart(8, '0');
 }

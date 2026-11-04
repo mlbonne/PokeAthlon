@@ -1,6 +1,8 @@
 import { gameplay } from '@pokeathlon/data';
-import { confine } from './arena';
 import { DT, ticks } from './constants';
+import { circleOverlapsBox, collideBox, collideCircle, collideSegment } from './geometry';
+import { scoreGoal } from './match';
+import { addXp } from './progression';
 import type { Vec2 } from './vec';
 import type { World } from './world';
 
@@ -13,6 +15,7 @@ import type { World } from './world';
  *  - friction halves the speed every second
  *  - each wall rebound nudges speed by ~100 towards a middle value
  *  - hits over 1750 make a "Red Core" that ignores friction (below 2000) for 1 s
+ *  - overtime: +20 % knockback; Energy Burst: next hit +50 % knockback and cap
  */
 const B = gameplay.ball;
 /** Linearised per-tick retention for the configured half-life (IEEE-exact ops only). */
@@ -21,6 +24,8 @@ const HITSTOP = ticks(B.hitstop);
 const RED_TICKS = ticks(B.redDuration);
 /** Ignore tiny bounces when emitting feedback events. */
 const EVENT_MIN_IMPACT = 150;
+/** Max ball travel per collision substep, as a fraction of its radius (prevents tunnelling). */
+const SUBSTEP_FRACTION = 0.5;
 
 /**
  * Apply a knockback hit to the ball. `dir` must be a unit vector.
@@ -28,16 +33,26 @@ const EVENT_MIN_IMPACT = 150;
  */
 export function hitBall(world: World, playerId: number, dir: Vec2, knockback: number): number {
   const b = world.ball;
+  const p = world.players[playerId];
+  let kb = knockback;
+  let cap = B.knockbackCap;
+  if (world.match.overtime) kb *= gameplay.match.overtimeBallKnockback;
+  const boosted = !!p && p.burstBoostTicks > 0;
+  if (p && boosted) {
+    kb *= gameplay.burst.boostMultiplier;
+    cap *= gameplay.burst.boostMultiplier;
+    p.burstBoostTicks = 0;
+  }
   const cur = b.hitstop > 0 ? b.launchVel : b.vel;
   const curSpeed = Math.sqrt(cur.x * cur.x + cur.y * cur.y);
-  const kb = Math.min(knockback, B.knockbackCap);
+  const capped = Math.min(kb, cap);
 
-  let speed = kb;
+  let speed = capped;
   let redirect = false;
-  if (curSpeed > kb) {
+  if (curSpeed > capped) {
     const dot = (dir.x * cur.x + dir.y * cur.y) / curSpeed;
     if (dot >= B.redirectMinDot) {
-      speed = curSpeed + kb * B.redirectBonus;
+      speed = curSpeed + capped * B.redirectBonus;
       redirect = true;
     }
   }
@@ -47,13 +62,23 @@ export function hitBall(world: World, playerId: number, dir: Vec2, knockback: nu
   // +1: the ball steps later in this same tick, which consumes one hitstop tick immediately.
   b.hitstop = HITSTOP + 1;
   b.lastHitBy = playerId;
-  b.redTicks = knockback > B.redThreshold ? RED_TICKS : 0;
-  world.events.push({ type: 'ballHit', playerId, pos: { ...b.pos }, speed, redirect, red: b.redTicks > 0 });
+  b.redTicks = kb > B.redThreshold ? RED_TICKS : 0;
+  b.controlBy = -1;
+  b.controlTicks = 0;
+  if (p) p.lastBallTouchTick = world.tick;
+  world.events.push({ type: 'ballHit', playerId, pos: { ...b.pos }, speed, redirect, red: b.redTicks > 0, boosted });
   return speed;
 }
 
 export function stepBall(world: World): void {
   const b = world.ball;
+  if (b.scored) return;
+
+  if (b.controlTicks > 0) {
+    b.controlTicks--;
+    if (b.controlTicks === 0) b.controlBy = -1;
+    return; // held still by an Energy Burst
+  }
 
   if (b.hitstop > 0) {
     b.hitstop--;
@@ -75,44 +100,88 @@ export function stepBall(world: World): void {
     b.vel = { x: b.vel.x * k, y: b.vel.y * k };
   }
 
-  b.pos = { x: b.pos.x + b.vel.x * DT, y: b.pos.y + b.vel.y * DT };
+  // Move in substeps so a fast ball can't tunnel through thin barriers or gates.
+  const travel = Math.sqrt(b.vel.x * b.vel.x + b.vel.y * b.vel.y) * DT;
+  const n = Math.max(1, Math.min(8, Math.ceil(travel / (b.radius * SUBSTEP_FRACTION))));
+  for (let i = 0; i < n; i++) {
+    b.pos = { x: b.pos.x + (b.vel.x * DT) / n, y: b.pos.y + (b.vel.y * DT) / n };
+    collideBall(world);
+    if (b.scored) return;
+  }
+}
+
+function collideBall(world: World): void {
+  const b = world.ball;
+  const stage = world.stage;
 
   if (B.bodyBlocking) collideBodies(world);
 
-  // Elastic rebound, then OS's speed nudge towards the middle.
-  const impact = confine(b.pos, b.vel, b.radius, world.arena, 1);
+  // Barriers: rebound and break.
+  for (let i = 0; i < world.barriers.length; i++) {
+    const bar = world.barriers[i]!;
+    if (!bar.alive) continue;
+    const impact = collideBox(b.pos, b.vel, b.radius, bar.box, 1);
+    if (impact > 0 || circleOverlapsBox(b.pos, b.radius, bar.box)) breakBarrier(world, i);
+  }
+
+  // Walls, posts and closed gates: elastic rebound + OS speed nudge.
+  let impact = 0;
+  for (const s of stage.ballWalls) impact = Math.max(impact, collideSegment(b.pos, b.vel, b.radius, s, 1));
+  for (const c of stage.posts) impact = Math.max(impact, collideCircle(b.pos, b.vel, b.radius, c, 1));
+  for (const g of world.gates) {
+    if (!g.open) impact = Math.max(impact, collideBox(b.pos, b.vel, b.radius, stage.goals[g.team].gate, 1));
+  }
   if (impact > 0) {
-    const s = Math.sqrt(b.vel.x * b.vel.x + b.vel.y * b.vel.y);
-    if (s > 0) {
-      const target = s < B.wallSpeedPivot ? s + B.wallSpeedDelta : Math.max(B.wallSpeedPivot, s - B.wallSpeedDelta);
-      const k = target / s;
-      b.vel = { x: b.vel.x * k, y: b.vel.y * k };
-    }
+    nudgeWallSpeed(b.vel);
     if (impact > EVENT_MIN_IMPACT) world.events.push({ type: 'ballWall', pos: { ...b.pos }, impact });
+  }
+
+  // Goals.
+  for (const goal of stage.goals) {
+    if (circleOverlapsBox(b.pos, b.radius, goal.score)) {
+      scoreGoal(world, goal.team === 0 ? 1 : 0);
+      return;
+    }
+  }
+}
+
+/** OS: each rebound changes speed by ~100, towards the pivot. */
+function nudgeWallSpeed(vel: Vec2): void {
+  const s = Math.sqrt(vel.x * vel.x + vel.y * vel.y);
+  if (s <= 0) return;
+  const target = s < B.wallSpeedPivot ? s + B.wallSpeedDelta : Math.max(B.wallSpeedPivot, s - B.wallSpeedDelta);
+  const k = target / s;
+  vel.x *= k;
+  vel.y *= k;
+}
+
+function breakBarrier(world: World, index: number): void {
+  const bar = world.barriers[index]!;
+  bar.alive = false;
+  const by = world.ball.lastHitBy;
+  const p = world.players[by];
+  if (p && p.team !== bar.team) {
+    p.stats.barriers++;
+    addXp(world, p, gameplay.xp.barrier);
+  }
+  world.events.push({ type: 'barrierBreak', team: bar.team, index, pos: { x: bar.box.x, y: bar.box.y }, by });
+  // Last barrier of a side gone → its gate opens after a short delay.
+  if (!world.barriers.some((o) => o.alive && o.team === bar.team)) {
+    const gate = world.gates[bar.team];
+    if (!gate.open && gate.openTimer < 0) gate.openTimer = Math.max(1, ticks(gameplay.match.gateOpenDelay));
   }
 }
 
 function collideBodies(world: World): void {
   const b = world.ball;
   for (const p of world.players) {
-    const dx = b.pos.x - p.pos.x;
-    const dy = b.pos.y - p.pos.y;
-    const min = b.radius + p.radius;
-    const d2 = dx * dx + dy * dy;
-    if (d2 >= min * min) continue;
-    const d = Math.sqrt(d2);
-    const nx = d > 0 ? dx / d : 1;
-    const ny = d > 0 ? dy / d : 0;
-    b.pos = { x: p.pos.x + nx * min, y: p.pos.y + ny * min };
-    const rvx = b.vel.x - p.vel.x;
-    const rvy = b.vel.y - p.vel.y;
-    const vn = rvx * nx + rvy * ny;
-    if (vn < 0) {
-      const k = (1 + B.playerRestitution) * vn;
-      b.vel = { x: b.vel.x - nx * k, y: b.vel.y - ny * k };
-      if (-vn > EVENT_MIN_IMPACT) {
-        world.events.push({ type: 'ballBody', playerId: p.id, pos: { ...b.pos }, impact: -vn });
-      }
+    if (p.koTicks > 0) continue;
+    const before = { x: b.vel.x - p.vel.x, y: b.vel.y - p.vel.y };
+    const rel = { ...before };
+    const hit = collideCircle(b.pos, rel, b.radius, { x: p.pos.x, y: p.pos.y, r: p.radius }, B.playerRestitution);
+    if (hit > 0) {
+      b.vel = { x: rel.x + p.vel.x, y: rel.y + p.vel.y };
+      if (hit > EVENT_MIN_IMPACT) world.events.push({ type: 'ballBody', playerId: p.id, pos: { ...b.pos }, impact: hit });
     }
   }
 }
