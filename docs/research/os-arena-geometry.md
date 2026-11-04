@@ -24,7 +24,7 @@ get scaled per placement. The visible art is a separate layer. **For us: a stage
 | Actor | Count | What it is |
 |---|---|---|
 | `RW_Box` | 12 | **Rebound walls**: what the Core bounces off |
-| `KOV_Box` | 4 | **KO volumes**: two side strips + one inside each goal pocket |
+| `KOV_Box` | 4 | KO-named volumes: two side strips + one inside each goal pocket ⚠ (exact role unclear, see `PDV_Box`) |
 | `SV_Box` | 2 | **Score volumes**: the Core touching one = goal |
 | `TP_GoalGateSpawnPoint` + `Terrain_MovingGoalWall` | 4 | **Goal gates** (two sliding halves per goal) |
 | `Terrain_Cylinder` | 4 | **Goal posts** |
@@ -32,7 +32,7 @@ get scaled per placement. The visible art is a separate layer. **For us: a stage
 | `GTV_GoalArc` | 2 | **Goal Arc** (defender buff zone) |
 | `GTV_CourtVolume` | 2 | **Court halves** (own/enemy half, used by goalie gear and Awakenings) |
 | `InvisibleWall_Box` | 24 | **Player movement walls** ⚠ (you can't *walk* off the arena) |
-| `PDV_Box` | 16 | Volumes just outside the walls ⚠ (likely projectile cleanup) |
+| `PDV_Box` | 16 | **Player death volumes** ⚠: they ring the *whole* arena just outside the walls (sides, corners, behind the goals). Together with the wiki ("knocked into any edge = KO"), this means **every edge KOs** |
 | `CCV_Box` / `PABV_Box` | 2 / 6 | Camera constraint / play-area bounds ⚠ |
 | `FOG_Semicircle` | 2 | "Face-off guard" semicircle at ±1200 ⚠ (kickoff exclusion zone) |
 | `RockSpawn_Blueprint` | 2 | **Core spawn points** (OS calls the Core "Rock" internally) |
@@ -54,9 +54,9 @@ Our axes from here on: **long axis = goal to goal** (OS Y), **side axis** (OS X)
 | **Goal gates** | long 1,375–1,500 (centre 1,437.5), side ±497.5, two sliding halves | gaps of ~65 at the sides are smaller than the Core (95), so closed gates block it |
 | **Goal Arc** | ellipse centred at long ±1,250, radius **400** (long) × **460** (side) | Oni Village: 1.435 × wider |
 | **Court halves** | side ±920, each half ~1,600 deep | own half / enemy half |
-| **Side KO strips** | side **946–1,046**, only for long **±1,100** | `KOV_Box` 50 × 22 |
+| **KO** | **any edge** for a knocked player: `PDV_Box` ring at side ≥925, corners, behind the pockets (long ≥1,525); `KOV` strips at side 946–1,046 (long ±1,100) and inside the pockets | corrected 2026-11-04 (first draft said sides only) |
 | **Goal-pocket KO** | long 1,535–1,635, side ±550 | knocked *into* the goal = KO |
-| **Player walls** ⚠ | sides at ±970 (inner face) for long ±1,000; walls beside the goal mouth and corners | Players are only KO'd along the middle of the long sides and inside the goal pocket. Corners and goal-line walls are solid |
+| **Player walls** ⚠ | sides at ±970 (inner face) for long ±1,000; walls beside the goal mouth, at the corners and at the back of the pocket (1,535) | They stop *walking*. Knocked players fly past them into the death volumes |
 
 ### Goal-line logic (how a goal happens)
 1. The Core must break the **barriers** (terrain) in front of the goal.
@@ -124,7 +124,7 @@ All also carry 75 (Energy max) and two constants (32, 512) ⚠ unidentified.
 | Body radius N/L/VL | **46 / 60 / 65** | 60 / 72 / 85 | **Adopt** |
 | Hurtbox N/L/VL | **55 / 70 / 75** | (same as body) | Add a separate hurtbox for abilities (M3) |
 | Strike reach | 125 / 132.5 / 135 | 125 / 132.5 / 135 + 35 ball bonus | Keep. Base the reach check on the Core *centre* within reach + Core radius ⚠ |
-| Player edge | KO only along the side strips (long ±1,100) and in the pocket; elsewhere walls; can't walk off | slides along every edge | M2: invisible walls + KO strips that only knockback can push you into ⚠ |
+| Player edge | walls stop walking; knocked past any edge = KO | slides along every edge | **Done in M2**: walking outline + KO when a knocked player's centre leaves it |
 | Core spawn | side spots (0, ±600) | centre | Adopt |
 | Starts | F (±1,000, ±250), G (±1,100, 0) | stage JSON placeholders | Adopt |
 | Sprite scale | — | 5 units/px (Pikachu ≈ 160 tall) | Re-check after shrinking: bodies are 92 wide, so ~3.5–4 u/px |

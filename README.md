@@ -5,7 +5,7 @@ Smash the ball through the enemy's barriers, score once their gate opens, and kn
 
 - 📋 Plan & roadmap: [docs/PLAN.md](docs/PLAN.md)
 - 🎮 Design bible (Omega Strikers breakdown → Pokémon version): [docs/design/GAME_BREAKDOWN.md](docs/design/GAME_BREAKDOWN.md)
-- Status: **M1 Sandbox done**. Walk, aim and Strike the ball around a placeholder pitch with the 8-Pokémon roster. Next: M2 (rules: barriers, goals, KO, Stagger, Energy)
+- Status: **M2 Rules done**. Full 1v1 match against a bot on the OS-geometry Viridian Pitch: barriers, gates, goals, sets, KOs, Stagger, Energy Burst, orbs and levels. Next: M3 (Pokémon kits)
 
 ## Getting started
 
@@ -14,7 +14,7 @@ Requires Node.js 22+ (developed on v26 LTS). On the dev machine a portable Node 
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173  (WASD move, mouse aim + click/J Strike, R reset ball, 1–8 switch, F3 debug)
+npm run dev          # http://localhost:5173  (WASD move, mouse aim, click/J Strike, Space Evade/Burst, 1–8 your Pokémon, R restart, F3 debug)
 npm run check        # typecheck + lint + tests
 npm run build        # production build → packages/client/dist
 npm run import-sprites   # re-import roster sprites from ./SpriteCollab-master and regenerate CREDITS.md

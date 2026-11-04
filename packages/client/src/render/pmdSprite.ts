@@ -159,6 +159,14 @@ export class PmdSprite {
     a.texture.offset.set(col / a.columns, 1 - (row + 1) / DIRECTIONS);
   }
 
+  /** Fade (Evade/immunity) and hide (KO). */
+  setOpacity(alpha: number): void {
+    const mat = this.mesh.material;
+    mat.opacity = alpha;
+    mat.alphaTest = alpha < 1 ? 0.05 : 0.5;
+    mat.depthWrite = alpha >= 1;
+  }
+
   /** Face the camera (full billboard, like most 2.5D sprite games). */
   faceCamera(camera: THREE.Camera): void {
     this.mesh.quaternion.copy(camera.quaternion);

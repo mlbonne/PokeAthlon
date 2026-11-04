@@ -26,7 +26,8 @@ export class InputSource {
         this.pendingActions.push('debug');
         e.preventDefault();
       }
-      if (e.code === 'KeyR') this.pendingActions.push('resetBall');
+      if (e.code === 'KeyR') this.pendingActions.push('restart');
+      if (e.code === 'Space') e.preventDefault();
     });
     target.addEventListener('keyup', (e) => this.keys.delete(e.code));
     target.addEventListener('blur', () => {
@@ -63,6 +64,7 @@ export class InputSource {
     let ay = 0;
     let buttons = 0;
     if (this.mouseDown || this.down('KeyJ', 'KeyK')) buttons |= Button.Strike;
+    if (this.down('Space', 'ShiftLeft', 'KeyL')) buttons |= Button.Evade;
 
     const pad = navigator.getGamepads?.().find((g) => g?.connected);
     if (pad) {
@@ -84,8 +86,9 @@ export class InputSource {
         this.lastAimSource = 'stick';
         this.mouseActive = false;
       }
-      // A, RB, RT strike.
+      // A, RB, RT strike; B, LB evade.
       if ([0, 5, 7].some((i) => pad.buttons[i]?.pressed)) buttons |= Button.Strike;
+      if ([1, 4].some((i) => pad.buttons[i]?.pressed)) buttons |= Button.Evade;
     }
 
     if (ax === 0 && ay === 0 && this.mouseActive && mouseAim) {
