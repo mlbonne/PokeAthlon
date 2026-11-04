@@ -4,6 +4,7 @@ import { DT } from './constants';
 import { collideBox, collideCircle, collideSegment, pointInPolygon } from './geometry';
 import { AXIS_MAX, type PlayerInput } from './input';
 import { frozenPhase } from './match';
+import { effectiveSpeed, stepDash } from './moves';
 import { approach, clampLen, type Vec2 } from './vec';
 import type { Player, World } from './world';
 
@@ -18,13 +19,21 @@ export function stepMovement(world: World, p: Player, inp: PlayerInput | undefin
     return;
   }
 
+  if (p.dash) {
+    stepDash(world, p);
+    for (const s of world.stage.playerWalls) collideSegment(p.pos, p.vel, p.radius, s, 0);
+    collideTerrain(world, p, 0);
+    return;
+  }
+
   const frozen = frozenPhase(world) || p.stunTicks > 0;
   const raw: Vec2 = !frozen && inp ? { x: inp.moveX / AXIS_MAX, y: inp.moveY / AXIS_MAX } : { x: 0, y: 0 };
   const dir = clampLen(raw, 1);
-  const speed = p.speed * (p.slowTicks > 0 ? 1 - gameplay.knock.lightSlow : 1);
+  const top = effectiveSpeed(p);
+  const speed = top * (p.slowTicks > 0 ? 1 - gameplay.knock.lightSlow : 1);
   const target = { x: dir.x * speed, y: dir.y * speed };
   const moving = dir.x !== 0 || dir.y !== 0;
-  const rate = p.speed / (moving ? gameplay.movement.accelTime : gameplay.movement.decelTime);
+  const rate = top / (moving ? gameplay.movement.accelTime : gameplay.movement.decelTime);
   p.vel = frozen && frozenPhase(world) ? { x: 0, y: 0 } : approach(p.vel, target, rate * DT);
   p.pos = { x: p.pos.x + p.vel.x * DT, y: p.pos.y + p.vel.y * DT };
   if (moving && p.strikeActive === 0) {
@@ -51,11 +60,14 @@ function stepKnock(world: World, p: Player): void {
   if (world.match.rulesEnabled && !pointInPolygon(p.pos, world.stage.playerOutline)) knockOut(world, p);
 }
 
-/** Solid terrain for players: goal posts, closed gates, standing barriers. */
+/** Solid terrain for players: goal posts, closed gates, standing barriers, creation walls. */
 function collideTerrain(world: World, p: Player, restitution: number, vel: Vec2 = p.vel): void {
   for (const c of world.stage.posts) collideCircle(p.pos, vel, p.radius, c, restitution);
   for (const g of world.gates) {
     if (!g.open) collideBox(p.pos, vel, p.radius, world.stage.goals[g.team].gate, restitution);
   }
   for (const b of world.barriers) if (b.alive) collideBox(p.pos, vel, p.radius, b.box, restitution);
+  for (const c of world.creations) {
+    collideSegment(p.pos, vel, p.radius + c.r, { ax: c.a.x, ay: c.a.y, bx: c.b.x, by: c.b.y }, restitution);
+  }
 }

@@ -6,6 +6,20 @@ import { stepEnergy } from './energy';
 import type { SimEvent } from './events';
 import type { PlayerInput } from './input';
 import { beginKickoff, stepMatchEnd, stepMatchStart } from './match';
+import {
+  movesFor,
+  stepCreations,
+  stepMoves,
+  stepPending,
+  stepProjectiles,
+  type Buff,
+  type CastState,
+  type Creation,
+  type DashState,
+  type MoveState,
+  type PendingAction,
+  type Projectile,
+} from './moves';
 import { stepMovement } from './movement';
 import { stepOrbs } from './orbs';
 import { stepPassiveXp } from './progression';
@@ -80,6 +94,13 @@ export interface Player {
   /** Last tick this player touched the ball (assists). */
   lastBallTouchTick: number;
   stats: { goals: number; assists: number; kos: number; deaths: number; barriers: number };
+
+  // Moves (M3)
+  /** Primary, secondary, special (empty if the Pokémon has no kit yet). */
+  moves: MoveState[];
+  cast: CastState | null;
+  dash: DashState | null;
+  buffs: Buff[];
 }
 
 export interface Ball {
@@ -97,6 +118,8 @@ export interface Ball {
   controlTicks: number;
   /** True while the ball sits in a goal after scoring (hidden, inert). */
   scored: boolean;
+  /** Ticks the ball is stunned (frozen, ignores knockback). OS "stun the Core". */
+  stunTicks: number;
 }
 
 export interface Barrier {
@@ -151,6 +174,10 @@ export interface World {
   gates: [Gate, Gate];
   orbs: Orb[];
   match: MatchState;
+  projectiles: Projectile[];
+  creations: Creation[];
+  pending: PendingAction[];
+  nextEntityId: number;
   /** Events produced by the most recent step. */
   events: SimEvent[];
 }
@@ -193,6 +220,7 @@ export function createWorld(spawns: PlayerSpawn[], opts: WorldOptions = {}): Wor
       controlBy: -1,
       controlTicks: 0,
       scored: false,
+      stunTicks: 0,
     },
     barriers: stage.barriers.map((b) => ({ team: b.team, box: { ...b.box }, alive: true })),
     gates: [
@@ -216,6 +244,10 @@ export function createWorld(spawns: PlayerSpawn[], opts: WorldOptions = {}): Wor
       nextOrbId: 1,
       rulesEnabled: true,
     },
+    projectiles: [],
+    creations: [],
+    pending: [],
+    nextEntityId: 1,
     events: [],
   };
   if (mode === 'match') beginKickoff(world, false);
@@ -280,6 +312,10 @@ function makePlayer(id: number, s: PlayerSpawn, stage: Stage): Player {
     xpTickAccumulator: 0,
     lastBallTouchTick: -1,
     stats: { goals: 0, assists: 0, kos: 0, deaths: 0, barriers: 0 },
+    moves: [],
+    cast: null,
+    dash: null,
+    buffs: [],
   };
   applyPokemon(p, s.pokemonId);
   p.stagger = p.maxStagger;
@@ -297,6 +333,8 @@ function applyPokemon(p: Player, pokemonId: string): void {
   p.strikeRadius = size.strikeWidth / 2;
   p.baseStagger = def.stats.stagger;
   p.staggerGrowth = def.stats.staggerGrowth;
+  p.moves = movesFor(def.id);
+  p.cast = null;
   const frac = p.maxStagger > 0 ? p.stagger / p.maxStagger : 1;
   p.maxStagger = maxStaggerAt(p, p.level);
   p.stagger = p.maxStagger * frac;
@@ -317,8 +355,9 @@ export const isTargetable = (p: Player): boolean => p.koTicks === 0 && p.elusive
  * Advance the world by one tick. `inputs[i]` belongs to `world.players[i]`;
  * missing entries count as neutral. Mutates and returns `world`.
  *
- * Order: match start-of-tick → timers → movement → strikes → energy actions → ball →
- * orbs → passive XP → match end-of-tick (goals, phases, overtime).
+ * Order: match start-of-tick → timers → movement (incl. dashes) → strikes → moves → energy →
+ * delayed actions → projectiles → ball → creations → orbs → passive XP → match end-of-tick.
+ * (Moves and Strike read last tick's buttons for press detection; energy updates them.)
  */
 export function step(world: World, inputs: readonly (PlayerInput | undefined)[]): World {
   world.events = [];
@@ -326,8 +365,12 @@ export function step(world: World, inputs: readonly (PlayerInput | undefined)[])
   for (const p of world.players) stepCombatTimers(world, p);
   for (const p of world.players) stepMovement(world, p, inputs[p.id]);
   for (const p of world.players) stepStrike(world, p, inputs[p.id]);
+  for (const p of world.players) stepMoves(world, p, inputs[p.id]);
   for (const p of world.players) stepEnergy(world, p, inputs[p.id]);
+  stepPending(world);
+  stepProjectiles(world);
   stepBall(world);
+  stepCreations(world);
   stepOrbs(world);
   stepPassiveXp(world);
   stepMatchEnd(world);

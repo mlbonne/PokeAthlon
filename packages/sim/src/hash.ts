@@ -46,6 +46,14 @@ export function hashWorld(w: World): string {
   for (const bar of w.barriers) mixU32(bar.alive ? 1 : 0);
   for (const g of w.gates) mixU32(g.open ? 1 : 0);
   for (const o of w.orbs) mixU32(o.id);
+  for (const pr of w.projectiles) {
+    mixU32(pr.id);
+    mixF64(pr.pos.x);
+    mixF64(pr.pos.y);
+  }
+  for (const c of w.creations) mixU32(c.id + c.ticks);
+  mixU32(b.stunTicks);
+  for (const p of w.players) for (const m of p.moves) mixU32(m.cooldown);
   const m = w.match;
   mixU32(m.goals[0]);
   mixU32(m.goals[1]);

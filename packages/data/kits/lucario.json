@@ -1,0 +1,87 @@
+{
+  "$comment": "Flexible Brawler (OS Juliette model). Numbers start from Juliette's Fiery Fist / Flying Phoenix / Flame Flurry.",
+  "pokemon": "lucario",
+  "moves": [
+    {
+      "id": "aura-sphere",
+      "name": "Aura Sphere",
+      "slot": "primary",
+      "cooldown": 9,
+      "anim": "Strike",
+      "desc": "A fast sphere of aura that hits the first enemy hard.",
+      "bot": "ballShot",
+      "actions": [
+        {
+          "type": "projectile",
+          "fx": { "color": "#5aa9ff" },
+          "speed": 2300,
+          "range": 700,
+          "radius": 45,
+          "hit": {
+            "ball": { "base": 1300, "powerRatio": 1.5 },
+            "player": { "base": 200, "powerRatio": 0.9 },
+            "damage": { "base": 200, "powerRatio": 0.9 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "extreme-speed",
+      "name": "Extreme Speed",
+      "slot": "secondary",
+      "cooldown": 14,
+      "anim": "Walk",
+      "desc": "Dash, hitting everything in your path. Other moves can be cast mid-dash.",
+      "bot": "engage",
+      "actions": [
+        {
+          "type": "dash",
+          "fx": { "color": "#9fd0ff" },
+          "distance": 520,
+          "time": 0.22,
+          "castWhileDashing": true,
+          "hit": {
+            "ball": { "base": 1150, "powerRatio": 1.0 },
+            "player": { "base": 150, "powerRatio": 0.6 },
+            "damage": { "base": 120, "powerRatio": 0.5 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "close-combat",
+      "name": "Close Combat",
+      "slot": "special",
+      "cooldown": 30,
+      "anim": "Double",
+      "desc": "A flurry of LIGHT jabs, then a devastating final kick.",
+      "bot": "engage",
+      "actions": [
+        {
+          "type": "area",
+          "fx": { "color": "#ff8f5a" },
+          "shape": "cone",
+          "radius": 230,
+          "angleDeg": 80,
+          "repeat": 4,
+          "repeatInterval": 0.12,
+          "hitsBall": false,
+          "hit": { "player": { "base": 40, "powerRatio": 0.2 }, "damage": { "base": 60, "powerRatio": 0.3 }, "light": true }
+        },
+        {
+          "type": "area",
+          "fx": { "color": "#ff5a3a" },
+          "delay": 0.55,
+          "shape": "cone",
+          "radius": 260,
+          "angleDeg": 90,
+          "hit": {
+            "ball": { "base": 1450, "powerRatio": 2.0 },
+            "player": { "base": 330, "powerRatio": 1.5 },
+            "damage": { "base": 300, "powerRatio": 1.3 }
+          }
+        }
+      ]
+    }
+  ]
+}

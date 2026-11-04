@@ -1,6 +1,7 @@
 import { gameplay } from '@pokeathlon/data';
 import { TICK_RATE, ticks } from './constants';
 import { addXp } from './progression';
+import { buffDamageReduction, buffKnockbackResist } from './moves';
 import { inGoalArc } from './stage';
 import type { Vec2 } from './vec';
 import { isTargetable, type Player, type World } from './world';
@@ -32,11 +33,13 @@ export function applyHit(world: World, attackerId: number, target: Player, hit: 
   if (!isTargetable(target)) return false;
   const wasStaggered = target.staggered;
 
-  const damage = hit.damage * (wasStaggered ? K.staggeredDamageTaken : 1);
+  const damage = hit.damage * (wasStaggered ? K.staggeredDamageTaken : 1) * (1 - buffDamageReduction(target));
   let knockback = hit.light && !wasStaggered ? 0 : hit.knockback;
   if (wasStaggered) knockback *= K.staggeredKnockbackMultiplier;
-  else if (knockback > 0 && inGoalArc(world.stage, target.team, target.pos)) {
-    knockback = Math.max(0, knockback - K.goalArcResist);
+  else if (knockback > 0) {
+    let resist = buffKnockbackResist(target);
+    if (inGoalArc(world.stage, target.team, target.pos)) resist += K.goalArcResist;
+    knockback = Math.max(0, knockback - resist);
   }
 
   // Stagger.
@@ -78,6 +81,8 @@ export function startKnock(p: Player, dir: Vec2, knockback: number): void {
   p.knockDecel = v0 / n;
   p.knockTicks = n;
   p.vel = { x: 0, y: 0 };
+  p.dash = null; // knockback interrupts dashes
+  p.cast = null;
 }
 
 export function gainEnergy(p: Player, amount: number): void {
@@ -88,6 +93,9 @@ export function gainEnergy(p: Player, amount: number): void {
 export function knockOut(world: World, p: Player): void {
   p.koTicks = ticks(gameplay.respawn.time);
   p.knockTicks = 0;
+  p.dash = null;
+  p.cast = null;
+  p.buffs = [];
   p.knockVel = { x: 0, y: 0 };
   p.vel = { x: 0, y: 0 };
   p.stunTicks = 0;
@@ -133,6 +141,7 @@ export function stepCombatTimers(world: World, p: Player): void {
   if (p.immuneTicks > 0) p.immuneTicks--;
   if (p.evadeCooldown > 0) p.evadeCooldown--;
   if (p.burstBoostTicks > 0) p.burstBoostTicks--;
+  for (let i = p.buffs.length - 1; i >= 0; i--) if (--p.buffs[i]!.ticks <= 0) p.buffs.splice(i, 1);
 
   if (p.regenDelay > 0) {
     p.regenDelay--;
