@@ -1,5 +1,6 @@
 import { gameplay } from '@pokeathlon/data';
 import { ticks } from './constants';
+import { resetMoveState } from './moves';
 import { addXp } from './progression';
 import type { Team } from './stage';
 import { spawnPosition, type World } from './world';
@@ -50,6 +51,8 @@ export function beginKickoff(world: World, nextRound: boolean): void {
     p.lastHitBy = -1;
   }
   world.orbs = [];
+  resetMoveState(world);
+  b.stunTicks = 0;
   m.orbTimer = ticks(gameplay.orbs.first);
   m.roundTicks = 0;
   m.overtime = false;

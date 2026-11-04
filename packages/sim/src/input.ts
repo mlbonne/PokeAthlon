@@ -23,6 +23,8 @@ export interface PlayerInput {
   aimY: number;
   /** Bitmask of {@link Button}. */
   buttons: number;
+  /** Aim distance in world units (0 = use the move's max range). Integer, clamped to [0, 4000]. */
+  aimDist?: number;
 }
 
 export const NEUTRAL_INPUT: Readonly<PlayerInput> = Object.freeze({
@@ -39,6 +41,7 @@ const q = (v: number): number => {
 };
 
 /** Quantize float axes (e.g. from a gamepad) into a PlayerInput. */
-export function quantizeInput(moveX: number, moveY: number, aimX = 0, aimY = 0, buttons = 0): PlayerInput {
-  return { moveX: q(moveX), moveY: q(moveY), aimX: q(aimX), aimY: q(aimY), buttons: buttons | 0 };
+export function quantizeInput(moveX: number, moveY: number, aimX = 0, aimY = 0, buttons = 0, aimDist = 0): PlayerInput {
+  const d = Math.round(Math.max(0, Math.min(4000, Number.isFinite(aimDist) ? aimDist : 0)));
+  return { moveX: q(moveX), moveY: q(moveY), aimX: q(aimX), aimY: q(aimY), buttons: buttons | 0, aimDist: d };
 }

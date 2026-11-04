@@ -16,6 +16,7 @@ export * from './events';
 export * from './geometry';
 export * from './hash';
 export * from './input';
+export { effectiveSpeed, movesFor, SLOTS, type Buff, type Creation, type MoveState, type Projectile } from './moves';
 export { beginKickoff, frozenPhase, scoreGoal } from './match';
 export { addXp, specialUnlocked } from './progression';
 export * from './stage';

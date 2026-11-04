@@ -63,5 +63,64 @@ export function botInput(world: World, id: number): PlayerInput {
     if (near) buttons |= Button.Evade;
   }
 
+  // Moves: pick at most one per tick by its data hint; it overrides the aim for this tick.
+  const cast = chooseMove(world, p.id, aim);
+  if (cast) return quantizeInput(move.x, move.y, cast.aim.x, cast.aim.y, (buttons & ~Button.Strike) | cast.button, cast.dist);
+
   return quantizeInput(move.x, move.y, aim.x, aim.y, buttons);
+}
+
+const MOVE_BUTTONS = [Button.Move1, Button.Move2, Button.Signature] as const;
+
+/** Bot move use, driven by each move's `bot` hint from the kit data. */
+function chooseMove(world: World, id: number, shotAim: Vec2): { button: number; aim: Vec2; dist: number } | null {
+  const p = world.players[id]!;
+  if (p.cast || p.knockTicks > 0 || p.stunTicks > 0) return null;
+  const b = world.ball;
+  const d2 = (a: Vec2, c: Vec2) => (a.x - c.x) ** 2 + (a.y - c.y) ** 2;
+  const dirTo = (q: Vec2) => {
+    const l = Math.sqrt(d2(q, p.pos)) || 1;
+    return { x: (q.x - p.pos.x) / l, y: (q.y - p.pos.y) / l };
+  };
+  const enemy = world.players
+    .filter((o) => o.team !== p.team && o.koTicks === 0)
+    .sort((a, c) => d2(a.pos, p.pos) - d2(c.pos, p.pos))[0];
+  const ownGoal = world.stage.goals[p.team];
+
+  for (let slot = 0; slot < p.moves.length; slot++) {
+    const m = p.moves[slot]!;
+    const bit = MOVE_BUTTONS[slot]!;
+    if (m.cooldown > 0 || (p.prevButtons & bit) !== 0) continue;
+    if (m.def.slot === 'special' && p.level < gameplay.xp.specialUnlockLevel) continue;
+    const ballDist = Math.sqrt(d2(b.pos, p.pos));
+    switch (m.def.bot) {
+      case 'ballShot': {
+        // Ball ahead and roughly on the line to our target: shoot it from range.
+        const toBall = dirTo(b.pos);
+        if (!b.scored && ballDist > 220 && ballDist < 650 && toBall.x * shotAim.x + toBall.y * shotAim.y > 0.9) {
+          return { button: bit, aim: toBall, dist: 0 };
+        }
+        break;
+      }
+      case 'engage':
+        if (enemy && d2(enemy.pos, p.pos) < 380 * 380) return { button: bit, aim: dirTo(enemy.pos), dist: 0 };
+        break;
+      case 'chase':
+        if (!b.scored && ballDist > 800) return { button: bit, aim: dirTo(b.pos), dist: 0 };
+        break;
+      case 'defend':
+        if (!b.scored && ownGoal.side * b.pos.x > 300 && ownGoal.side * b.vel.x > 500 && ballDist < 700) {
+          return { button: bit, aim: dirTo(b.pos), dist: 0 };
+        }
+        break;
+      case 'support': {
+        // Heal a hurt teammate (or ourselves), otherwise drop it on a close enemy.
+        const hurt = world.players.find((o) => o.team === p.team && o.koTicks === 0 && o.stagger < o.maxStagger * 0.6);
+        if (hurt) return { button: bit, aim: dirTo(hurt.pos), dist: Math.max(1, Math.sqrt(d2(hurt.pos, p.pos))) };
+        if (enemy && d2(enemy.pos, p.pos) < 600 * 600) return { button: bit, aim: dirTo(enemy.pos), dist: Math.sqrt(d2(enemy.pos, p.pos)) };
+        break;
+      }
+    }
+  }
+  return null;
 }

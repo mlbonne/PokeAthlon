@@ -9,6 +9,7 @@ export type AimSource = 'stick' | 'mouse' | 'none';
 export class InputSource {
   private keys = new Set<string>();
   private mouseDown = false;
+  private mouseRight = false;
   /** Mouse position in normalised device coords (-1..1). */
   readonly mouseNdc = { x: 0, y: 0 };
   private mouseActive = false;
@@ -26,13 +27,14 @@ export class InputSource {
         this.pendingActions.push('debug');
         e.preventDefault();
       }
-      if (e.code === 'KeyR') this.pendingActions.push('restart');
-      if (e.code === 'Space') e.preventDefault();
+      if (e.code === 'Backspace') this.pendingActions.push('restart');
+      if (e.code === 'Space' || e.code === 'Backspace') e.preventDefault();
     });
     target.addEventListener('keyup', (e) => this.keys.delete(e.code));
     target.addEventListener('blur', () => {
       this.keys.clear();
       this.mouseDown = false;
+      this.mouseRight = false;
     });
     canvas.addEventListener('pointermove', (e) => {
       const r = canvas.getBoundingClientRect();
@@ -42,10 +44,12 @@ export class InputSource {
     });
     canvas.addEventListener('pointerdown', (e) => {
       if (e.button === 0) this.mouseDown = true;
+      if (e.button === 2) this.mouseRight = true;
       this.mouseActive = true;
     });
     target.addEventListener('pointerup', (e) => {
       if (e.button === 0) this.mouseDown = false;
+      if (e.button === 2) this.mouseRight = false;
     });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   }
@@ -64,7 +68,10 @@ export class InputSource {
     let ay = 0;
     let buttons = 0;
     if (this.mouseDown || this.down('KeyJ', 'KeyK')) buttons |= Button.Strike;
-    if (this.down('Space', 'ShiftLeft', 'KeyL')) buttons |= Button.Evade;
+    if (this.down('Space', 'ShiftLeft', 'KeyF')) buttons |= Button.Evade;
+    if (this.mouseRight || this.down('KeyQ', 'KeyU')) buttons |= Button.Move1;
+    if (this.down('KeyE', 'KeyI')) buttons |= Button.Move2;
+    if (this.down('KeyR', 'KeyO')) buttons |= Button.Signature;
 
     const pad = navigator.getGamepads?.().find((g) => g?.connected);
     if (pad) {
@@ -86,22 +93,27 @@ export class InputSource {
         this.lastAimSource = 'stick';
         this.mouseActive = false;
       }
-      // A, RB, RT strike; B, LB evade.
+      // A, RB, RT strike; B, LB evade; X, Y, LT moves.
       if ([0, 5, 7].some((i) => pad.buttons[i]?.pressed)) buttons |= Button.Strike;
       if ([1, 4].some((i) => pad.buttons[i]?.pressed)) buttons |= Button.Evade;
+      if (pad.buttons[2]?.pressed) buttons |= Button.Move1;
+      if (pad.buttons[3]?.pressed) buttons |= Button.Move2;
+      if (pad.buttons[6]?.pressed) buttons |= Button.Signature;
     }
 
+    let aimDist = 0;
     if (ax === 0 && ay === 0 && this.mouseActive && mouseAim) {
       const l = Math.hypot(mouseAim.x, mouseAim.y);
       if (l > 1) {
         ax = mouseAim.x / l;
         ay = mouseAim.y / l;
+        aimDist = l;
         this.lastAimSource = 'mouse';
       }
     }
     if (ax === 0 && ay === 0 && !this.mouseActive) this.lastAimSource = 'none';
 
-    return quantizeInput(x, y, ax, ay, buttons);
+    return quantizeInput(x, y, ax, ay, buttons, aimDist);
   }
 
   takeDigits(): number[] {

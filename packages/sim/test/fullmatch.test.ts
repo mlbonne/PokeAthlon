@@ -17,7 +17,7 @@ describe('full match (bots)', () => {
     const { w, counts, minutes } = playMatch(
       [
         { pokemonId: 'pikachu', team: 0 },
-        { pokemonId: 'machamp', team: 1 },
+        { pokemonId: 'lucario', team: 1 },
       ],
       30,
     );
@@ -34,14 +34,16 @@ describe('full match (bots)', () => {
         { pokemonId: 'pikachu', team: 0, slot: 0 },
         { pokemonId: 'lucario', team: 0, slot: 1 },
         { pokemonId: 'snorlax', team: 0, role: 'goalie' },
-        { pokemonId: 'greninja', team: 1, slot: 0 },
-        { pokemonId: 'machamp', team: 1, slot: 1 },
-        { pokemonId: 'blastoise', team: 1, role: 'goalie' },
+        { pokemonId: 'togekiss', team: 1, slot: 0 },
+        { pokemonId: 'lucario', team: 1, slot: 1 },
+        { pokemonId: 'snorlax', team: 1, role: 'goalie' },
       ],
       30,
     );
     expect(w.match.phase).toBe('matchOver');
     expect(minutes).toBeLessThan(20);
     expect(counts.goal).toBeGreaterThanOrEqual(4);
+    expect(counts.cast).toBeGreaterThan(20); // bots use their kits
+    expect(counts.ko).toBeGreaterThan(0); // and knock each other out
   });
 });

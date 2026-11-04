@@ -43,6 +43,7 @@ export function hitBall(world: World, playerId: number, dir: Vec2, knockback: nu
     cap *= gameplay.burst.boostMultiplier;
     p.burstBoostTicks = 0;
   }
+  if (b.stunTicks > 0) return 0; // a stunned ball ignores knockback (OS)
   const cur = b.hitstop > 0 ? b.launchVel : b.vel;
   const curSpeed = Math.sqrt(cur.x * cur.x + cur.y * cur.y);
   const capped = Math.min(kb, cap);
@@ -73,6 +74,11 @@ export function hitBall(world: World, playerId: number, dir: Vec2, knockback: nu
 export function stepBall(world: World): void {
   const b = world.ball;
   if (b.scored) return;
+
+  if (b.stunTicks > 0) {
+    b.stunTicks--;
+    return; // frozen in place
+  }
 
   if (b.controlTicks > 0) {
     b.controlTicks--;
@@ -130,6 +136,10 @@ function collideBall(world: World): void {
   for (const c of stage.posts) impact = Math.max(impact, collideCircle(b.pos, b.vel, b.radius, c, 1));
   for (const g of world.gates) {
     if (!g.open) impact = Math.max(impact, collideBox(b.pos, b.vel, b.radius, stage.goals[g.team].gate, 1));
+  }
+  for (const c of world.creations) {
+    const seg = { ax: c.a.x, ay: c.a.y, bx: c.b.x, by: c.b.y };
+    impact = Math.max(impact, collideSegment(b.pos, b.vel, b.radius + c.r, seg, 1));
   }
   if (impact > 0) {
     nudgeWallSpeed(b.vel);

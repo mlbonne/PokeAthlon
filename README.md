@@ -5,7 +5,7 @@ Smash the ball through the enemy's barriers, score once their gate opens, and kn
 
 - 📋 Plan & roadmap: [docs/PLAN.md](docs/PLAN.md)
 - 🎮 Design bible (Omega Strikers breakdown → Pokémon version): [docs/design/GAME_BREAKDOWN.md](docs/design/GAME_BREAKDOWN.md)
-- Status: **M2 Rules done**. Full 1v1 match against a bot on the OS-geometry Viridian Pitch: barriers, gates, goals, sets, KOs, Stagger, Energy Burst, orbs and levels. Next: M3 (Pokémon kits)
+- Status: **M3 Kits done**. Data-driven move system; Pikachu, Snorlax, Lucario and Togekiss have full kits (Q/E/R). Next: M4 (smarter bots, 3v3, gamepad polish)
 
 ## Getting started
 
@@ -14,7 +14,7 @@ Requires Node.js 22+ (developed on v26 LTS). On the dev machine a portable Node 
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173  (WASD move, mouse aim, click/J Strike, Space Evade/Burst, 1–8 your Pokémon, R restart, F3 debug)
+npm run dev          # http://localhost:5173  (WASD move, mouse aim, click Strike, Q/E/R moves, Space Evade/Burst, 1–8 Pokémon, Backspace restart)
 npm run check        # typecheck + lint + tests
 npm run build        # production build → packages/client/dist
 npm run import-sprites   # re-import roster sprites from ./SpriteCollab-master and regenerate CREDITS.md
@@ -26,7 +26,7 @@ npm run import-sprites   # re-import roster sprites from ./SpriteCollab-master a
 |---|---|
 | `packages/sim` | Deterministic fixed-step (60 Hz) simulation. No DOM, no Three.js, no wall clock or `Math.random` (lint-enforced) |
 | `packages/client` | Vite + Three.js renderer, input, HUD. Interpolates sim state |
-| `packages/data` | Roster and game data as JSON + Zod schemas |
+| `packages/data` | Roster, rules, stages and kits (`kits/*.json`) as JSON + Zod schemas |
 | `tools/import-sprites.ts` | SpriteCollab → `assets/` importer + `CREDITS.md` generator |
 | `tools/research/` | Python readers used for the Omega Strikers study (output never committed) |
 | `assets/` | Generated, committed sprites and portraits for the roster only |

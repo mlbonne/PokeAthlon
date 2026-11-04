@@ -14,6 +14,8 @@ import {
   type Vec2,
   type World,
 } from '@pokeathlon/sim';
+import { getKit } from '@pokeathlon/data';
+import { AbilityBar } from './abilityBar';
 import { Hud, nameOf, TEAM_NAMES } from './hud';
 import { InputSource } from './input';
 import { AimIndicator } from './render/aim';
@@ -21,6 +23,7 @@ import { buildArena } from './render/arena';
 import { BallView } from './render/ball';
 import { Effects } from './render/effects';
 import { facingRow, PmdSprite } from './render/pmdSprite';
+import { MoveViews } from './render/moves';
 import { Structures } from './render/structures';
 import { toThreeX, toThreeZ, WORLD_TO_THREE } from './render/units';
 
@@ -56,6 +59,8 @@ interface MatchView {
   effects: Effects;
   aim: AimIndicator;
   hud: Hud;
+  moves: MoveViews;
+  bar: AbilityBar;
   prevPos: Vec2[];
   prevBall: Vec2;
 }
@@ -70,6 +75,7 @@ function dexOf(id: string): string {
 function startMatch(): void {
   if (view) {
     scene.remove(view.group);
+    view.bar.remove();
     hudRoot.querySelectorAll('.scoreboard, .banner, .plate, .pop').forEach((e) => e.remove());
   }
   const world = createWorld(
@@ -88,7 +94,8 @@ function startMatch(): void {
   const effects = new Effects();
   const aim = new AimIndicator();
   const ball = new BallView(world.ball.radius, gameplay.ball.glowSpeed);
-  group.add(structures.object, effects.object, aim.object, ball.object);
+  const moves = new MoveViews(world);
+  group.add(structures.object, effects.object, aim.object, ball.object, moves.object);
   const sprites = world.players.map((p) => {
     const s = new PmdSprite();
     group.add(s.object);
@@ -106,6 +113,8 @@ function startMatch(): void {
     effects,
     aim,
     hud: new Hud(hudRoot, world),
+    moves,
+    bar: new AbilityBar(hudRoot),
     prevPos: world.players.map((p) => ({ ...p.pos })),
     prevBall: { ...world.ball.pos },
   };
@@ -143,6 +152,7 @@ const teamColor = (t: number) => (t === 0 ? 0x3d7bff : 0xff4d5e);
 
 function onEvent(e: SimEvent): void {
   const { world, effects, hud, sprites } = view;
+  view.moves.onEvent(e);
   const at = (p: Vec2, h = 1.2) => project(p.x, p.y, h);
   switch (e.type) {
     case 'strike':
@@ -216,6 +226,22 @@ function onEvent(e: SimEvent): void {
       break;
     case 'orb':
       effects.ring(toThreeX(e.pos.x), toThreeZ(e.pos.y), 0x8fd3ff, 1.6, 0.35);
+      break;
+    case 'cast': {
+      const p = world.players[e.playerId]!;
+      const def = getKit(p.pokemonId)?.moves.find((m) => m.id === e.moveId);
+      if (def) sprites[e.playerId]?.playOnce(def.anim, 1.4);
+      if (e.slot === 'special') {
+        const s = at(p.pos, 2.4);
+        hud.pop(def?.name ?? '', s.x, s.y, 'lvl');
+      }
+      break;
+    }
+    case 'ballStun':
+      effects.ring(toThreeX(e.pos.x), toThreeZ(e.pos.y), 0xc9b38a, 1.5, 0.4);
+      break;
+    case 'wall':
+      effects.shake(0.15);
       break;
     case 'levelUp': {
       const p = world.players[e.playerId]!;
@@ -328,6 +354,7 @@ function frame(now: number): void {
     s.object.position.set(toThreeX(x), 0, toThreeZ(y));
     const speed = Math.hypot(p.vel.x, p.vel.y);
     if (p.knockTicks > 0 || p.stunTicks > 0) s.play('Hurt');
+    else if (p.dash) s.play('Walk');
     else s.play(speed > 20 ? 'Walk' : 'Idle');
     s.update(dt, facingRow(p.facing.x, p.facing.y), speed > 20 ? Math.max(0.6, speed / 300) : 1);
     const blink = p.immuneTicks > 0 && Math.floor(now / 90) % 2 === 0;
@@ -347,10 +374,12 @@ function frame(now: number): void {
     toThreeZ(lerp(view.prevBall.y, b.pos.y)),
     toThreeX(b.vel.x),
     toThreeZ(b.vel.y),
-    b.hitstop > 0 || b.controlTicks > 0,
+    b.hitstop > 0 || b.controlTicks > 0 || b.stunTicks > 0,
     b.redTicks > 0,
   );
   view.structures.update(dt, world);
+  view.moves.update(dt, world);
+  view.bar.update(world.players[ME]!);
   view.effects.update(dt);
 
   // Camera: frame the whole stage, drift slightly towards the ball.
