@@ -78,17 +78,6 @@ body {
   font-size: 12px;
 }
 
-#debug {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  padding: 6px 10px;
-  background: var(--panel);
-  border-radius: 8px;
-  font: 12px/1.4 ui-monospace, Consolas, monospace;
-  white-space: pre;
-}
-
 #legal {
   position: absolute;
   left: 16px;
@@ -379,4 +368,192 @@ body {
 body.spectate #help,
 body.spectate .abilities {
   display: none;
+}
+
+/* ---------- F3 debug menu (M4.3) ---------- */
+#dbg {
+  position: absolute;
+  top: 64px;
+  right: 12px;
+  width: min(640px, calc(100vw - 24px));
+  max-height: calc(100vh - 150px);
+  display: flex;
+  flex-direction: column;
+  background: rgba(14, 11, 30, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  font: 12px/1.35 system-ui, 'Segoe UI', Roboto, sans-serif;
+  pointer-events: auto;
+}
+#dbg[hidden] {
+  display: none;
+}
+.dbg-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.dbg-tabs button,
+.practice button {
+  font: inherit;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.dbg-tabs button {
+  border-radius: 6px 6px 0 0;
+  border-bottom: none;
+}
+.dbg-tabs button.on {
+  background: var(--accent);
+  color: #1b1638;
+  font-weight: 700;
+}
+.practice button:hover,
+.dbg-tabs button:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.dbg-body {
+  padding: 8px 10px 10px;
+  overflow: auto;
+}
+.dbg-body h4 {
+  margin: 10px 0 4px;
+  font-size: 12px;
+  color: var(--accent);
+}
+.dbg-body small,
+.dbg-head,
+.note {
+  color: var(--muted);
+}
+.dbg-body table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.dbg-body th,
+.dbg-body td {
+  padding: 2px 5px;
+  text-align: right;
+  white-space: nowrap;
+}
+.dbg-body th:first-child,
+.dbg-body td:first-child {
+  text-align: left;
+}
+.dbg-body th {
+  color: var(--muted);
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.dbg-body tr[data-focus] {
+  cursor: pointer;
+}
+.dbg-body tr.sel td {
+  background: rgba(255, 210, 63, 0.12);
+}
+.dbg-body td.team0 {
+  color: #8fb3ff;
+}
+.dbg-body td.team1 {
+  color: #ff8a96;
+}
+.core {
+  font-size: 13px;
+}
+.spd-h {
+  color: #ffb347;
+  font-weight: 700;
+}
+.spd-x {
+  color: #ff3b2f;
+  font-weight: 700;
+}
+.practice > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+}
+.practice > div > span {
+  width: 92px;
+  color: var(--muted);
+}
+.practice select,
+.kit-pick select {
+  font: inherit;
+  color: var(--ink);
+  background: #241d4a;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 3px 6px;
+}
+.kstats {
+  margin: 6px 0;
+}
+.kcards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+}
+.kcard {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.kcard h5 {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+.kcard th {
+  border: none;
+  font-weight: 400;
+}
+.kcard td {
+  white-space: normal;
+}
+.tier {
+  display: inline-block;
+  min-width: 34px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  text-align: center;
+  font-weight: 800;
+  color: #14112a;
+}
+.t-T0 { background: #ff3b5c; }
+.t-T0_5 { background: #ff8a3d; }
+.t-A { background: #ffd23f; }
+.t-B { background: #7dff9a; }
+.t-C { background: #5ad1ff; }
+.t-D { background: #a98bff; }
+.t-F { background: #8a8aa0; }
+.t-– { background: rgba(255, 255, 255, 0.15); color: var(--muted); }
+.tiers td {
+  vertical-align: middle;
+}
+.spec {
+  color: #ffb347;
+}
+.legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 4px;
+  margin-top: 6px;
+}
+@media (max-width: 720px) {
+  #dbg {
+    top: auto;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-height: 55vh;
+  }
 }

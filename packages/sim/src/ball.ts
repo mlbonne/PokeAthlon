@@ -195,3 +195,48 @@ function collideBodies(world: World): void {
     }
   }
 }
+
+/** Result of a ball-only look-ahead. */
+export interface BallPrediction {
+  /** Ball centre per tick (index 0 = after the first tick). */
+  path: Vec2[];
+  /** Team whose goal the ball enters within the look-ahead (−1 = none). */
+  goalAgainst: -1 | 0 | 1;
+  /** Ticks until that goal, or the full look-ahead. */
+  ticks: number;
+}
+
+/**
+ * Run the ball alone forward with the real physics (friction, walls, posts, gates, creations,
+ * barriers) but no players, and report where it goes. Pure: the world is not changed.
+ * Used by telemetry (shots/saves), the debug overlay and, later, the bots.
+ */
+export function predictBall(world: World, lookAhead: number): BallPrediction {
+  const b = world.ball;
+  const ghost: World = {
+    ...world,
+    players: [],
+    ball: { ...b, pos: { ...b.pos }, vel: { ...b.vel }, launchVel: { ...b.launchVel }, lastHitBy: -1 },
+    barriers: world.barriers.map((x) => ({ ...x })),
+    gates: [{ ...world.gates[0] }, { ...world.gates[1] }],
+    match: { ...world.match, phase: 'play', rulesEnabled: true, goals: [0, 0] },
+    events: [],
+  };
+  const path: Vec2[] = [];
+  for (let t = 0; t < lookAhead; t++) {
+    for (const g of ghost.gates) {
+      if (g.openTimer > 0 && --g.openTimer === 0) {
+        g.open = true;
+        g.openTimer = -1;
+      }
+    }
+    stepBall(ghost);
+    path.push({ ...ghost.ball.pos });
+    if (ghost.ball.scored) {
+      // goals[team] counts goals FOR team, so the goal is against the other one.
+      return { path, goalAgainst: ghost.match.goals[0] > 0 ? 1 : 0, ticks: t + 1 };
+    }
+    if (ghost.ball.vel.x === 0 && ghost.ball.vel.y === 0 && ghost.ball.hitstop === 0 && ghost.ball.stunTicks === 0) break;
+  }
+  return { path, goalAgainst: -1, ticks: lookAhead };
+}

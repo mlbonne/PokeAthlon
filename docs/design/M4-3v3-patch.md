@@ -241,8 +241,8 @@ Like OS community lists, Pokémon are ranked **per role**: a **Forward** tier an
 The difference from OS lists: tiers come from **measured numbers**, not opinion. There are two sources:
 
 1. **Sim tier** (the real ranking, from the B4 batch runs at `balance` difficulty).
-   - **Score** = role win rate, shrunk toward 50 % so small samples don't swing it: `(wins + 10) / (games + 20)`.
-     This counts 20 phantom games at 50 %.
+   - **Score** = role win rate, shrunk toward 50 % so small samples don't swing it: `(wins + 50) / (games + 100)`.
+     This counts 100 phantom games at 50 %: a handful of games stays near B, while thousands barely move (600 wins of 1,000 → 59 %).
    - **Role win rate** comes from rotating 3v3 comps, where every Pokémon plays both Forward and Goalie slots against every other.
    - **Bands**, in points from 50 %:
 
@@ -298,7 +298,7 @@ Before 4.6 has produced a snapshot, only theory tiers show.
 |---|---|---|---|
 | **4.1** ✅ | `feat/telemetry-headless` | B1 telemetry, seeded AI RNG, Node headless runner (`npm run sim`) | 1000 bot-vs-bot matches run headless; same seed gives the same hash |
 | **4.2** ✅ | `feat/kit-analyzer` | B2 analyzer + `npm run kits` table | Every kit's metrics are printed; tests check reach, area and DPS for known shapes |
-| **4.3** | `feat/debug-meter` | B3 F3 debug menu (Meter, Practice, Kit, Tiers tabs), hitbox/reach drawing, shots/saves/redirects/ball-speed telemetry, theory tiers | Meter matches the telemetry totals at the end of a match; every Practice control works |
+| **4.3** ✅ | `feat/debug-meter` | B3 F3 debug menu (Meter, Practice, Kit, Tiers tabs), hitbox/reach drawing, shots/saves/redirects/ball-speed telemetry, theory tiers | Meter matches the telemetry totals at the end of a match; every Practice control works |
 | **4.4** | `feat/ai-v2` | Part A (perception, coordinator, utility, move model, difficulty) + bot ladder | v2 beats v1 ≥ 80 % in mirrors; 3v3 bots rotate jobs, pass, guard and dodge |
 | **4.5** | `feat/3v3-playable` | Part C | A full 3v3 is playable with keyboard or gamepad against `normal` bots |
 | **4.6** | `feat/balance-report` | B4 batch sim + B5 impact score + B6 sim tiers (per role) + HTML report | `npm run balance` makes the win-rate matrix and the per-role T0–F tier snapshot for the 4 kits, with confidence intervals |

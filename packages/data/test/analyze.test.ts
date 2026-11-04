@@ -105,3 +105,21 @@ describe('kit analyzer: roster', () => {
     for (const f of all) expect(f.kitDps).toBeCloseTo(f.moves.reduce((s, m) => s + m.dps, 0));
   });
 });
+
+describe('tiers', () => {
+  it('theory and sim bands', async () => {
+    const { theoryTier, simTier, shrunkWinRate, bestTier } = await import('../src/tiers');
+    expect(theoryTier(130)).toBe('T0');
+    expect(theoryTier(100)).toBe('B');
+    expect(theoryTier(70)).toBe('F');
+    expect(shrunkWinRate(0, 0)).toBe(0.5);
+    expect(simTier(600, 1000).tier).toBe('T0'); // (600 + 50) / 1100 ≈ 59 %
+    expect(simTier(500, 1000).tier).toBe('B');
+    expect(simTier(400, 1000).tier).toBe('F');
+    // A tiny sample is pulled to 50 % and flagged uncertain.
+    const small = simTier(4, 5);
+    expect(small.tier).toBe('B'); // (4 + 50) / 105 ≈ 51 %
+    expect(small.uncertain).toBe(true);
+    expect(bestTier('C', 'A')).toBe('A');
+  });
+});

@@ -26,7 +26,7 @@ import { stepPassiveXp } from './progression';
 import { mixSeed } from './rng';
 import { buildStage, type Stage, type Team } from './stage';
 import { stepStrike } from './strike';
-import { collectTelemetry, createTelemetry, type Telemetry } from './telemetry';
+import { collectTelemetry, createTelemetry, playerTelemetry, type Telemetry } from './telemetry';
 import type { Vec2 } from './vec';
 
 export type Role = 'forward' | 'goalie';
@@ -395,4 +395,38 @@ export function step(world: World, inputs: readonly (PlayerInput | undefined)[])
   collectTelemetry(world, prevPos);
   world.tick++;
   return world;
+}
+
+/** Add a player mid-game (practice dummies). Returns the new player. */
+export function addPlayer(world: World, spawn: PlayerSpawn): Player {
+  const p = makePlayer(world.players.length, spawn, world.stage);
+  world.players.push(p);
+  world.ai.rng.push(mixSeed((world.seed * 16 + p.id) >>> 0));
+  world.telemetry.players.push(playerTelemetry(p));
+  world.telemetry.lastHit.push(null);
+  world.telemetry.lastBallSource.push(null);
+  return p;
+}
+
+/**
+ * Remove players (practice). Ids are re-numbered so `players[i].id === i` still holds;
+ * in-flight projectiles, creations and delayed actions are cleared.
+ */
+export function removePlayers(world: World, keep: (p: Player) => boolean): void {
+  const kept = world.players.map((p, i) => ({ p, i })).filter(({ p }) => keep(p));
+  world.players = kept.map(({ p }, id) => Object.assign(p, { id }));
+  world.ai.rng = kept.map(({ i }) => world.ai.rng[i]!);
+  const tel = world.telemetry;
+  tel.players = kept.map(({ i }, id) => Object.assign(tel.players[i]!, { id }));
+  tel.lastHit = kept.map(() => null);
+  tel.lastBallSource = kept.map(() => null);
+  tel.lastTouch = null;
+  tel.liveShot = null;
+  world.projectiles = [];
+  world.creations = [];
+  world.pending = [];
+  world.ball.lastHitBy = -1;
+  world.ball.controlBy = -1;
+  world.ball.controlTicks = 0;
+  for (const p of world.players) p.lastHitBy = -1;
 }

@@ -1,6 +1,9 @@
 import { roster, getPokemon, SIZE_TABLE, type PokemonDef } from './index';
 import { getKit, type MoveAction, type MoveDef, type MoveHit } from './kits';
 import { gameplay, getFrame, scaled } from './rules';
+import { theoryTier, type Tier } from './tiers';
+
+export * from './tiers';
 
 /**
  * Static kit analyzer (M4.2): numbers worked out from the data alone, before any match is played.
@@ -105,6 +108,8 @@ export interface FighterStats {
   /** Provisional power budget (100 = roster average) and its parts; weights get fitted in M4.6. */
   budget: number;
   budgetParts: Record<BudgetPart, number>;
+  /** Theory tier from the budget (B6). */
+  theoryTier: Tier;
 }
 
 export type BudgetPart = 'offense' | 'koThreat' | 'ball' | 'mobility' | 'control' | 'survivability';
@@ -348,7 +353,7 @@ function emptyMove(id: string, name: string, slot: MoveStats['slot'], kind: stri
 const staggerAt = (p: PokemonDef, level: number) => p.stats.stagger + (p.stats.staggerGrowth * (level - 1)) / 9;
 
 /** Raw per-fighter numbers (no roster-relative parts yet). */
-function analyzeFighterRaw(p: PokemonDef): Omit<FighterStats, 'combosToStagger' | 'survivability' | 'budget' | 'budgetParts'> {
+function analyzeFighterRaw(p: PokemonDef): Omit<FighterStats, 'combosToStagger' | 'survivability' | 'budget' | 'budgetParts' | 'theoryTier'> {
   const kit = getKit(p.id);
   const moves = kit ? (['primary', 'secondary', 'special'] as const).map((slot) => analyzeMove(kit.moves.find((m) => m.slot === slot)!, p)) : [];
   const strike = analyzeStrike(p);
@@ -411,6 +416,7 @@ export function analyzeRoster(ids?: string[]): FighterStats[] {
       survivability: surv(r),
       budget,
       budgetParts,
+      theoryTier: theoryTier(budget),
     };
   });
 }

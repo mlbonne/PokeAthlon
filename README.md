@@ -14,16 +14,23 @@ Requires Node.js 22+ (developed on v26 LTS). On the dev machine a portable Node 
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173  (WASD move, mouse aim, click Strike, Q/E/R moves, Space Evade/Burst, 1–8 Pokémon, Backspace restart)
+npm run dev          # http://localhost:5173  (WASD move, mouse aim, click Strike, Q/E/R moves, Space Evade/Burst, 1–8 Pokémon, Backspace restart, F3 debug menu)
 npm run check        # typecheck + lint + tests
 npm run build        # production build → packages/client/dist
 npm run import-sprites   # re-import roster sprites from ./SpriteCollab-master and regenerate CREDITS.md
-npm run record -- --a pikachu --b lucario   # record a CPU vs CPU match to recordings/*.mp4 + a balance report (needs npm run build + vite preview on :4173, and Edge)
+npm run record -- --a pikachu --b lucario   # record a CPU vs CPU match to recordings/*.mp4 + a balance report (needs npm run build + vite preview on :4173, and Edge; add --meter to bake in the F3 menu)
 npm run sim -- --lineup pikachu/lucario --games 1000 --swap   # headless bot-vs-bot batch: win rates (95 % CI) + per-Pokémon telemetry → reports/*.json (3v3: a,b,c/d,e,f)
 npm run kits                                 # static kit report: reach, area, timing, DPS, knockback, KO reach, ball power + power budget → reports/kits-*.md
 ```
 
-Spectate a CPU match live: `http://localhost:5173/?cpu=pikachu,lucario`.
+Spectate a CPU match live: `http://localhost:5173/?cpu=pikachu,lucario`. Practice sandbox with an enemy dummy: `?practice=1`. Add `&meter=1` to open the debug menu on start.
+
+**F3 debug menu** (modelled on Omega Strikers' own Practice mode, Core Stats and match stats):
+- **Meter**: live scoreboard (goals, assists, KOs, saves, shots, redirects, damage, DPS, possession, ball progress, MVP score) and Core Stats; per-move casts, landed %, damage and idle-ready time.
+- **Practice**: spawn/remove ball, spawn or swap the enemy dummy (idle or bot), clear cooldowns, energy, stagger/damage/knock back self or enemy, barriers, overtime, reset.
+- **Kit**: the kit analyzer's numbers laid out like OS ability tooltips.
+- **Tiers**: T0 / T0.5 / A / B / C / D / F per role (sim tiers after `npm run balance`) and the theory tier from the power budget.
+- World overlay: hurtboxes, Strike reach, move reach rings, projectile hitboxes and the predicted ball path.
 
 ### Layout
 
