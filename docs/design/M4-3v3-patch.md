@@ -165,7 +165,10 @@ Pure function, `kit + stats + rules → numbers`, at level 1 and at max level:
 
 Output: a markdown/CSV table per Pokémon, plus a **power-budget** score with weights from B4, so outliers show before any match is played.
 
-### B3. Live debug meter (client overlay, toggled with **F3**)
+### B3. Debug menu (client overlay, toggled with **F3**)
+Modelled on OS's own tooling: Practice mode, Core Stats, scoreboard and end-of-game stats, ability tooltips. See [omega-strikers.md §7a](../research/omega-strikers.md). Four tabs:
+
+**Meter tab (live)**
 - **Per-player panel:**
   - rolling 5 s and match DPS
   - damage dealt and taken
@@ -173,9 +176,40 @@ Output: a markdown/CSV table per Pokémon, plus a **power-budget** score with we
   - cooldown uptime: how much of the time each move sat unused while ready
   - ball touches, control %, ball progress
   - KOs, deaths, current Danger
+- **OS scoreboard columns:** Goals, Assists, KOs, **Saves**, Damage, **Shots**, **Redirects**, Orbs.
+- **Core Stats readout** (OS `WBP_CoreStats`):
+  - average, max and final (goal) ball speed
+  - high and extreme colour thresholds at 1,300 and 1,750 (our Red Core threshold)
 - **World view:** hitbox shapes while active, reach rings for every move, predicted ball path, and the AI's current job and action label over each bot.
-- **Kit card (hover or press 1–8):** the B2 static numbers, so the static and live values sit side by side.
-- **Works with** live play, spectate (`?cpu=`) and recordings. The recorder can bake it into video with `&meter=1`.
+
+**Practice tab** (OS Practice-mode controls):
+- spawn or remove the ball
+- spawn an enemy dummy and pick its Pokémon; destroy all; reset all
+- clear cooldowns; always clear cooldowns
+- Energy: zero, half, max
+- Stagger self or enemy; damage self or enemy; knock back self or enemy
+- restore or disable barriers
+- start or end overtime
+
+All of it runs through sim functions, so it stays deterministic and also works from scripts.
+
+**Kit tab:**
+- The B2 static numbers for the selected Pokémon, so static and live values sit side by side.
+- Laid out like OS's ability tooltips: hit type, ability type, damage, player and ball knockback, durations and speeds.
+
+**Tiers tab:** the B6 tier list.
+
+Works with live play, spectate (`?cpu=`) and recordings. The recorder can bake it into video with `&meter=1`.
+
+**Telemetry additions** (B1), so the meter can show OS's stats:
+- **Shot:** a touch after which the ball is on target. Its straight path crosses the enemy goal mouth between the posts, and its friction stopping distance reaches it.
+- **Save:** touching an enemy shot that is on target.
+- **Redirect:** the `ballHit.redirect` flag.
+- **Ball speed:** average, max and final (goal) speed.
+- **Per-role set MVP:**
+  - Forward: goals ×3, assists ×2, KOs ×1.5, shots ×0.5, damage ÷ 1,000.
+  - Goalie: saves ×2, plus the same terms at half weight.
+  - The weights are provisional.
 
 ### B4. Headless batch simulator (`npm run balance`)
 - Runs the pure sim in Node with no browser, at roughly 100× real time or more, across worker threads.
@@ -201,6 +235,52 @@ impact = w1·goal share + w2·assist share + w3·ball progress share
 - The weights are fitted by logistic regression of these features on match outcome across the batch runs, so the score tracks what wins games here rather than a guess.
 - Reported next to the plain win rate. Impact explains *why*; win rate says *how much*.
 
+### B6. Tier list (T0, T0.5, A, B, C, D, F)
+Like OS community lists, Pokémon are ranked **per role**: a **Forward** tier and a **Goalie** tier. **Overall** is the better of the two. A Pokémon whose roles are 2 or more tiers apart is flagged "role-specialist".
+
+The difference from OS lists: tiers come from **measured numbers**, not opinion. There are two sources:
+
+1. **Sim tier** (the real ranking, from the B4 batch runs at `balance` difficulty).
+   - **Score** = role win rate, shrunk toward 50 % so small samples don't swing it: `(wins + 10) / (games + 20)`.
+     This counts 20 phantom games at 50 %.
+   - **Role win rate** comes from rotating 3v3 comps, where every Pokémon plays both Forward and Goalie slots against every other.
+   - **Bands**, in points from 50 %:
+
+   | Tier | Win rate | Meaning |
+   |---|---|---|
+   | **T0** | ≥ 56 % | Warps the game; must be nerfed |
+   | **T0.5** | 54–56 % | Clearly best; watch it |
+   | **A** | 52–54 % | Strong |
+   | **B** | 48–52 % | Healthy band (the target for everyone) |
+   | **C** | 46–48 % | Weak |
+   | **D** | 44–46 % | Clearly worst; buff |
+   | **F** | < 44 % | Unplayable; must be buffed |
+
+   - **Confidence:** if the 95 % interval covers more than one neighbouring tier, the tier shows a "?" and the menu says how many more games would settle it.
+   - **Snapshot:** `npm run balance` writes the snapshot to `packages/data/balance/tiers.json`, committed, so the in-game menu can read it.
+
+2. **Theory tier** (available at once, from the B2 power budget, 100 = roster average).
+   - **Bands:**
+
+   | Tier | Budget |
+   |---|---|
+   | T0 | ≥ 118 |
+   | T0.5 | 112–118 |
+   | A | 106–112 |
+   | B | 94–106 |
+   | C | 88–94 |
+   | D | 82–88 |
+   | F | < 82 |
+
+   - Shown next to the sim tier. A big gap between the two means either the kit's numbers mislead (for example, utility that the budget can't value) or the bots misuse the kit.
+
+The **Tiers tab** lists every Pokémon with:
+- Forward, Goalie and Overall tier, and the theory tier;
+- win rate ± CI, games played and impact score (B5);
+- a "why" line: the impact parts and budget parts furthest from average, e.g. *"KO threat 132 %, ball 107 %"*.
+
+Before 4.6 has produced a snapshot, only theory tiers show.
+
 ---
 
 ## Part C — 3v3 playable
@@ -218,10 +298,10 @@ impact = w1·goal share + w2·assist share + w3·ball progress share
 |---|---|---|---|
 | **4.1** ✅ | `feat/telemetry-headless` | B1 telemetry, seeded AI RNG, Node headless runner (`npm run sim`) | 1000 bot-vs-bot matches run headless; same seed gives the same hash |
 | **4.2** ✅ | `feat/kit-analyzer` | B2 analyzer + `npm run kits` table | Every kit's metrics are printed; tests check reach, area and DPS for known shapes |
-| **4.3** | `feat/debug-meter` | B3 F3 overlay + hitbox/reach drawing | Meter matches the telemetry totals at the end of a match |
+| **4.3** | `feat/debug-meter` | B3 F3 debug menu (Meter, Practice, Kit, Tiers tabs), hitbox/reach drawing, shots/saves/redirects/ball-speed telemetry, theory tiers | Meter matches the telemetry totals at the end of a match; every Practice control works |
 | **4.4** | `feat/ai-v2` | Part A (perception, coordinator, utility, move model, difficulty) + bot ladder | v2 beats v1 ≥ 80 % in mirrors; 3v3 bots rotate jobs, pass, guard and dodge |
 | **4.5** | `feat/3v3-playable` | Part C | A full 3v3 is playable with keyboard or gamepad against `normal` bots |
-| **4.6** | `feat/balance-report` | B4 batch sim + B5 impact score + HTML report | `npm run balance --duel` makes the matrix for the 4 kits, with confidence intervals |
+| **4.6** | `feat/balance-report` | B4 batch sim + B5 impact score + B6 sim tiers (per role) + HTML report | `npm run balance` makes the win-rate matrix and the per-role T0–F tier snapshot for the 4 kits, with confidence intervals |
 
 - 4.1–4.3 come first because they are the yardstick for the AI work in 4.4.
 - Recordings (`npm run record`) keep working throughout and pick up the meter overlay after 4.3.
