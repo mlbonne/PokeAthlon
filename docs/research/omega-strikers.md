@@ -224,6 +224,68 @@ Every striker has the same frame: **Strike (shared) + Primary + Secondary + Spec
 - Goalies want cooldown reduction or more charges. Brawlers want size and damage. Controllers want more creation size and longer buff durations.
 - Find the enemy's weak side (fragile striker or weaker player) and play through it.
 
+## 7a. Debug, practice and stats tooling (game files + wiki, 2026-11-04)
+
+How OS itself measures Strikers. Sources:
+- The game files (`base-game-assets.pak`):
+  - `Blueprints/Debug/CheatManager_Game`, `RW_Debug`, `GE_DebugSpeedOverride`
+  - `GameMode_Practice`, `HUD_Practice`, `PlayerController_Practice`, `PlayerState_Game`
+  - `UI/InGame/WBP_CoreStats`, `WBP_ScoreboardOverlay*`, `UI/OutOfGame/EndOfGame/*`
+  - the `ST_PracticeMode` and `ST_UserInterface` string tables
+- The wiki's Playbook page.
+
+Only names and labels were read. No assets are used.
+
+**Practice mode** (the developers' debug kit, exposed to players). Settings panel `WBP_Settings_Practice`, with server RPCs `PracticeMode*_Server`:
+
+| Group | Controls |
+|---|---|
+| Core | Spawn Core, Destroy Core |
+| Enemy | Spawn Enemy (pick the **Enemy Character**; it spawns a dummy bot), Destroy Enemy, Destroy All, Reset All |
+| Cooldowns | Clear Cooldowns, **Always Clear Cooldowns** (no cooldowns) |
+| Energy | Zero / Half / Max Energy |
+| Stagger | Stagger Self / Enemy (`ForceClearStaggeredState`, `DamageRatioToClearStagger`) |
+| Damage | Damage Self / Enemy (`GetDamageAsRatioOfMax`) |
+| Knock Back | Knock Back Self / Enemy (`PracticeModeApplyKnockBackToCharacter`) |
+| Barriers | Restore / Reset / Disable Barriers |
+| Overtime | Start / End Overtime |
+
+- **Core Stats readout** (`WBP_CoreStats`, practice HUD):
+  - Shows **Avg. Speed**, **Max Speed** (top speed) and **Final Speed** (the Core's speed when it scored, `GoalSpeed`).
+  - Each value turns to a "high" or "extreme" colour past a threshold (`…HighSpeedThreshold` / `…ExtremeSpeedThreshold`).
+  - A practice "rock" target reports `RockStats` (damage dealt to it).
+- **Cheat manager** (`PMCheatManager`, native): can spawn the shipped bot behaviour trees:
+  - `BT_FowardBot`, `BT_MobileForwardBot`, `BT_AggroBot`
+  - `BT_GoalieBot`, `BT_BadGoalieBot`
+  - `BT_Zombie`, a dummy
+  - So OS bots are **per-role behaviour trees**, plus deliberately weak variants for difficulty.
+- **Ability tooltips** list per-ability stats: Hit Type (LIGHT / MEDIUM / HEAVY), Ability Type (PROJECTILE / MOVEMENT / CREATION / BUFF / DEBUFF), Damage, 2nd Damage, Player Knockback, Core Knockback, Projectile Speed / Duration, Creation / Buff / Haste Duration, Heal %, Slow %. Power scaling is shown as `base + bonus % × Power`.
+
+**Match stats OS tracks** (scoreboard + end-of-game screen):
+- Stat columns:
+  - **Goals**, **Assists** (also shown together as "Goals & Assists")
+  - **KOs**, **Saves**, **Damage**, **Shots**
+  - **Redirects**, **Orbs**
+  - Scoreboard: "Saves Vs" per opponent
+- **Accolades** (end-of-game call-outs):
+  - Top / Monstrous / Legendary Damage
+  - *N* Goals, *N* KOs, *N* Saves, *N* Shots on Goal
+  - Goal streaks Triple … Octa
+  - Badges: 3+/4+/5+ KOs, 10+/20+/30+ Saves
+- **MVP** per set, separately for **Forward** and **Goalie**: missions say "Earn Set MVP as a Forward / as a Goalie". The MVP card highlights SAVES for goalies.
+
+**Tier lists.**
+- OS has no official tier list.
+- Community lists (Pocket Gamer, Mobalytics, Dexerto, Charlie Intel) use S/A/B/C and **rank Forwards and Goalies separately**, because a Striker can be strong in one role and weak in the other.
+- Placement is editorial, informed by ranked leaderboards. Players used external stat sites (linked from the wiki Playbook) for per-Striker pick and win rates.
+
+**What we take from this:**
+- the F3 meter gets a Practice tab with the same controls;
+- a Core Stats readout;
+- OS's match stats (add Saves, Shots, Redirects and Core speed to our telemetry);
+- per-role MVP;
+- per-role tiers, from measured win rates rather than opinion.
+
 ## 8. What this changes in our plan (PokéAthlon)
 
 | Topic | Our draft v0.1 said | Research says → new design |
