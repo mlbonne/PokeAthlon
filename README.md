@@ -1,7 +1,7 @@
 # PokéAthlon (working title)
 
 A free, non-commercial **3v3 Pokémon strike-ball** fan game. It's part soccer, part air hockey, part sumo.
-Hit the enemy target to drop their goal barrier, score with the ball, and knock rivals off the arena.
+Smash the ball through the enemy's barriers, score once their gate opens, and knock rivals off the arena.
 
 - 📋 Plan & roadmap: [docs/PLAN.md](docs/PLAN.md)
 - 🎮 Design bible (Omega Strikers breakdown → Pokémon version): [docs/design/GAME_BREAKDOWN.md](docs/design/GAME_BREAKDOWN.md)
