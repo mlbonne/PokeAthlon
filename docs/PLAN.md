@@ -166,7 +166,7 @@ Each milestone ends in something you can play, a git tag, and a short changelog.
 |---|---|---|
 | **M0** ✅ | **Foundation** | Repo, TS/Vite/Vitest/ESLint, CI, sprite import tool, credits generation. One Pikachu walking with the Walk/Idle animations |
 | **M1** ✅ | **Sandbox** | Arena walls, ball physics (friction, bounces, body blocking, hitstop), Strike with aim + cooldown, camera, hit feedback. Hit the ball around solo. (Evade moved to M2 with Energy, matching OS) |
-| **M2** | **Rules** | Barriers, gates, goals, KO edges, Goal Arc, Stagger, Energy (Evade/Burst), orbs, levels, rounds and sets. A full match is possible (1v1 local) |
+| **M2** | **Rules** | **First: OS arena + sizes** ([research](research/os-arena-geometry.md)): stage JSON split into shared frame + per-map terrain; field ±1360.5 × ±910 with OS corner cuts, goal pocket (posts, gates, score line 150 behind the mouth, back wall), side KO strips + pocket KO, walls that block walking; Core r47.5, bodies 46/60/65, hurtboxes 55/70/75, Core spawns at (0, ±600), OS start positions; re-tune camera and sprite scale. **Then:** barriers, gates, goals, Goal Arc, Stagger, Energy (Evade/Burst), orbs, levels, rounds and sets. A full match is possible (1v1 local) |
 | **M3** | **Kits** | Data-driven move system (hitboxes, projectiles, dashes, status, cooldowns). First 4 Pokémon (one per role) |
 | **M4** | **Bots and 3v3** | Role-aware AI (striker chases, goalie guards). 3v3 against bots, gamepad support |
 | **M5** | **Meta** | Draft/pick screen, held items, all 8 Pokémon, match results screen |
