@@ -25,6 +25,7 @@
     "sim": "tsx tools/sim-batch.ts",
     "ladder": "tsx tools/sim-batch.ts --ladder",
     "balance": "tsx tools/balance.ts",
+    "playstyle": "tsx tools/playstyle.ts",
     "kits": "tsx tools/kits.ts"
   },
   "devDependencies": {

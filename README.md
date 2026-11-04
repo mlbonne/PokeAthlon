@@ -22,6 +22,7 @@ npm run record -- --a pikachu --b lucario   # record a CPU vs CPU match to recor
 npm run sim -- --lineup pikachu/lucario --games 1000 --swap   # headless bot-vs-bot batch: win rates (95 % CI) + per-Pokémon telemetry → reports/*.json (3v3: a,b,c/d,e,f; --brains v2,v1 to pit bot brains)
 npm run balance                              # balance report: 600 random-comp 3v3s + every 1v1 pairing → per-role T0–F tiers, duel matrix, impact score, per-move stats → reports/balance-*.html; updates the F3 Tiers tab snapshot
 npm run balance -- --set lucario.close-combat.damage*=0.8   # what-if tuning (no JSON edits), compared with the last baseline run
+npm run playstyle -- --variant "name:rules.respawn.time=8;all.*.knockback*=1.25"   # fight/KO pace, crowding, passing for rule variants on the same seeds
 npm run ladder                               # bot quality gate: brain A vs brain B mirrors for every kit + a 3v3 mirror (default v2 vs v1, pass at >= 80 %)
 npm run kits                                 # static kit report: reach, area, timing, DPS, knockback, KO reach, ball power + power budget → reports/kits-*.md
 ```

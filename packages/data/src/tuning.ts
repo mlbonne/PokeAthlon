@@ -1,4 +1,5 @@
 import { roster } from './index';
+import { gameplay } from './rules';
 import { getKit, type MoveDef } from './kits';
 
 /**
@@ -10,6 +11,9 @@ import { getKit, type MoveDef } from './kits';
  *   lucario.aura-sphere.damage*=0.8         every hit of the move: damage, knockback (players),
  *                                           ball, stun (both base and Power ratio for scalings)
  *   lucario.close-combat.actions.1.radius=240   any field by its path inside the move
+ *   all.stagger*=0.8                       a stat or move field for every Pokémon (moves: all that have it)
+ *   lucario.*.damage*=1.2 / all.*.damage*=1.2   every move of one / every Pokémon
+ *   rules.respawn.time=8                   any number in rules/gameplay.json, by path
  *
  * `=` sets, `*=` multiplies, `+=` adds. Returns a normalized description of what changed.
  */
@@ -24,11 +28,24 @@ const SHORTCUTS: Record<string, string[]> = {
 };
 
 function applyOne(spec: string): string {
-  const m = /^([a-z0-9-]+)\.([A-Za-z0-9.-]+?)\s*(\*=|\+=|=)\s*(-?[0-9.]+)$/.exec(spec.trim());
+  const m = /^([a-z0-9-]+)\.([A-Za-z0-9.*-]+?)\s*(\*=|\+=|=)\s*(-?[0-9.]+)$/.exec(spec.trim());
   if (!m) throw new Error(`Bad --set "${spec}". Use e.g. lucario.aura-sphere.cooldown=11 or lucario.power*=0.95`);
   const [, mon, path, op, raw] = m as unknown as [string, string, string, string, string];
   const value = Number(raw);
   const apply = (cur: number) => (op === '=' ? value : op === '*=' ? cur * value : cur + value);
+  if (mon === 'rules') return setPath(gameplay as unknown as Record<string, unknown>, path.split('.'), apply, spec, 'rules');
+  if (mon === 'all') {
+    const done: string[] = [];
+    for (const r of roster) {
+      try {
+        done.push(applyOne(`${r.id}.${path}${op}${raw}`));
+      } catch {
+        /* this Pokémon has no such stat / move */
+      }
+    }
+    if (!done.length) throw new Error(`--set: nothing matches "${spec}"`);
+    return `all (${done.length}): ${path} ${op} ${value}`;
+  }
   const def = roster.find((r) => r.id === mon);
   if (!def) throw new Error(`--set: unknown Pokémon "${mon}"`);
 
@@ -40,6 +57,18 @@ function applyOne(spec: string): string {
     return `${mon}.${k} = ${def.stats[k]}`;
   }
   const kit = getKit(mon);
+  // `*` = every move of this Pokémon (only those the change applies to).
+  if (parts[0] === '*' && kit) {
+    const done = kit.moves.flatMap((mv) => {
+      try {
+        return [applyOne(`${mon}.${mv.id}.${parts.slice(1).join('.')}${op}${raw}`)];
+      } catch {
+        return [];
+      }
+    });
+    if (!done.length) throw new Error(`--set: no move of ${mon} matches "${spec}"`);
+    return `${mon}.* (${done.length} moves): ${parts.slice(1).join('.')} ${op} ${value}`;
+  }
   const move = kit?.moves.find((x) => x.id === parts[0]);
   if (!move) throw new Error(`--set: ${mon} has no move "${parts[0]}"`);
   const rest = parts.slice(1);
@@ -76,16 +105,20 @@ function applyOne(spec: string): string {
   }
 
   // Any numeric field by path.
-  let obj: Record<string, unknown> = move as unknown as Record<string, unknown>;
-  for (const key of rest.slice(0, -1)) {
+  return setPath(move as unknown as Record<string, unknown>, rest, apply, spec, `${mon}.${move.id}`);
+}
+
+function setPath(root: Record<string, unknown>, keys: string[], apply: (cur: number) => number, spec: string, label: string): string {
+  let obj = root;
+  for (const key of keys.slice(0, -1)) {
     const next = obj[key];
     if (typeof next !== 'object' || next === null) throw new Error(`--set: no "${key}" in ${spec}`);
     obj = next as Record<string, unknown>;
   }
-  const last = rest[rest.length - 1]!;
+  const last = keys[keys.length - 1]!;
   if (typeof obj[last] !== 'number') throw new Error(`--set: ${spec} is not a number field`);
   obj[last] = apply(obj[last] as number);
-  return `${mon}.${move.id}.${rest.join('.')} = ${obj[last] as number}`;
+  return `${label}.${keys.join('.')} = ${obj[last] as number}`;
 }
 
 /** Deep copy of the current tuned move (for reports). */
