@@ -22,7 +22,7 @@ export class Hud {
       const plate = el('div', `plate team${p.team}`);
       plate.innerHTML =
         `<div class="plate-top"><span class="lv"></span><span class="nm"></span></div>` +
-        `<div class="bar"><div class="fill"></div></div><div class="pips"><i></i><i></i><i></i></div>`;
+        `<div class="bar"><div class="fill"></div></div><div class="pips"><i></i><i></i><i></i></div><div class="ai"></div>`;
       root.append(plate);
       this.plates.push(plate);
     }
@@ -47,7 +47,13 @@ export class Hud {
     this.pops.push({ el: p, age: 0 });
   }
 
-  update(dt: number, world: World, project: (x: number, y: number, h: number) => { x: number; y: number; visible: boolean }): void {
+  /** @param aiLabel when given (F3 open), shows each bot's current job and action under its plate. */
+  update(
+    dt: number,
+    world: World,
+    project: (x: number, y: number, h: number) => { x: number; y: number; visible: boolean },
+    aiLabel: ((id: number) => string) | null = null,
+  ): void {
     this.now += dt;
     this.pops = this.pops.filter((p) => {
       p.age += dt;
@@ -90,6 +96,7 @@ export class Hud {
       plate.querySelector<HTMLElement>('.lv')!.textContent = `Lv${p.level}`;
       plate.querySelector<HTMLElement>('.nm')!.textContent = out ? `${nameOf(p)} · ${Math.ceil(p.koTicks / TICK_RATE)}s` : nameOf(p);
       plate.querySelector<HTMLElement>('.fill')!.style.width = `${(100 * p.stagger) / p.maxStagger}%`;
+      plate.querySelector<HTMLElement>('.ai')!.textContent = aiLabel ? aiLabel(p.id) : '';
       const bars = p.energy / (gameplay.energy.max / 3);
       plate.querySelectorAll<HTMLElement>('.pips i').forEach((pip, k) => {
         const f = Math.max(0, Math.min(1, bars - k));

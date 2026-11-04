@@ -557,3 +557,15 @@ body.spectate .abilities {
     max-height: 55vh;
   }
 }
+
+/* Bot job / action label under nameplates (F3 open). */
+.plate .ai {
+  font: 600 10px/1.2 ui-monospace, Consolas, monospace;
+  color: #ffe9a3;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px #000;
+}
+.plate .ai:empty {
+  display: none;
+}
