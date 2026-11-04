@@ -16,6 +16,7 @@ import {
 } from '@pokeathlon/sim';
 import { getKit } from '@pokeathlon/data';
 import { AbilityBar } from './abilityBar';
+import type { FrameRecorder } from './recorder';
 import { Hud, nameOf, TEAM_NAMES } from './hud';
 import { InputSource } from './input';
 import { AimIndicator } from './render/aim';
@@ -436,6 +437,7 @@ function render(dt: number, now: number, alpha: number): void {
 if (RECORD) {
   // Deterministic capture: the recorder advances the game exactly `ticks` per video frame.
   let simClock = 0;
+  let recorder: FrameRecorder | null = null;
   // Per-player balance stats for the recording report.
   const tally = new Map<number, Record<string, number>>();
   const bump = (id: number, key: string, n = 1) => {
@@ -457,6 +459,12 @@ if (RECORD) {
   };
   Object.assign(window, {
     __rec: {
+      /** Set up in-page H.264 capture; frames are streamed out via window.__writeChunk. */
+      async startCapture(fps: number) {
+        const { FrameRecorder } = await import('./recorder');
+        const write = (window as unknown as { __writeChunk: (b64: string, pos: number) => void }).__writeChunk;
+        recorder = new FrameRecorder(canvas.width, canvas.height, fps, write);
+      },
       async advance(ticksPerFrame: number) {
         for (let i = 0; i < ticksPerFrame; i++) {
           simStep(NEUTRAL_INPUT);
@@ -464,10 +472,13 @@ if (RECORD) {
         }
         simClock += ticksPerFrame * DT * 1000;
         render(ticksPerFrame * DT, simClock, 1);
-        // Let the compositor present this frame before the recorder screenshots it.
-        await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+        // Capture in the same task as the render (the WebGL buffer is only valid until it yields).
+        if (recorder) await recorder.capture(canvas, hudRoot);
         const m = view.world.match;
         return { tick: view.world.tick, phase: m.phase, goals: m.goals, sets: m.sets, winner: m.winner };
+      },
+      async finishCapture() {
+        return recorder ? recorder.finish() : 0;
       },
       summary() {
         const w = view.world;

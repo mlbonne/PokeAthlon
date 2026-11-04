@@ -2,14 +2,14 @@
  * Extract JPEG stills from a recorded MP4 at given timestamps (decoded by headless Edge),
  * e.g. to check a recording without a video player:
  *   node tools/video-stills.mjs recordings/<file>.mp4 out/still 5 60 120
- * Needs the dev server (npm run dev) for a secure localhost page.
+ * Needs the built game served on :4173 (vite preview) for a secure localhost page.
  */
 import puppeteer from 'puppeteer-core';
 import { readFileSync, writeFileSync } from 'node:fs';
 const [file, outPrefix, ...times] = process.argv.slice(2);
 const b = await puppeteer.launch({ executablePath: 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless: true });
 const p = await b.newPage();
-await p.goto('http://localhost:5173/sprites/0025/anim.json');
+await p.goto('http://localhost:4173/sprites/0025/anim.json');
 const b64 = readFileSync(file).toString('base64');
 const info = await p.evaluate(async (data, ts) => {
   const bin = Uint8Array.from(atob(data), (c) => c.charCodeAt(0));

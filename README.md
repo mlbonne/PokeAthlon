@@ -18,7 +18,7 @@ npm run dev          # http://localhost:5173  (WASD move, mouse aim, click Strik
 npm run check        # typecheck + lint + tests
 npm run build        # production build → packages/client/dist
 npm run import-sprites   # re-import roster sprites from ./SpriteCollab-master and regenerate CREDITS.md
-npm run record -- --a pikachu --b lucario   # record a CPU vs CPU match to recordings/*.mp4 + a balance report (needs npm run dev + Edge)
+npm run record -- --a pikachu --b lucario   # record a CPU vs CPU match to recordings/*.mp4 + a balance report (needs npm run build + vite preview on :4173, and Edge)
 ```
 
 Spectate a CPU match live: `http://localhost:5173/?cpu=pikachu,lucario`.
