@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PokéAthlon</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <canvas id="game"></canvas>
+    <div id="hud">
+      <div id="card">
+        <img id="portrait" alt="" />
+        <div>
+          <div id="mon-name"></div>
+          <div id="mon-info"></div>
+        </div>
+      </div>
+      <div id="help">WASD / arrows / left stick: move · 1–8: switch Pokémon · F3: debug</div>
+      <div id="debug" hidden></div>
+      <div id="legal">
+        Fan game, non-commercial · Sprites: PMD Sprite Collab (CC BY-NC 4.0), see CREDITS.md · Pokémon © Nintendo / Creatures / GAME FREAK
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

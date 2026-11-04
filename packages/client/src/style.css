@@ -1,0 +1,108 @@
+:root {
+  --ink: #f4f2ff;
+  --muted: #b9b4d6;
+  --panel: rgba(20, 16, 40, 0.72);
+  --accent: #ffd23f;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #120f24;
+  color: var(--ink);
+  font: 14px/1.4 system-ui, 'Segoe UI', Roboto, sans-serif;
+}
+
+#game {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+#hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+#card {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 14px 10px 10px;
+  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+}
+
+#portrait {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+#mon-name {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+#mon-info {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: pre;
+}
+
+#help {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  max-width: calc(100vw - 32px);
+  padding: 6px 10px;
+  background: var(--panel);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+#debug {
+  position: absolute;
+  top: 56px;
+  right: 16px;
+  padding: 6px 10px;
+  background: var(--panel);
+  border-radius: 8px;
+  font: 12px/1.4 ui-monospace, Consolas, monospace;
+  white-space: pre;
+}
+
+#legal {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 10px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+@media (max-width: 640px) {
+  #help {
+    top: auto;
+    bottom: 40px;
+    right: 16px;
+    left: 16px;
+  }
+}

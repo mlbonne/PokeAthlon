@@ -3,6 +3,7 @@
   "references": [
     { "path": "packages/data" },
     { "path": "packages/sim" },
+    { "path": "packages/client" },
     { "path": "tools" }
   ]
 }
