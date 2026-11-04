@@ -1,108 +1,125 @@
 import * as THREE from 'three';
-import type { Arena } from '@pokeathlon/sim';
-import { WORLD_TO_THREE } from './units';
+import { getFrame } from '@pokeathlon/data';
+import type { Stage, Vec2 } from '@pokeathlon/sim';
+import { toThreeX, toThreeZ, WORLD_TO_THREE } from './units';
 
-/** Arena outline (rectangle with cut corners) in Three units, on the XZ plane. */
-function outline(a: Arena, inset = 0): THREE.Vector2[] {
-  const w = (a.halfWidth - inset) * WORLD_TO_THREE;
-  const h = (a.halfHeight - inset) * WORLD_TO_THREE;
-  const c = a.cornerCut * WORLD_TO_THREE;
-  // Shape coords: (x, y) where y maps to -z after rotation.
-  return [
-    new THREE.Vector2(-w + c, h),
-    new THREE.Vector2(w - c, h),
-    new THREE.Vector2(w, h - c),
-    new THREE.Vector2(w, -h + c),
-    new THREE.Vector2(w - c, -h),
-    new THREE.Vector2(-w + c, -h),
-    new THREE.Vector2(-w, -h + c),
-    new THREE.Vector2(-w, h - c),
-  ];
+const v2 = (p: Vec2) => new THREE.Vector2(toThreeX(p.x), -toThreeZ(p.y));
+const flat = (m: THREE.Object3D, y: number) => {
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = y;
+  return m;
+};
+
+function shapeOf(pts: Vec2[]): THREE.Shape {
+  return new THREE.Shape(pts.map(v2));
 }
 
-function flatLine(points: THREE.Vector2[], color: number, closed = false): THREE.Line {
-  const pts = points.map((p) => new THREE.Vector3(p.x, 0.005, -p.y));
-  if (closed && pts[0]) pts.push(pts[0].clone());
-  return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color }));
+function lineLoop(pts: Vec2[], color: number, y: number, opacity = 1): THREE.LineLoop {
+  const g = new THREE.BufferGeometry().setFromPoints(pts.map((p) => new THREE.Vector3(toThreeX(p.x), y, toThreeZ(p.y))));
+  return new THREE.LineLoop(g, new THREE.LineBasicMaterial({ color, transparent: opacity < 1, opacity }));
 }
 
-function circle(cx: number, cy: number, r: number, from = 0, to = Math.PI * 2, n = 48): THREE.Vector2[] {
-  const out: THREE.Vector2[] = [];
-  for (let i = 0; i <= n; i++) {
-    const t = from + ((to - from) * i) / n;
-    out.push(new THREE.Vector2(cx + Math.cos(t) * r, cy + Math.sin(t) * r));
-  }
-  return out;
-}
-
-/** Placeholder "Viridian Pitch" floor: grass, field markings, goal mouths, KO-edge lines. */
-export function buildArena(a: Arena): THREE.Group {
+/** Static arena: floor, KO edge, ball rails, goal pockets, posts, Goal Arcs, field markings. */
+export function buildArena(stage: Stage): THREE.Group {
   const g = new THREE.Group();
-  const w = a.halfWidth * WORLD_TO_THREE;
-  const h = a.halfHeight * WORLD_TO_THREE;
 
+  // Floor where players can stand (outline = KO edge).
   const floor = new THREE.Mesh(
-    new THREE.ShapeGeometry(new THREE.Shape(outline(a))),
+    new THREE.ShapeGeometry(shapeOf(stage.playerOutline)),
     new THREE.MeshStandardMaterial({ color: 0x4f9d52, roughness: 1 }),
   );
-  floor.rotation.x = -Math.PI / 2;
-  floor.receiveShadow = true;
-  g.add(floor);
+  g.add(flat(floor, 0));
 
-  // Mowing stripes.
+  // Goal pockets (net floor) — the ball can go deeper than players.
+  const F = getFrame('standard').field;
+  for (const goal of stage.goals) {
+    const s = goal.side;
+    const net = new THREE.Mesh(
+      new THREE.PlaneGeometry((F.backX - F.mouthX) * WORLD_TO_THREE, F.pocketHalfWidth * 2 * WORLD_TO_THREE),
+      new THREE.MeshStandardMaterial({ color: s < 0 ? 0x26407a : 0x7a2633, roughness: 1 }),
+    );
+    flat(net, 0.003).position.set(toThreeX((s * (F.mouthX + F.backX)) / 2), 0.003, 0);
+    g.add(net);
+    // Score volume tint.
+    const sc = new THREE.Mesh(
+      new THREE.PlaneGeometry(goal.score.hx * 2 * WORLD_TO_THREE, goal.score.hy * 2 * WORLD_TO_THREE),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.12, depthWrite: false }),
+    );
+    flat(sc, 0.006).position.set(toThreeX(goal.score.x), 0.006, 0);
+    g.add(sc);
+  }
+
+  // Mowing stripes, clipped roughly to the field.
   const stripeMat = new THREE.MeshStandardMaterial({ color: 0x58a85a, roughness: 1 });
-  const stripes = 9;
-  for (let i = 0; i < stripes; i += 2) {
-    const sw = (2 * w) / stripes;
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(sw, 2 * h - 2 * a.cornerCut * WORLD_TO_THREE), stripeMat);
-    m.rotation.x = -Math.PI / 2;
-    m.position.set(-w + sw * (i + 0.5), 0.002, 0);
+  const hl = toThreeX(F.cornerStartX);
+  const hw = toThreeX(F.sideY);
+  for (let i = 0; i < 8; i += 2) {
+    const sw = (2 * hl) / 8;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(sw, 2 * hw), stripeMat);
+    flat(m, 0.002).position.set(-hl + sw * (i + 0.5), 0.002, 0);
     g.add(m);
   }
 
   // Markings.
   const white = 0xeaf5e4;
-  g.add(flatLine([new THREE.Vector2(0, h), new THREE.Vector2(0, -h)], white));
-  g.add(flatLine(circle(0, 0, 3), white, true));
-  // Goal arcs ("Home Turf").
-  g.add(flatLine(circle(-w, 0, 4.2, -Math.PI / 2, Math.PI / 2), white));
-  g.add(flatLine(circle(w, 0, 4.2, Math.PI / 2, (3 * Math.PI) / 2), white));
-  // KO edge: yellow.
-  g.add(flatLine(outline(a), 0xffd23f, true));
+  const mid = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.01, -hw), new THREE.Vector3(0, 0.01, hw)]);
+  g.add(new THREE.Line(mid, new THREE.LineBasicMaterial({ color: white })));
+  const circle: Vec2[] = [];
+  for (let i = 0; i < 48; i++) circle.push({ x: Math.cos((i / 48) * Math.PI * 2) * 300, y: Math.sin((i / 48) * Math.PI * 2) * 300 });
+  g.add(lineLoop(circle, white, 0.01, 0.7));
 
-  // Goal mouths (decorative until M2).
-  const goalMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
-  for (const side of [-1, 1]) {
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.2, 5), goalMat);
-    post.position.set(side * (w + 0.2), 0.6, 0);
-    g.add(post);
-    const team = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.2, 5),
-      new THREE.MeshBasicMaterial({ color: side < 0 ? 0x3d7bff : 0xff4d5e, transparent: true, opacity: 0.5 }),
+  // Goal Arcs (team tint), only the part in front of the goal line.
+  for (const goal of stage.goals) {
+    const a = goal.arc;
+    const pts: Vec2[] = [];
+    for (let i = 0; i <= 64; i++) {
+      const t = (i / 64) * Math.PI * 2;
+      const p = { x: a.x + Math.cos(t) * a.rx, y: a.y + Math.sin(t) * a.ry };
+      if (Math.abs(p.x) <= Math.abs(goal.mouthX)) pts.push(p);
+    }
+    pts.sort((p, q) => Math.atan2(p.y - a.y, p.x - a.x) - Math.atan2(q.y - a.y, q.x - a.x));
+    const color = goal.team === 0 ? 0x3d7bff : 0xff4d5e;
+    const fill = new THREE.Mesh(
+      new THREE.ShapeGeometry(shapeOf(pts)),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.16, depthWrite: false }),
     );
-    team.rotation.x = -Math.PI / 2;
-    team.position.set(side * (w - 0.6), 0.004, 0);
-    g.add(team);
+    g.add(flat(fill, 0.008));
+    g.add(lineLoop(pts, color, 0.012, 0.8));
   }
 
-  // Void below the arena so KO edges read as a drop.
-  const voidMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(200, 200),
-    new THREE.MeshBasicMaterial({ color: 0x1b1638 }),
-  );
-  voidMesh.rotation.x = -Math.PI / 2;
-  voidMesh.position.y = -2;
-  g.add(voidMesh);
+  // KO edge: glowing line along the player outline.
+  g.add(lineLoop(stage.playerOutline, 0xffd23f, 0.015));
 
-  // Arena slab edge for depth.
+  // Ball rails: low walls along the ball outline.
+  const railMat = new THREE.MeshStandardMaterial({ color: 0xf0eef8, roughness: 0.5, transparent: true, opacity: 0.85 });
+  for (const s of stage.ballWalls) {
+    const dx = s.bx - s.ax;
+    const dy = s.by - s.ay;
+    const len = Math.hypot(dx, dy) * WORLD_TO_THREE;
+    if (len < 1e-3) continue;
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(len, 0.18, 0.08), railMat);
+    rail.position.set(toThreeX((s.ax + s.bx) / 2), 0.09, toThreeZ((s.ay + s.by) / 2));
+    rail.rotation.y = -Math.atan2(toThreeZ(s.by) - toThreeZ(s.ay), toThreeX(s.bx) - toThreeX(s.ax));
+    g.add(rail);
+  }
+
+  // Goal posts.
+  const postMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3, metalness: 0.2 });
+  for (const c of stage.posts) {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(c.r * WORLD_TO_THREE, c.r * WORLD_TO_THREE, 1.4, 16), postMat);
+    post.position.set(toThreeX(c.x), 0.7, toThreeZ(c.y));
+    g.add(post);
+  }
+
+  // Slab + void so the KO edge reads as a drop.
   const slab = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(new THREE.Shape(outline(a)), { depth: 1.5, bevelEnabled: false }),
+    new THREE.ExtrudeGeometry(shapeOf(stage.playerOutline), { depth: 1.5, bevelEnabled: false }),
     new THREE.MeshStandardMaterial({ color: 0x6b4f3a, roughness: 1 }),
   );
   slab.rotation.x = Math.PI / 2;
-  // Keep the slab's top cap well below the grass to avoid z-fighting at grazing angles.
   slab.position.y = -0.05;
   g.add(slab);
-
+  const voidMesh = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshBasicMaterial({ color: 0x1b1638 }));
+  g.add(flat(voidMesh, -2));
   return g;
 }

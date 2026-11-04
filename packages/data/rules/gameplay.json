@@ -1,11 +1,16 @@
 {
-  "$comment": "Global gameplay tuning. World units; OS-like scale (see docs/design/GAME_BREAKDOWN.md §4). Times in seconds. Ball values follow the OS Core (omegastrikers.wiki.gg/wiki/Core); ⚠ = not documented, our guess.",
+  "$comment": "Global gameplay tuning. OS units. Times in seconds. Sources: OS wiki + data-mining (docs/research). Keys listed in 'unverified' are our guesses (⚠).",
+  "unverified": [
+    "ball.wallSpeedPivot", "ball.hitstop", "knock.*", "stagger.staggeredRegenPerSecond", "burst.radius", "burst.stun",
+    "burst.ballControl", "burst.boostWindow", "evade.cancelsOnStrike", "respawn.*", "xp.*", "match.goalsPerSet",
+    "match.setsToWin", "match.kickoff", "match.goalPause", "match.setPause", "match.gateOpenDelay", "orbs.radius"
+  ],
   "movement": {
     "accelTime": 0.08,
     "decelTime": 0.1
   },
   "ball": {
-    "radius": 70,
+    "radius": 47.5,
     "frictionHalfLife": 1.0,
     "stopSpeed": 25,
     "knockbackCap": 2000,
@@ -26,5 +31,81 @@
     "activeTime": 0.15,
     "ballKnockback": { "base": 1230, "powerRatio": 1.25 },
     "reachBallFraction": 0.5
+  },
+  "knock": {
+    "$comment": "Player knockback: a hit of K knockback pushes the target K × distancePerKnockback units over a short, decelerating slide.",
+    "distancePerKnockback": 1.0,
+    "minTime": 0.18,
+    "maxTime": 0.75,
+    "timePerUnit": 0.0004,
+    "staggeredKnockbackMultiplier": 3.545,
+    "staggeredDamageTaken": 0.25,
+    "goalArcResist": 125,
+    "lightSlow": 0.5,
+    "lightSlowTime": 0.25
+  },
+  "stagger": {
+    "regenDelay": 2.375,
+    "regenDelayLight": 1.625,
+    "regenPerSecond": 0.04,
+    "staggeredRegenPerSecond": 0.25,
+    "staggeredRegenDelayOnHit": 0.5,
+    "recoverAt": 0.5
+  },
+  "energy": {
+    "start": 25,
+    "max": 75,
+    "lightHit": 1,
+    "normalHit": 3
+  },
+  "evade": {
+    "cost": 25,
+    "cooldown": 3,
+    "elusive": 1.5,
+    "cancelsOnStrike": true
+  },
+  "burst": {
+    "radius": 300,
+    "playerKnockback": { "base": 200, "powerRatio": 1.0 },
+    "damage": { "base": 150, "powerRatio": 1.0 },
+    "elusive": 1.5,
+    "stun": 0.3,
+    "ballControl": 0.6,
+    "boostWindow": 2.0,
+    "boostMultiplier": 1.5
+  },
+  "respawn": {
+    "time": 5,
+    "immune": 1.5
+  },
+  "orbs": {
+    "first": 10,
+    "interval": 20,
+    "radius": 40,
+    "healMin": 0.075,
+    "healMax": 0.3,
+    "xp": 15,
+    "energy": 7.5
+  },
+  "xp": {
+    "levelThresholds": [0, 40, 90, 150, 220, 300, 390, 490, 600, 720],
+    "passivePerSecond": 1,
+    "strikeBall": 2,
+    "barrier": 10,
+    "goal": 30,
+    "assist": 15,
+    "takedown": 25,
+    "specialUnlockLevel": 2
+  },
+  "match": {
+    "goalsPerSet": 3,
+    "setsToWin": 2,
+    "kickoff": 3,
+    "goalPause": 3,
+    "setPause": 4,
+    "overtimeAfter": 60,
+    "overtimeBallKnockback": 1.2,
+    "gateOpenDelay": 1.0,
+    "assistWindow": 3
   }
 }

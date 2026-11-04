@@ -1,0 +1,27 @@
+{
+  "$comment": "Shared arena frame, from the OS standard frame (docs/research/os-arena-geometry.md). Our axes: x = goal to goal (team 0 defends x<0), y = side to side. Values describe the +x half and are mirrored.",
+  "id": "standard",
+  "field": {
+    "$comment": "Ball walls (inner faces). Corner diagonal from (cornerStartX, sideY) to (mouthX, pocketHalfWidth); goal pocket back wall at backX.",
+    "sideY": 910,
+    "cornerStartX": 1002,
+    "mouthX": 1350,
+    "pocketHalfWidth": 562,
+    "backX": 1674.5
+  },
+  "playerBounds": {
+    "$comment": "Walls that stop walking. A knocked player whose centre crosses this outline is KO'd (OS: any edge).",
+    "sideY": 970,
+    "cornerStartX": 1000,
+    "cornerSideY": 912,
+    "pocketBackX": 1535
+  },
+  "goal": {
+    "mouthX": 1360.5,
+    "postY": 587,
+    "postRadius": 25,
+    "score": { "x0": 1510, "x1": 1610, "halfWidth": 550 },
+    "gate": { "x0": 1375, "x1": 1500, "halfWidth": 497.5 }
+  },
+  "goalArc": { "centerX": 1250, "radiusX": 400, "radiusY": 460 }
+}

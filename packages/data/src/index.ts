@@ -5,11 +5,14 @@ export * from './rules';
 export const SizeClass = z.enum(['normal', 'large', 'very-large']);
 export type SizeClass = z.infer<typeof SizeClass>;
 
-/** Hurtbox radius / strike width per size class, in world units (OS: strike width 250/265/270). */
-export const SIZE_TABLE: Record<SizeClass, { radius: number; strikeWidth: number }> = {
-  normal: { radius: 60, strikeWidth: 250 },
-  large: { radius: 72, strikeWidth: 265 },
-  'very-large': { radius: 85, strikeWidth: 270 },
+/**
+ * Collision sizes per size class (OS data-mined, docs/research/os-arena-geometry.md):
+ * body = movement capsule radius, hurt = where abilities hit, strikeWidth = Strike diameter.
+ */
+export const SIZE_TABLE: Record<SizeClass, { radius: number; hurtRadius: number; strikeWidth: number }> = {
+  normal: { radius: 46, hurtRadius: 55, strikeWidth: 250 },
+  large: { radius: 60, hurtRadius: 70, strikeWidth: 265 },
+  'very-large': { radius: 65, hurtRadius: 75, strikeWidth: 270 },
 };
 
 export const Archetype = z.enum([

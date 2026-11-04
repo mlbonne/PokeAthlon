@@ -1,16 +1,21 @@
 {
-  "$comment": "Baseline stage. Origin at centre, +x towards the right goal, +y towards the top edge. World units.",
+  "$comment": "Terrain layer for the baseline stage (Night-Market-like layout). Positions are for team 0 (left, x<0); team 1 is mirrored through the origin.",
   "id": "viridian-pitch",
   "name": "Viridian Pitch",
   "biome": "forest",
-  "halfWidth": 1800,
-  "halfHeight": 1000,
-  "cornerCut": 320,
-  "goalHalfWidth": 250,
-  "barriersPerSide": 2,
+  "frame": "standard",
   "spawns": {
-    "ball": { "x": 0, "y": 0 },
-    "team0": [{ "x": -700, "y": 0 }, { "x": -500, "y": 450 }, { "x": -1500, "y": 0 }],
-    "team1": [{ "x": 700, "y": 0 }, { "x": 500, "y": -450 }, { "x": 1500, "y": 0 }]
-  }
+    "forwards": [{ "x": -1000, "y": 250 }, { "x": -1000, "y": -250 }],
+    "goalie": { "x": -1100, "y": 0 },
+    "respawn": [{ "x": -950, "y": 700 }],
+    "ball": [{ "x": 0, "y": 600 }, { "x": 0, "y": -600 }]
+  },
+  "orbs": {
+    "mid": [{ "x": 0, "y": 600 }, { "x": 0, "y": -600 }],
+    "arc": [{ "x": -1250, "y": 250 }, { "x": -1250, "y": -250 }]
+  },
+  "barriers": [
+    { "x": -1300, "y": 370, "hx": 70, "hy": 335 },
+    { "x": -1300, "y": -370, "hx": 70, "hy": 335 }
+  ]
 }

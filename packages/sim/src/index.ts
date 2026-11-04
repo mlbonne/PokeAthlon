@@ -8,10 +8,16 @@
  *  - Inputs are quantized integers so the same input stream always reproduces the same state.
  *  - All tuning numbers come from @pokeathlon/data JSON, not from code.
  */
-export * from './arena';
+export { hitBall } from './ball';
+export { botInput } from './bot';
+export { applyHit, knockOut, respawn, startKnock, type HitSpec } from './combat';
 export * from './constants';
 export * from './events';
+export * from './geometry';
 export * from './hash';
 export * from './input';
+export { beginKickoff, frozenPhase, scoreGoal } from './match';
+export { addXp, specialUnlocked } from './progression';
+export * from './stage';
 export * from './vec';
 export * from './world';
