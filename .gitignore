@@ -29,3 +29,6 @@ desktop.ini
 
 # FModel exports from Omega Strikers: private research data, never commit
 /docs/research/fmodel-export/
+/out/
+FModel.exe
+__pycache__/

@@ -81,6 +81,9 @@ final = (base + powerRatio × Power) × (1 + Σ additive % bonuses) × target mo
 Target modifiers: **Staggered = +254.5 % knockback** (and −75 % damage taken), damage-reduction effects, etc.
 The Core only takes knockback.
 
+**Strike only hits the Core.** The game's tutorial says "Remember, Strike can only hit the Core." Its player values only apply when a
+kit upgrades it (e.g. X's ultimate). Ability slots in the game files: Q = Strike, E = Primary, W = Secondary, R = Special.
+
 **Reference values** (Strike is the same for every striker):
 | Ability | Core KB | Player KB | Damage | Cooldown |
 |---|---|---|---|---|
