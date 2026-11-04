@@ -1,11 +1,11 @@
 import { gameplay, scaled } from '@pokeathlon/data';
+import { hitBall } from './ball';
 import { ticks } from './constants';
 import { AXIS_MAX, Button, type PlayerInput } from './input';
 import type { Player, World } from './world';
 
 const COOLDOWN = ticks(gameplay.strike.cooldown);
 const ACTIVE = ticks(gameplay.strike.activeTime);
-const HITSTOP = ticks(gameplay.ball.hitstop);
 
 /**
  * Strike: the shared basic action. It only affects the ball (OS rule). The hitbox is a circle
@@ -38,19 +38,6 @@ function tryHitBall(world: World, p: Player): void {
   const reach = p.strikeRadius + b.radius * gameplay.strike.reachBallFraction;
   if (dx * dx + dy * dy > reach * reach) return;
 
-  // Speed the ball already has: from a pending launch if it is mid-hitstop.
-  const cur = b.hitstop > 0 ? b.launchVel : b.vel;
-  const incoming = Math.sqrt(cur.x * cur.x + cur.y * cur.y);
-  const speed = Math.min(
-    gameplay.ball.maxSpeed,
-    scaled(gameplay.strike.ballKnockback, p.power) + incoming * gameplay.ball.momentumCarry,
-  );
-
   p.strikeConnected = true;
-  b.launchVel = { x: p.strikeDir.x * speed, y: p.strikeDir.y * speed };
-  b.vel = { x: 0, y: 0 };
-  // +1: the ball steps later in this same tick, which consumes one hitstop tick immediately.
-  b.hitstop = HITSTOP + 1;
-  b.lastHitBy = p.id;
-  world.events.push({ type: 'ballHit', playerId: p.id, pos: { ...b.pos }, speed });
+  hitBall(world, p.id, p.strikeDir, scaled(gameplay.strike.ballKnockback, p.power));
 }

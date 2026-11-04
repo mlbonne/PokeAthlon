@@ -55,7 +55,7 @@ const sprites = world.players.map((p) => {
   void s.load(roster.find((r) => r.id === p.pokemonId)!.dex);
   return s;
 });
-const ballView = new BallView(world.ball.radius);
+const ballView = new BallView(world.ball.radius, gameplay.ball.glowSpeed);
 scene.add(ballView.object);
 const effects = new Effects();
 scene.add(effects.object);
@@ -98,11 +98,15 @@ function onEvent(e: SimEvent): void {
       sprites[e.playerId]?.playOnce('Attack', 1.8);
       if (e.playerId === controlled) aim.strikeFlash();
       break;
-    case 'ballHit':
-      ballView.hit();
-      effects.ring(toThreeX(e.pos.x), toThreeZ(e.pos.y), 0xffe066, 2.4, 0.28);
-      effects.shake(0.06 + Math.min(1, e.speed / gameplay.ball.maxSpeed) * 0.18);
+    case 'ballHit': {
+      // Spin direction from the hit's turn relative to the striker → ball line.
+      const by = world.players[e.playerId];
+      const turn = by ? Math.sign((e.pos.x - by.pos.x) * by.strikeDir.y - (e.pos.y - by.pos.y) * by.strikeDir.x) : 1;
+      ballView.hit(turn || 1);
+      effects.ring(toThreeX(e.pos.x), toThreeZ(e.pos.y), e.red ? 0xff3b2f : 0xffe066, 2.4, 0.28);
+      effects.shake(0.06 + Math.min(1, e.speed / gameplay.ball.knockbackCap) * 0.18);
       break;
+    }
     case 'ballLaunch':
       peakBallSpeed = Math.max(peakBallSpeed, e.speed);
       break;
@@ -226,6 +230,7 @@ function frame(now: number): void {
     toThreeX(b.vel.x),
     toThreeZ(b.vel.y),
     b.hitstop > 0,
+    b.redTicks > 0,
   );
   effects.update(dt);
 

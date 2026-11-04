@@ -6,7 +6,7 @@ import type { Vec2 } from './vec';
  */
 export type SimEvent =
   | { type: 'strike'; playerId: number; dir: Vec2 }
-  | { type: 'ballHit'; playerId: number; pos: Vec2; speed: number }
+  | { type: 'ballHit'; playerId: number; pos: Vec2; speed: number; redirect: boolean; red: boolean }
   | { type: 'ballLaunch'; playerId: number; speed: number }
   | { type: 'ballWall'; pos: Vec2; impact: number }
   | { type: 'ballBody'; playerId: number; pos: Vec2; impact: number };

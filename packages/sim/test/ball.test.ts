@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { gameplay, getStage } from '@pokeathlon/data';
 import { Button, createWorld, quantizeInput, step, ticks, TICK_RATE, type World } from '../src/index';
+import { hitBall } from '../src/ball';
 
 const STRIKE = (aimX: number, aimY: number) => quantizeInput(0, 0, aimX, aimY, Button.Strike);
 const idle = quantizeInput(0, 0);
@@ -70,7 +71,9 @@ describe('ball physics', () => {
     for (let i = 0; i < TICK_RATE * 10; i++) {
       step(w, [idle]);
       const s = speedOf(w);
-      if (w.ball.hitstop === 0 && i > 10) expect(s).toBeLessThanOrEqual(prev + 1e-9);
+      const bounced = w.events.some((e) => e.type === 'ballWall');
+      // Friction only ever slows it; wall rebounds may nudge a slow ball faster (OS rule).
+      if (w.ball.hitstop === 0 && i > 10 && !bounced) expect(s).toBeLessThanOrEqual(prev + 1e-9);
       if (w.ball.hitstop === 0) prev = s;
       if (s === 0 && i > 10 && stoppedAt < 0) stoppedAt = i;
     }
@@ -78,7 +81,8 @@ describe('ball physics', () => {
   });
 
   it('bounces off walls and never leaves the arena', () => {
-    const w = setup();
+    const w = setup(650, 0);
+    w.ball.pos = { x: 800, y: 0 };
     step(w, [STRIKE(1, 0.37)]);
     const a = getStage('viridian-pitch');
     let walls = 0;
@@ -91,30 +95,88 @@ describe('ball physics', () => {
     expect(walls).toBeGreaterThan(0);
   });
 
-  it('is blocked by player bodies', () => {
+  it('passes through player bodies (OS: no body blocking) when bodyBlocking is off', () => {
+    expect(gameplay.ball.bodyBlocking).toBe(false);
     const w = createWorld([
       { pokemonId: 'pikachu', team: 0, pos: { x: -150, y: 0 } },
       { pokemonId: 'snorlax', team: 1, pos: { x: 600, y: 0 } },
     ]);
     step(w, [STRIKE(1, 0), idle]);
-    let blocked = false;
     for (let i = 0; i < TICK_RATE; i++) {
       step(w, [idle, idle]);
-      if (w.events.some((e) => e.type === 'ballBody' && e.playerId === 1)) blocked = true;
+      expect(w.events.some((e) => e.type === 'ballBody')).toBe(false);
     }
-    expect(blocked).toBe(true);
-    expect(w.ball.pos.x).toBeLessThan(600); // bounced back, never passed through Snorlax
+    expect(w.ball.pos.x).toBeGreaterThan(600); // went straight past Snorlax
+  });
+});
+
+/** Put the ball in motion directly (no hitstop) for physics checks. */
+function moving(vx: number, vy: number, x = 0, y = 0): World {
+  const w = createWorld([{ pokemonId: 'pikachu', team: 0, pos: { x: -1500, y: 900 } }]);
+  w.ball.pos = { x, y };
+  w.ball.vel = { x: vx, y: vy };
+  return w;
+}
+
+describe('OS Core rules', () => {
+  it('friction halves the speed in about one second', () => {
+    const w = moving(1600, 0, -1500);
+    for (let i = 0; i < TICK_RATE; i++) step(w, [idle]);
+    expect(speedOf(w)).toBeGreaterThan(1600 * 0.48);
+    expect(speedOf(w)).toBeLessThan(1600 * 0.52);
   });
 
-  it('momentum carry makes return hits faster than the base launch', () => {
+  it('a hit sets the speed to its knockback, even against a faster ball coming the other way', () => {
+    const w = moving(-1800, 0);
+    hitBall(w, 0, { x: 1, y: 0 }, 1300);
+    expect(Math.hypot(w.ball.launchVel.x, w.ball.launchVel.y)).toBeCloseTo(1300, 9);
+  });
+
+  it('knockback is capped at 2000', () => {
+    const w = moving(0, 0);
+    hitBall(w, 0, { x: 1, y: 0 }, 5000);
+    expect(w.ball.launchVel.x).toBeCloseTo(2000, 9);
+  });
+
+  it('redirecting within the ~90° cone keeps a faster ball’s speed and adds 2.5 % of the hit', () => {
+    const w = moving(1800, 0);
+    hitBall(w, 0, { x: Math.SQRT1_2, y: Math.SQRT1_2 }, 1300); // 45° off the path: edge of the cone
+    const last = w.events.at(-1)!;
+    expect(last.type === 'ballHit' && last.redirect).toBe(true);
+    expect(Math.hypot(w.ball.launchVel.x, w.ball.launchVel.y)).toBeCloseTo(1800 + 0.025 * 1300, 6);
+
+    const w2 = moving(1800, 0);
+    hitBall(w2, 0, { x: 0, y: 1 }, 1300); // 90° off the path: outside the cone
+    expect(Math.hypot(w2.ball.launchVel.x, w2.ball.launchVel.y)).toBeCloseTo(1300, 9);
+  });
+
+  it('wall rebounds speed up a slow ball and slow down a fast one by ~100', () => {
+    const slow = moving(600, 0, 1725);
+    step(slow, [idle]);
+    expect(slow.ball.vel.x).toBeLessThan(0); // bounced
+    expect(speedOf(slow)).toBeGreaterThan(600 - 15 + 90);
+
+    const fast = moving(1900, 0, 1725);
+    step(fast, [idle]);
+    expect(fast.ball.vel.x).toBeLessThan(0);
+    expect(speedOf(fast)).toBeLessThan(1900 - 90);
+  });
+
+  it('hits over 1750 make a Red Core that ignores friction for 1 s', () => {
+    const w = moving(0, 0, -1500);
+    hitBall(w, 0, { x: 1, y: 0 }, 1900);
+    expect(w.ball.redTicks).toBeGreaterThan(0);
+    for (let i = 0; i < ticks(gameplay.ball.hitstop) + 1; i++) step(w, [idle]);
+    const launched = speedOf(w);
+    for (let i = 0; i < 30; i++) step(w, [idle]);
+    expect(speedOf(w)).toBeCloseTo(launched, 6); // no friction yet
+    for (let i = 0; i < TICK_RATE; i++) step(w, [idle]);
+    expect(speedOf(w)).toBeLessThan(launched * 0.9); // friction back on
+  });
+
+  it('normal Strikes do not make a Red Core', () => {
     const w = setup();
     step(w, [STRIKE(1, 0)]);
-    for (let i = 0; i < ticks(gameplay.ball.hitstop) + 1; i++) step(w, [idle]);
-    // Teleport the ball back into reach while it is moving fast, then strike again.
-    w.ball.pos = { x: -100, y: 0 };
-    w.players[0]!.strikeCooldown = 0;
-    step(w, [STRIKE(1, 0)]);
-    const hit = w.events.find((e) => e.type === 'ballHit');
-    expect(hit && hit.type === 'ballHit' && hit.speed).toBeGreaterThan(1230 + 1.25 * 95);
+    expect(w.ball.redTicks).toBe(0);
   });
 });

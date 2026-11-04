@@ -35,5 +35,6 @@ export function hashWorld(w: World): string {
   mixF64(b.vel.y);
   mixU32(b.hitstop);
   mixU32(b.lastHitBy + 1);
+  mixU32(b.redTicks);
   return (h >>> 0).toString(16).padStart(8, '0');
 }
