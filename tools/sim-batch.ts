@@ -5,7 +5,7 @@
  *                  [--brains v2,v2] [--threads N] [--max-minutes 30] [--out reports]
  *   npm run ladder [-- --games 60 --brains v2,v1]
  *
- * --lineup  "a/b" for 1v1, "a,b,c/d,e,f" for 3v3 (last of each team is the goalie).
+ * --lineup  "a,b,c/d,e,f" (3v3, the only mode; last of each team is the goalie). Smaller teams still work for tests.
  * --swap    every other game the two lineups swap sides, so map side doesn't bias the result.
  * --brains  bot brain for lineup A and lineup B (default v2,v2). See BRAINS: v1, v2, v2-easy … v2-balance.
  * --ladder  quality gate for bot brains (A6): mirror matches for every kit plus a 3v3 mirror,
@@ -121,8 +121,11 @@ async function ladder(): Promise<void> {
   const threads = Number(arg('threads', String(defaultThreads())));
   const { analyzeRoster } = await import('@pokeathlon/data/analyze');
   const kits = analyzeRoster().map((k) => k.id);
-  const trio = kits.slice(0, 3).join(',');
-  const lineups: [string, string][] = [...kits.map((k) => [k, k] as [string, string]), [trio, trio]];
+  // 3v3 mirrors: rotate the kits so each one plays forward and goalie.
+  const lineups: [string, string][] = kits.map((_, i) => {
+    const trio = [0, 1, 2].map((j) => kits[(i + j) % kits.length]!).join(',');
+    return [trio, trio] as [string, string];
+  });
   console.log(`Bot ladder: ${a} vs ${b}, ${games} games per lineup, sides swapped every other game\n`);
   let wins = 0;
   let total = 0;
@@ -147,7 +150,7 @@ async function main(): Promise<void> {
   if (flag('ladder')) return ladder();
   const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-  const lineupSpec = arg('lineup', 'pikachu/lucario');
+  const lineupSpec = arg('lineup', 'pikachu,lucario,snorlax/togekiss,lucario,snorlax');
   const [lineupA, lineupB] = lineupSpec.split(/[/:]/) as [string, string];
   parseLineup(lineupSpec); // validate early
   const games = Number(arg('games', '100'));

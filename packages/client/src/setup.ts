@@ -10,9 +10,7 @@ export interface MatchConfig {
   practice: boolean;
 }
 
-type Mode = '1v1' | '3v3';
 export interface Saved {
-  mode: Mode;
   /** Your Pokémon, then your 2 teammates (3v3), then the enemies; '?' = random. */
   blue: string[];
   red: string[];
@@ -25,7 +23,6 @@ const RANDOM = '?';
 const kitted = (): PokemonDef[] => roster.filter((r) => getKit(r.id));
 
 const DEFAULTS: Saved = {
-  mode: '3v3',
   blue: ['pikachu', 'lucario', 'snorlax'],
   red: ['togekiss', 'lucario', 'snorlax'],
   role: 'forward',
@@ -51,7 +48,7 @@ function save(s: Saved): void {
 }
 
 /**
- * Pre-match setup (M4.5): 1v1 or 3v3, your Pokémon and role, your two bot teammates, the three
+ * Pre-match setup (M4.5): 3v3 (the only mode): your Pokémon and role, your two bot teammates, the three
  * enemy bots, and bot difficulty. Also starts a spectator match or the practice sandbox.
  * Works with mouse, keyboard (Tab / Enter) and gamepad (D-pad + A, via `navigate`).
  */
@@ -121,7 +118,7 @@ export class SetupScreen {
 
   private render(): void {
     const s = this.s;
-    const n = s.mode === '3v3' ? 3 : 1;
+    const n = 3;
     const picker = (team: 'blue' | 'red', slot: number, label: string) => {
       const cur = s[team][slot]!;
       const chips = [...kitted(), null]
@@ -146,8 +143,7 @@ export class SetupScreen {
       <div class="setup-card">
         <h1>PokéAthlon <small>match setup</small></h1>
         <div class="row">
-          <div class="group"><span>Mode</span>${toggle('mode', '1v1', '1 vs 1', s.mode === '1v1')}${toggle('mode', '3v3', '3 vs 3', s.mode === '3v3')}</div>
-          ${n === 3 ? `<div class="group"><span>Your role</span>${toggle('role', 'forward', 'Forward', s.role === 'forward')}${toggle('role', 'goalie', 'Goalie', s.role === 'goalie')}</div>` : ''}
+          <div class="group"><span>Your role</span>${toggle('role', 'forward', 'Forward', s.role === 'forward')}${toggle('role', 'goalie', 'Goalie', s.role === 'goalie')}</div>
           <div class="group"><span>CPU skill</span>${(['easy', 'normal', 'hard'] as const).map((d) => toggle('diff', d, d[0]!.toUpperCase() + d.slice(1), s.diff === d)).join('')}</div>
         </div>
         <div class="teams">
@@ -174,7 +170,6 @@ export class SetupScreen {
       s[team][Number(slot)] = id;
     } else if (t.dataset.set) {
       const [key, value] = t.dataset.set.split(':') as [string, string];
-      if (key === 'mode') s.mode = value as Mode;
       if (key === 'role') s.role = value as Saved['role'];
       if (key === 'diff') s.diff = value as Saved['diff'];
     } else if (t.dataset.go) {
@@ -202,16 +197,15 @@ export function buildConfig(s: Saved, go: 'play' | 'spectate' | 'practice', pick
   if (go === 'practice') {
     return { lineup: [{ pokemonId: pick(s.blue[0]!), team: 0 }, { pokemonId: pick(s.red[0]!), team: 1 }], me: 0, diff: s.diff, practice: true };
   }
-  const lineup: PlayerSpawn[] = [];
-  if (s.mode === '1v1') {
-    lineup.push({ pokemonId: pick(s.blue[0]!), team: 0 }, { pokemonId: pick(s.red[0]!), team: 1 });
-  } else {
-    // Your role decides who keeps goal for Blue.
-    const youGoalie = s.role === 'goalie';
-    lineup.push(youGoalie ? { pokemonId: pick(s.blue[0]!), team: 0, role: 'goalie' } : { pokemonId: pick(s.blue[0]!), team: 0, slot: 0 });
-    lineup.push({ pokemonId: pick(s.blue[1]!), team: 0, slot: youGoalie ? 0 : 1 });
-    lineup.push(youGoalie ? { pokemonId: pick(s.blue[2]!), team: 0, slot: 1 } : { pokemonId: pick(s.blue[2]!), team: 0, role: 'goalie' });
-    lineup.push({ pokemonId: pick(s.red[0]!), team: 1, slot: 0 }, { pokemonId: pick(s.red[1]!), team: 1, slot: 1 }, { pokemonId: pick(s.red[2]!), team: 1, role: 'goalie' });
-  }
+  // Your role decides who keeps goal for Blue.
+  const youGoalie = s.role === 'goalie';
+  const lineup: PlayerSpawn[] = [
+    youGoalie ? { pokemonId: pick(s.blue[0]!), team: 0, role: 'goalie' } : { pokemonId: pick(s.blue[0]!), team: 0, slot: 0 },
+    { pokemonId: pick(s.blue[1]!), team: 0, slot: youGoalie ? 0 : 1 },
+    youGoalie ? { pokemonId: pick(s.blue[2]!), team: 0, slot: 1 } : { pokemonId: pick(s.blue[2]!), team: 0, role: 'goalie' },
+    { pokemonId: pick(s.red[0]!), team: 1, slot: 0 },
+    { pokemonId: pick(s.red[1]!), team: 1, slot: 1 },
+    { pokemonId: pick(s.red[2]!), team: 1, role: 'goalie' },
+  ];
   return { lineup, me: go === 'spectate' ? -1 : 0, diff: go === 'spectate' ? 'hard' : s.diff, practice: false };
 }

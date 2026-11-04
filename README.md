@@ -18,18 +18,18 @@ npm run dev          # http://localhost:5173  (WASD move, mouse aim, click Strik
 npm run check        # typecheck + lint + tests
 npm run build        # production build → packages/client/dist
 npm run import-sprites   # re-import roster sprites from ./SpriteCollab-master and regenerate CREDITS.md
-npm run record -- --a pikachu --b lucario   # record a CPU vs CPU match to recordings/*.mp4 + a balance report (needs npm run build + vite preview on :4173, and Edge; add --meter to bake in the F3 menu)
-npm run sim -- --lineup pikachu/lucario --games 1000 --swap   # headless bot-vs-bot batch: win rates (95 % CI) + per-Pokémon telemetry → reports/*.json (3v3: a,b,c/d,e,f; --brains v2,v1 to pit bot brains)
-npm run balance                              # balance report: 600 random-comp 3v3s + every 1v1 pairing → per-role T0–F tiers, duel matrix, impact score, per-move stats → reports/balance-*.html; updates the F3 Tiers tab snapshot
+npm run record -- --lineup a,b,c/d,e,f   # record a CPU vs CPU match to recordings/*.mp4 + a balance report (needs npm run build + vite preview on :4173, and Edge; add --meter to bake in the F3 menu)
+npm run sim -- --lineup pikachu,lucario,snorlax/togekiss,lucario,snorlax --games 200 --swap   # headless bot-vs-bot batch: win rates (95 % CI) + per-Pokémon telemetry → reports/*.json (--brains v2,v1 to pit bot brains)
+npm run balance                              # balance report: 600 random-comp 3v3s → per-role T0–F tiers, 3v3 matchup matrix, impact score, per-move stats → reports/balance-*.html; updates the F3 Tiers tab snapshot
 npm run balance -- --set lucario.close-combat.damage*=0.8   # what-if tuning (no JSON edits), compared with the last baseline run
 npm run playstyle -- --variant "name:rules.respawn.time=8;all.*.knockback*=1.25"   # fight/KO pace, crowding, passing for rule variants on the same seeds
 npm run ladder                               # bot quality gate: brain A vs brain B mirrors for every kit + a 3v3 mirror (default v2 vs v1, pass at >= 80 %)
 npm run kits                                 # static kit report: reach, area, timing, DPS, knockback, KO reach, ball power + power budget → reports/kits-*.md
 ```
 
-The game opens on a **match setup** screen: 1v1 or 3v3, your Pokémon and role (forward or goalie), your two CPU teammates, the three CPU enemies (or Random), CPU skill, and Play / Watch CPU vs CPU / Practice. `?quick=1` skips it.
+**3v3 is the only mode.** The game opens on a **match setup** screen: your Pokémon and role (forward or goalie), your two CPU teammates, the three CPU enemies (or Random), CPU skill, and Play / Watch CPU vs CPU / Practice. `?quick=1` skips it.
 
-Spectate a CPU match live: `http://localhost:5173/?cpu=pikachu,lucario`, or a 3v3: `?cpu=pikachu,lucario,snorlax/togekiss,lucario,snorlax` (last of each team is the goalie). Bot skill: `&diff=easy|normal|hard` (default normal vs you, hard when spectating); `&brain=v1` for the old bot. With F3 open each bot's job and action shows under its nameplate. Practice sandbox with an enemy dummy: `?practice=1`. Add `&meter=1` to open the debug menu on start.
+Spectate a CPU 3v3 live: `http://localhost:5173/?cpu=pikachu,lucario,snorlax/togekiss,lucario,snorlax` (last of each team is the goalie). Bot skill: `&diff=easy|normal|hard` (default normal vs you, hard when spectating); `&brain=v1` for the old bot. With F3 open each bot's job and action shows under its nameplate. Practice sandbox with an enemy dummy: `?practice=1`. Add `&meter=1` to open the debug menu on start.
 
 **F3 debug menu** (modelled on Omega Strikers' own Practice mode, Core Stats and match stats):
 - **Meter**: live scoreboard (goals, assists, KOs, saves, shots, redirects, damage, DPS, possession, ball progress, MVP score) and Core Stats; per-move casts, landed %, damage and idle-ready time.

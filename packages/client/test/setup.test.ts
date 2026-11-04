@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createWorld } from '@pokeathlon/sim';
 import { buildConfig, type Saved } from '../src/setup';
 
-const base: Saved = { mode: '3v3', blue: ['pikachu', 'lucario', 'snorlax'], red: ['togekiss', '?', 'snorlax'], role: 'forward', diff: 'normal' };
+const base: Saved = { blue: ['pikachu', 'lucario', 'snorlax'], red: ['togekiss', '?', 'snorlax'], role: 'forward', diff: 'normal' };
 const fixed = (id: string) => (id === '?' ? 'lucario' : id);
 
 describe('match setup', () => {
@@ -25,8 +25,8 @@ describe('match setup', () => {
     expect(new Set(c.lineup.slice(1, 3).map((s) => s.slot)).size).toBe(2);
   });
 
-  it('1v1, spectate and practice', () => {
-    expect(buildConfig({ ...base, mode: '1v1' }, 'play', fixed).lineup).toHaveLength(2);
+  it('spectate and practice', () => {
+    expect(buildConfig(base, 'play', fixed).lineup).toHaveLength(6);
     const spec = buildConfig(base, 'spectate', fixed);
     expect(spec.me).toBe(-1);
     expect(spec.diff).toBe('hard');

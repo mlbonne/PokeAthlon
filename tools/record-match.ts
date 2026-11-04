@@ -1,14 +1,14 @@
 /**
  * Record a CPU vs CPU match to an MP4 (H.264), plus a JSON balance report.
  *
- *   npm run record -- --a pikachu --b lucario [--until goal|set|match] [--fps 30] [--meter] [--url http://localhost:4173] [--out recordings]
+ *   npm run record -- [--lineup pikachu,lucario,snorlax/togekiss,lucario,snorlax] [--until goal|set|match] [--fps 30] [--meter] [--url http://localhost:4173] [--out recordings]
  *
  * --meter  bake the F3 debug menu (Meter tab, hitbox / reach / ball-path overlay) into the video.
  *
  * Needs the game served (best: `npm run build` + `vite preview` on :4173, which never hot-reloads)
  * and Microsoft Edge (or Chrome via --browser).
  *
- * How it works: the game runs in a headless browser in record mode (?cpu=a,b&record=1), where
+ * How it works: the game runs in a headless browser in record mode (?cpu=<3v3 lineup>&record=1), where
  * nothing moves on its own. For every video frame the recorder advances the simulation by exactly
  * 60/fps ticks; the page renders, then captures that very frame in-page (3D canvas + HUD painted
  * on top) and encodes it with WebCodecs (H.264). mp4-muxer streams the MP4 to disk through an
@@ -24,8 +24,9 @@ const arg = (name: string, def: string) => {
   const i = process.argv.indexOf(`--${name}`);
   return i > -1 && process.argv[i + 1] ? process.argv[i + 1]! : def;
 };
-const A = arg('a', 'pikachu');
-const B = arg('b', 'lucario');
+/** 3v3 is the only mode: `a,b,c/d,e,f`, last of each team is the goalie. */
+const LINEUP = arg('lineup', 'pikachu,lucario,snorlax/togekiss,lucario,snorlax');
+const [A, B] = LINEUP.split('/').map((t) => t.replace(/,/g, '+')) as [string, string];
 const FPS = Number(arg('fps', '30'));
 const URL_BASE = arg('url', 'http://localhost:4173');
 const OUT_DIR = resolve(ROOT, arg('out', 'recordings'));
@@ -69,7 +70,7 @@ try {
     const buf = Buffer.from(b64, 'base64');
     writeSync(fd, buf, 0, buf.length, position);
   });
-  await page.goto(`${URL_BASE}/?cpu=${A},${B}&record=1${METER ? '&meter=1' : ''}`);
+  await page.goto(`${URL_BASE}/?cpu=${LINEUP}&record=1${METER ? '&meter=1' : ''}`);
   await page.waitForFunction(() => '__rec' in window);
   await new Promise((r) => setTimeout(r, 2500)); // sprites and portraits
   await page.evaluate((fps: number) => (window as unknown as RecWindow).__rec.startCapture(fps), FPS);
