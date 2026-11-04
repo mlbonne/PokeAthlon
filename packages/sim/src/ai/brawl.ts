@@ -73,10 +73,14 @@ export function pushDir(m: MoveModel, p: Player, aim: Vec2, t: Vec2): Vec2 {
   return travel;
 }
 
-/** Best ready move of `p` for knocking players, or null. */
-export function bestKnockMove(p: Player): MoveModel | null {
+/**
+ * Best ready move of `p` for knocking players, or null. `slots` = how many move slots the bot may use
+ * (difficulty: Normal bots don't use their special).
+ */
+export function bestKnockMove(p: Player, slots = 3): MoveModel | null {
   let best: MoveModel | null = null;
   for (const m of moveModels(p.pokemonId)) {
+    if (m.slot >= slots) continue;
     const st = p.moves[m.slot];
     if (!st || st.cooldown > 0 || !m.hitsPlayers) continue;
     if (st.def.slot === 'special' && p.level < gameplay.xp.specialUnlockLevel) continue;
@@ -89,8 +93,8 @@ export function bestKnockMove(p: Player): MoveModel | null {
  * A finishing opportunity: an enemy that one hit from `p` can knock off the arena from the
  * field side. Returns where to stand and who, or null.
  */
-export function finisherSpot(world: World, p: Player): { target: Player; spot: Vec2; value: number } | null {
-  const m = bestKnockMove(p);
+export function finisherSpot(world: World, p: Player, slots = 3): { target: Player; spot: Vec2; value: number } | null {
+  const m = bestKnockMove(p, slots);
   const burst = p.energy >= gameplay.energy.max && p.evadeCooldown === 0;
   if (!m && !burst) return null;
   let best: { target: Player; spot: Vec2; value: number } | null = null;
@@ -119,10 +123,11 @@ export function finisherSpot(world: World, p: Player): { target: Player; spot: V
  * Is `p` standing in a kill line: could an enemy's ready knockback (or Burst) push it off the
  * arena from where they are? Returns the direction to step (toward safety), or null.
  */
-export function killLine(world: World, p: Player): Vec2 | null {
+/** `slots`: move slots enemies are assumed to use (same skill as us). */
+export function killLine(world: World, p: Player, slots = 3): Vec2 | null {
   for (const o of world.players) {
     if (o.team === p.team || o.koTicks > 0 || o.knockTicks > 0 || o.stunTicks > 0) continue;
-    const m = bestKnockMove(o);
+    const m = bestKnockMove(o, slots);
     const burst = o.energy >= gameplay.energy.max && o.evadeCooldown === 0;
     const reachM = m ? m.stats.reach + p.hurtRadius : 0;
     const reachB = burst ? gameplay.burst.radius + p.hurtRadius : 0;

@@ -1,15 +1,14 @@
 /**
- * Balance report (M4.6): thousands of headless bot matches → win-rate matrix, per-role win rates,
+ * Balance report (M4.6): thousands of headless 3v3 bot matches → matchup matrix, per-role win rates,
  * impact scores, T0–F tiers and per-move numbers. Writes reports/balance-<date>.{json,html} and,
  * for an untouched baseline, the tier snapshot the F3 Tiers tab reads
  * (packages/data/balance/tiers.json).
  *
- *   npm run balance [-- --games 600] [--duel-games 60] [--seed 1] [--threads N]
- *                   [--only duel|3v3] [--set lucario.aura-sphere.cooldown=11 ...] [--no-snapshot]
+ *   npm run balance [-- --games 600] [--seed 1] [--threads N] [--set lucario.aura-sphere.cooldown=11 ...] [--no-snapshot]
  *
- * 3v3: every game draws a random comp (seeded) for both teams, so every Pokémon plays Forward and
- *      Goalie against every other. Games where a Pokémon is on both sides don't count for it.
- * duel: every 1v1 pairing, sides swapped every other game → matrix.
+ * 3v3 is the only mode. Every game draws a random comp (seeded) for both teams, so every Pokémon
+ * plays Forward and Goalie against every other. Games where a Pokémon is on both sides don't count
+ * for it. Matchups: the win rate of teams fielding Pokémon A against teams fielding Pokémon B.
  * --set: what-if tuning (see packages/data/src/tuning.ts); the report shows the change against
  *      the last baseline run (reports/balance-baseline.json). No snapshot is written.
  * Bots play at `balance` difficulty (v2).
@@ -26,7 +25,7 @@ import { fitImpact, impactOf, impactShares, IMPACT_FEATURES, mixSeed, parseLineu
 // ---------------------------------------------------------------- worker side
 
 interface Spec {
-  kind: 'duel' | '3v3';
+  kind: '3v3';
   seed: number;
   lineup: PlayerSpawn[];
 }
@@ -138,15 +137,13 @@ async function main(): Promise<void> {
   const sets = args('set');
   const tuned = applyTuning(sets); // also in this thread, so the analyzer and replay see it
   const games3 = Number(arg('games', '600'));
-  const duelGames = Number(arg('duel-games', '60'));
   const seed0 = Number(arg('seed', '1'));
   const threads = Number(arg('threads', String(Math.max(1, availableParallelism() - 1))));
-  const only = arg('only', '');
   const kits = analyzeRoster().map((k) => k.id);
 
   // ---- Specs ----
   const specs: Spec[] = [];
-  if (only !== 'duel') {
+  {
     for (let i = 0; i < games3; i++) {
       const seed = seed0 + i;
       const slot = { rng: [mixSeed(seed * 7919 + 13)] };
@@ -155,17 +152,7 @@ async function main(): Promise<void> {
       specs.push({ kind: '3v3', seed, lineup: parseLineup(spec) });
     }
   }
-  if (only !== '3v3') {
-    for (let a = 0; a < kits.length; a++) {
-      for (let b = a + 1; b < kits.length; b++) {
-        for (let i = 0; i < duelGames; i++) {
-          const [x, y] = i % 2 === 0 ? [kits[a]!, kits[b]!] : [kits[b]!, kits[a]!];
-          specs.push({ kind: 'duel', seed: seed0 + 100000 + a * 10000 + b * 1000 + i, lineup: parseLineup(`${x}/${y}`) });
-        }
-      }
-    }
-  }
-  console.log(`Balance run: ${specs.filter((s) => s.kind === '3v3').length} 3v3 games (random comps) + ${specs.filter((s) => s.kind === 'duel').length} duels on ${threads} threads, v2 bots at balance difficulty`);
+  console.log(`Balance run: ${specs.length} 3v3 games (random comps) on ${threads} threads, v2 bots at balance difficulty`);
   if (tuned.length) console.log(`What-if tuning:\n  ${tuned.join('\n  ')}`);
 
   const t0 = Date.now();
@@ -177,16 +164,22 @@ async function main(): Promise<void> {
   const again = play(specs.find((s) => s.kind === first.kind && s.seed === first.seed)!);
   const deterministic = again.hash === first.hash;
 
-  // ---- Duel matrix ----
-  const duel: Record<string, Record<string, Rec>> = Object.fromEntries(kits.map((a) => [a, Object.fromEntries(kits.map((b) => [b, rec()]))]));
-  for (const g of games.filter((x) => x.kind === 'duel')) {
+  // ---- Matchups (3v3): teams fielding A vs teams fielding B (A on one side only) ----
+  const matchups: Record<string, Record<string, Rec>> = Object.fromEntries(kits.map((a) => [a, Object.fromEntries(kits.map((b) => [b, rec()]))]));
+  for (const g of games) {
     if (g.winner < 0) continue;
-    const [p0, p1] = g.players as [PlayerOut, PlayerOut];
-    const w = g.winner === p0.team ? p0 : p1;
-    const l = w === p0 ? p1 : p0;
-    duel[w.pokemon]![l.pokemon]!.wins++;
-    duel[w.pokemon]![l.pokemon]!.games++;
-    duel[l.pokemon]![w.pokemon]!.games++;
+    for (const t of [0, 1] as const) {
+      const mine = new Set(g.players.filter((p) => p.team === t).map((p) => p.pokemon));
+      const theirs = new Set(g.players.filter((p) => p.team !== t).map((p) => p.pokemon));
+      for (const a of mine) {
+        if (theirs.has(a)) continue;
+        for (const b of theirs) {
+          if (mine.has(b)) continue;
+          matchups[a]![b]!.games++;
+          if (g.winner === t) matchups[a]![b]!.wins++;
+        }
+      }
+    }
   }
 
   // ---- 3v3 roles, impact ----
@@ -194,7 +187,7 @@ async function main(): Promise<void> {
   const xs: number[][] = [];
   const ys: number[] = [];
   const samples: { pokemon: string; role: string; shares: number[] }[] = [];
-  const g3 = games.filter((x) => x.kind === '3v3');
+  const g3 = games;
   for (const g of g3) {
     if (g.winner < 0) continue;
     const shares = impactShares(g.players);
@@ -254,11 +247,9 @@ async function main(): Promise<void> {
     const cell = (s: ReturnType<typeof simTier> | null, x: Rec) => (s ? `${(s.tier + (s.uncertain ? '?' : '')).padEnd(5)} ${pct(x.wins / Math.max(1, x.games))} n=${x.games}` : '–').padEnd(22);
     console.log(`  ${r.name.padEnd(10)} overall ${(r.overall ?? '–').padEnd(5)} forward ${cell(r.fw, r.roles.forward)} goalie ${cell(r.gk, r.roles.goalie)} impact ${r.impact.all >= 0 ? '+' : ''}${r.impact.all.toFixed(1)} · theory ${r.theory}`);
   }
-  if (only !== '3v3') {
-    console.log('\nDuel matrix (row beats column):');
-    console.log('  ' + ''.padEnd(10) + kits.map((k) => k.slice(0, 8).padStart(10)).join(''));
-    for (const a of kits) console.log('  ' + a.padEnd(10) + kits.map((b) => (a === b ? '–' : pct(duel[a]![b]!.wins / Math.max(1, duel[a]![b]!.games))).padStart(10)).join(''));
-  }
+  console.log('\nMatchups (3v3: win rate of teams with the row Pokémon vs teams with the column Pokémon):');
+  console.log('  ' + ''.padEnd(10) + kits.map((k) => k.slice(0, 8).padStart(10)).join(''));
+  for (const a of kits) console.log('  ' + a.padEnd(10) + kits.map((b) => (a === b ? '–' : pct(matchups[a]![b]!.wins / Math.max(1, matchups[a]![b]!.games))).padStart(10)).join(''));
 
   // ---- Files ----
   const outDir = resolve(ROOT, arg('out', 'reports'));
@@ -271,7 +262,6 @@ async function main(): Promise<void> {
     seeds: seed0,
     tuning: tuned,
     games3v3: g3.length,
-    duels: games.length - g3.length,
     minutes: +(secs / 60).toFixed(1),
     deterministic,
     draws: games.filter((g) => g.winner < 0).length,
@@ -286,7 +276,7 @@ async function main(): Promise<void> {
       theory: r.theory,
       budget: r.budget,
     })),
-    duel,
+    matchups,
     moves: Object.fromEntries(Object.entries(moveStats).map(([k, ms]) => [k, Object.fromEntries(Object.entries(ms).map(([id, m]) => [id, Object.fromEntries(Object.entries(m).map(([f, v]) => [f, +(v / gamesBy[k]!).toFixed(2)]))]))])),
   };
   const base = join(outDir, `balance-${stamp}${tag}`);
@@ -296,7 +286,7 @@ async function main(): Promise<void> {
   writeFileSync(`${base}.html`, html(report, kits, baseline));
   console.log(`\nReport: ${base}.html (+ .json)`);
 
-  if (!sets.length && only !== 'duel' && !flag('no-snapshot')) {
+  if (!sets.length && !flag('no-snapshot')) {
     copyFileSync(`${base}.json`, baselinePath);
     const snap = {
       $comment: 'Sim tier snapshot, written by `npm run balance` (M4.6). Do not edit by hand.',
@@ -332,13 +322,12 @@ interface ReportLike {
   difficulty: string;
   tuning: string[];
   games3v3: number;
-  duels: number;
   minutes: number;
   deterministic: boolean;
   draws: number;
   model: { features: readonly string[]; weights: number[]; accuracy: number; samples: number } | null;
   tiers: { pokemon: string; overall: Tier | null; forward: RoleOut; goalie: RoleOut; all: Rec; impact: { forward: number; goalie: number; all: number }; theory: Tier; budget: number }[];
-  duel: Record<string, Record<string, Rec>>;
+  matchups: Record<string, Record<string, Rec>>;
   moves: Record<string, Record<string, Record<string, number>>>;
 }
 
@@ -365,7 +354,7 @@ function html(r: ReportLike, kits: string[], baseline: ReportLike | null): strin
         `<tr><th>${name(a)}</th>${kits
           .map((b) => {
             if (a === b) return '<td class="dim">–</td>';
-            const c = r.duel[a]![b]!;
+            const c = r.matchups[a]![b]!;
             const v = c.games ? c.wins / c.games : 0.5;
             const hue = v >= 0.5 ? `rgba(80,200,120,${Math.min(0.6, (v - 0.5) * 2)})` : `rgba(230,80,90,${Math.min(0.6, (0.5 - v) * 2)})`;
             return `<td style="background:${hue}">${p(c.wins, c.games)} <small>n=${c.games}</small></td>`;
@@ -398,13 +387,13 @@ th:first-child{text-align:left}small,.dim,.muted{color:var(--muted)}
 .legend{display:flex;flex-wrap:wrap;gap:10px}
 </style></head><body><main>
 <h1>PokéAthlon balance report</h1>
-<p class="muted">${esc(r.generatedAt.slice(0, 16).replace('T', ' '))} UTC · ${r.games3v3} 3v3 games (random comps) + ${r.duels} duels · v2 bots at <b>${r.difficulty}</b> difficulty · ${r.minutes} min · replay ${r.deterministic ? 'deterministic' : 'MISMATCH'} · ${r.draws} time-limit draws
+<p class="muted">${esc(r.generatedAt.slice(0, 16).replace('T', ' '))} UTC · ${r.games3v3} 3v3 games (random comps) · v2 bots at <b>${r.difficulty}</b> difficulty · ${r.minutes} min · replay ${r.deterministic ? 'deterministic' : 'MISMATCH'} · ${r.draws} time-limit draws
 ${r.tuning.length ? `<br><b>What-if tuning:</b> ${r.tuning.map(esc).join('; ')}${baseline ? ' — compared with the last baseline run' : ''}` : ''}</p>
 <section><h2>Tier list (per role)</h2>
 <table><tr><th>Pokémon</th><th>Overall</th><th>Forward</th><th>Goalie</th><th>Impact (pts)</th><th>Theory</th>${baseline ? '<th>Δ win rate</th>' : ''}</tr>${tierRows}</table>
 <p class="muted">Win rates come from 3v3 games, leaving out games where the same Pokémon was on both teams. The tier uses the win rate pulled toward 50 % by 100 phantom games. "?" means the 95 % interval spans more than one neighbouring tier. Impact is the change in win probability that the Pokémon's average stat line predicts. Theory is the tier from the kit analyzer's power budget.</p>
 <div class="legend">${TIERS.map((t) => `<span>${badge(t)} ${esc(TIER_MEANING[t])}</span>`).join('')}</div></section>
-<section><h2>Duel matrix (1v1, row vs column)</h2><table>${matrix}</table></section>
+<section><h2>Matchups (3v3)</h2><p class="muted">Win rate of teams fielding the row Pokémon against teams fielding the column Pokémon (neither on both sides).</p><table>${matrix}</table></section>
 <section><h2>Impact model</h2><p class="muted">Logistic regression of each player's share of the match total on whether their team won (${r.model?.samples ?? 0} player-games, ${r.model ? (r.model.accuracy * 100).toFixed(1) : 0}% of outcomes predicted). Weights are log-odds per standard deviation.</p><table>${weights}</table></section>
 <section><h2>Moves (per 3v3 game played)</h2>${moves}</section>
 <p class="muted">Caveat: these are bot games. Bot balance is not human balance, so human playtest notes have the final say.</p>

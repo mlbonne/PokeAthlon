@@ -47,7 +47,7 @@ export function smartBotInput(world: World, id: number, difficulty: Difficulty =
   }
   // Standing where an enemy's ready knockback would send us off the arena: step off that line.
   if (action !== 'finish' && perc.intercept[id]!.t > 12) {
-    const safe = killLine(world, p);
+    const safe = killLine(world, p, D.moveSlots);
     if (safe) {
       target = { x: p.pos.x + safe.x * 260, y: p.pos.y + safe.y * 260 };
       action = `${action}·avoid`;
@@ -222,8 +222,9 @@ function positionFor(world: World, p: Player, job: Job, perc: Perception, D: Dif
 
   // Finish: an enemy one hit from going off the edge. Forwards go to the field side of them.
   // (Not when a man down, unless they're Staggered; never the goalie; never right before our touch.)
-  if (job !== 'goalie' && it.t > 25) {
-    const fin = finisherSpot(world, p);
+  // The striker stays on the ball unless it is far away.
+  if (job !== 'goalie' && it.t > (job === 'striker' ? 60 : 25)) {
+    const fin = finisherSpot(world, p, D.moveSlots);
     const short = onField(world, p.team) < onField(world, p.team === 0 ? 1 : 0);
     if (fin && (!short || fin.target.staggered)) return { target: fin.spot, action: 'finish' };
   }
@@ -258,17 +259,17 @@ function positionFor(world: World, p: Player, job: Job, perc: Perception, D: Dif
   const contester = enemies(world, p)
     .filter((o) => perc.intercept[o.id]!.t < 40)
     .sort((a, b) => perc.intercept[a.id]!.t - perc.intercept[b.id]!.t)[0];
-  if (contester && hasEngage(p) && dist(contester.pos, p.pos) < 700) {
+  if (contester && hasEngage(p, D.moveSlots) && dist(contester.pos, p.pos) < 700) {
     // Hit them from the field side so the push goes toward their nearest edge, from the move's
     // range: the support fights from outside the scrum instead of joining it.
     const edge = nearestEdge(world, contester.pos);
-    const km = bestKnockMove(p);
+    const km = bestKnockMove(p, D.moveSlots);
     const standOff = D.spacing ? Math.max(230, Math.min(520, (km?.stats.reach ?? 300) * 0.75)) : 160;
     return { target: { x: contester.pos.x - edge.dir.x * standOff, y: contester.pos.y - edge.dir.y * standOff }, action: 'peel' };
   }
   // Punish a clump: two or more enemies bunched up and we hold an area hit or a Burst.
   if (D.spacing) {
-    const clump = enemyClump(world, p);
+    const clump = enemyClump(world, p, D.moveSlots);
     if (clump) return { target: clump, action: 'punish' };
   }
   // Spacing discipline: hold a lane well away from the scrum.
@@ -302,9 +303,9 @@ function detour(from: Vec2, to: Vec2, obstacle: Vec2, r: number): Vec2 {
 }
 
 /** Where to stand to hit 2+ bunched enemies with a ready area move or Burst (or null). */
-function enemyClump(world: World, p: Player): Vec2 | null {
+function enemyClump(world: World, p: Player, slots: number): Vec2 | null {
   const area = moveModels(p.pokemonId).find(
-    (m) => m.delivery === 'selfArea' && m.hitsPlayers && (p.moves[m.slot]?.cooldown ?? 1) === 0 && (m.slot < 2 || p.level >= gameplay.xp.specialUnlockLevel),
+    (m) => m.slot < slots && m.delivery === 'selfArea' && m.hitsPlayers && (p.moves[m.slot]?.cooldown ?? 1) === 0 && (m.slot < 2 || p.level >= gameplay.xp.specialUnlockLevel),
   );
   const burst = p.energy >= gameplay.energy.max && p.evadeCooldown === 0;
   if (!area && !burst) return null;
@@ -383,7 +384,7 @@ function canCast(world: World, p: Player): boolean {
   return true;
 }
 
-const hasEngage = (p: Player) => moveModels(p.pokemonId).some((m, i) => m.hitsPlayers && (p.moves[i]?.cooldown ?? 1) === 0);
+const hasEngage = (p: Player, slots = 3) => moveModels(p.pokemonId).some((m, i) => i < slots && m.hitsPlayers && (p.moves[i]?.cooldown ?? 1) === 0);
 
 interface Cast {
   slot: number;

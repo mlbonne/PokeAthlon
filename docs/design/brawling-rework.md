@@ -196,3 +196,28 @@ the main open item. In OS these are part of the game too ("ping-pong"), so that 
 - Duels are much closer: Lucario is now about even with Pikachu and Togekiss (52 / 52 %, was 28 / 25 %).
 - Snorlax still dominates 3v3, and its duels are its weakness (10–27 %). Its size, walls and stuns gain even
   more now that edges matter. It is the first candidate when kit tuning starts.
+
+### Follow-up: 3v3 only, and Normal bots that forgot the ball (2026-11-04)
+- **3v3 is the only mode.**
+  - The setup screen has no mode choice. `?quick=1`, spectating and recording are 3v3.
+  - The balance report replaces the 1v1 duel matrix with a **3v3 matchup matrix**: the win rate of teams fielding
+    Pokémon A against teams fielding Pokémon B.
+  - The ladder uses rotating 3v3 mirrors.
+  - Practice stays as a training sandbox (you against one dummy).
+- **Normal bots chased fights instead of the ball. That was a bug:** Normal bots may only use their first two
+  moves, but the finish, peel, punish and kill-line logic counted their special too. So they walked to
+  finishing spots for a move they could not cast, and dodged threats their enemies could not use either.
+  The striker also left the ball to finish whenever the ball was more than 25 ticks away.
+  - Fix: all brawling decisions respect the bot's usable move slots, and the striker only leaves the ball
+    when it is more than 60 ticks away.
+
+  | | Normal before | Normal after | Hard |
+  |---|---|---|---|
+  | Loose ball (nobody within 450) | 30 % | **13 %** | 14 % |
+  | Goals per live minute | 1.5 | **2.1** | 2.1 |
+  | KOs per live minute | 0.8 | 1.6 | 2.7 |
+  | Forwards on fight actions | about 55 % | about 3 % | about 10 % |
+
+- Checks after the fix:
+  - ladder v2 vs v1, 3v3 mirrors: **100 %**;
+  - spaced vs crowding: 41 % (CI 32–51 %, within noise of the agreed ~45 %).

@@ -55,41 +55,43 @@ const hudRoot = document.querySelector<HTMLElement>('#hud')!;
 // ---------- Match ----------
 // With no URL mode the game opens the match setup screen (Esc / Start returns to it).
 // URL modes (skip the setup screen):
-//   ?quick=1               straight into a 1v1 vs a CPU Lucario
+//   ?quick=1               straight into a 3v3 (you: Pikachu forward) vs CPUs
 //   ?cpu=pikachu,lucario   CPU vs CPU spectator match (both sides played by bots)
 //   &record=1              no real-time loop; frames are advanced by window.__rec (match recorder)
 //   &meter=1               open the F3 debug menu on start (also bakes it into recordings)
 //   ?practice=1            practice sandbox: no kickoff, an idle enemy dummy (F3 → Practice)
 const params = new URLSearchParams(location.search);
-//   ?cpu=a,b,c/d,e,f       3v3 spectator match (last of each team is the goalie)
+//   ?cpu=a,b,c/d,e,f       spectate a 3v3 (last of each team is the goalie). 3v3 is the only mode.
 //   &diff=easy|normal|hard bot skill (default: normal when you play, hard when spectating)
 //   &brain=v1              the old M2/M3 bot instead
 const cpuSpec = params.get('cpu') ?? '';
 const cpuLineup = (() => {
   try {
-    const spec = cpuSpec.includes('/') ? cpuSpec : cpuSpec.split(',').slice(0, 2).join('/');
-    const l = parseLineup(spec);
-    return l.every((s) => roster.some((r) => r.id === s.pokemonId)) ? l : null;
+    const l = parseLineup(cpuSpec);
+    return l.length === 6 && l.every((s) => roster.some((r) => r.id === s.pokemonId)) ? l : null;
   } catch {
     return null;
   }
 })();
 const RECORD = params.get('record') === '1';
 const urlDiff = (params.get('diff') ?? '') as MatchConfig['diff'] | '';
-const duel = (): MatchConfig['lineup'] => [
+/** Default 3v3: you (Pikachu, forward) with Lucario and Snorlax vs Togekiss, Lucario, Snorlax. */
+const defaultLineup = (): MatchConfig['lineup'] => parseLineup('pikachu,lucario,snorlax/togekiss,lucario,snorlax');
+/** Practice sandbox: you and one enemy dummy (OS practice mode). */
+const practiceLineup = (): MatchConfig['lineup'] => [
   { pokemonId: 'pikachu', team: 0 },
   { pokemonId: 'lucario', team: 1 },
 ];
 const urlConfig: MatchConfig | null = cpuLineup
   ? { lineup: cpuLineup, me: -1, diff: urlDiff || 'hard', practice: false }
   : params.get('practice') === '1'
-    ? { lineup: duel(), me: 0, diff: urlDiff || 'normal', practice: true }
+    ? { lineup: practiceLineup(), me: 0, diff: urlDiff || 'normal', practice: true }
     : params.get('quick') === '1'
-      ? { lineup: duel(), me: 0, diff: urlDiff || 'normal', practice: false }
+      ? { lineup: defaultLineup(), me: 0, diff: urlDiff || 'normal', practice: false }
       : null;
 
-// Current match settings (a placeholder duel runs behind the setup screen).
-let config: MatchConfig = urlConfig ?? { lineup: duel(), me: 0, diff: 'normal', practice: false };
+// Current match settings (a placeholder 3v3 runs behind the setup screen).
+let config: MatchConfig = urlConfig ?? { lineup: defaultLineup(), me: 0, diff: 'normal', practice: false };
 let SPECTATE = false;
 let PRACTICE = false;
 let ME = 0;
