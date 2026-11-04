@@ -46,9 +46,17 @@ const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 400);
 const hudRoot = document.querySelector<HTMLElement>('#hud')!;
 
 // ---------- Match ----------
+// URL modes:
+//   ?cpu=pikachu,lucario   CPU vs CPU spectator match (both sides played by bots)
+//   &record=1              no real-time loop; frames are advanced by window.__rec (match recorder)
+const params = new URLSearchParams(location.search);
+const cpuLineup = params.get('cpu')?.split(',').filter((id) => roster.some((r) => r.id === id));
+const SPECTATE = !!cpuLineup && cpuLineup.length === 2;
+const RECORD = params.get('record') === '1';
 const ME = 0;
-let myPokemon = 'pikachu';
-const BOT_POKEMON = 'lucario';
+let myPokemon = SPECTATE ? cpuLineup![0]! : 'pikachu';
+const BOT_POKEMON = SPECTATE ? cpuLineup![1]! : 'lucario';
+if (SPECTATE) document.body.classList.add('spectate');
 
 interface MatchView {
   world: World;
@@ -118,7 +126,13 @@ function startMatch(): void {
     prevPos: world.players.map((p) => ({ ...p.pos })),
     prevBall: { ...world.ball.pos },
   };
-  showCard(roster.find((r) => r.id === myPokemon)!);
+  if (SPECTATE) {
+    const a = roster.find((r) => r.id === myPokemon)!;
+    const b = roster.find((r) => r.id === BOT_POKEMON)!;
+    $name.textContent = `CPU vs CPU`;
+    $info.textContent = `Blue ${a.name}  vs  Red ${b.name}`;
+    $portrait.src = `portraits/${a.dex}/Normal.png`;
+  } else showCard(roster.find((r) => r.id === myPokemon)!);
 }
 
 // ---------- Card ----------
@@ -272,7 +286,7 @@ function simStep(mine: PlayerInput): void {
   const { world } = view;
   world.players.forEach((p, i) => (view.prevPos[i] = { ...p.pos }));
   view.prevBall = { ...world.ball.pos };
-  step(world, world.players.map((p) => (p.id === ME ? mine : botInput(world, p.id))));
+  step(world, world.players.map((p) => (p.id === ME && !SPECTATE ? mine : botInput(world, p.id))));
   for (const e of world.events) onEvent(e);
 }
 
@@ -340,7 +354,12 @@ function frame(now: number): void {
     steps++;
   }
   if (steps === 5) acc = 0;
-  const alpha = acc / DT;
+  render(dt, now, acc / DT);
+  requestAnimationFrame(frame);
+}
+
+/** Draw one frame. `now` (ms) only drives cosmetic blinking; `alpha` interpolates between sim ticks. */
+function render(dt: number, now: number, alpha: number): void {
   const lerp = (a: number, b: number) => a + (b - a) * alpha;
   const { world, sprites } = view;
 
@@ -360,7 +379,7 @@ function frame(now: number): void {
     const blink = p.immuneTicks > 0 && Math.floor(now / 90) % 2 === 0;
     s.setOpacity(p.elusiveTicks > 0 ? 0.45 : blink ? 0.35 : 1);
     if (i === ME) {
-      view.aim.object.visible = p.koTicks === 0;
+      view.aim.object.visible = p.koTicks === 0 && !SPECTATE;
       view.aim.update(dt, toThreeX(x), toThreeZ(y), lastInput.aimX, -lastInput.aimY, p.strikeCooldown / STRIKE_COOLDOWN_TICKS);
     }
   });
@@ -379,7 +398,7 @@ function frame(now: number): void {
   );
   view.structures.update(dt, world);
   view.moves.update(dt, world);
-  view.bar.update(world.players[ME]!);
+  if (!SPECTATE) view.bar.update(world.players[ME]!);
   view.effects.update(dt);
 
   // Camera: frame the whole stage, drift slightly towards the ball.
@@ -412,6 +431,56 @@ function frame(now: number): void {
   }
 
   renderer.render(scene, camera);
+}
+
+if (RECORD) {
+  // Deterministic capture: the recorder advances the game exactly `ticks` per video frame.
+  let simClock = 0;
+  // Per-player balance stats for the recording report.
+  const tally = new Map<number, Record<string, number>>();
+  const bump = (id: number, key: string, n = 1) => {
+    const t = tally.get(id) ?? {};
+    t[key] = (t[key] ?? 0) + n;
+    tally.set(id, t);
+  };
+  const count = (e: SimEvent) => {
+    if (e.type === 'cast') bump(e.playerId, `cast:${e.moveId}`);
+    if (e.type === 'hit') {
+      bump(e.attacker, 'hitsLanded');
+      bump(e.attacker, 'damageDealt', Math.round(e.damage));
+      bump(e.target, 'damageTaken', Math.round(e.damage));
+    }
+    if (e.type === 'ballHit') bump(e.playerId, 'ballTouches');
+    if (e.type === 'burst') bump(e.playerId, 'energyBursts');
+    if (e.type === 'staggered') bump(e.playerId, 'timesStaggered');
+    if (e.type === 'orb') bump(e.playerId, 'orbs');
+  };
+  Object.assign(window, {
+    __rec: {
+      async advance(ticksPerFrame: number) {
+        for (let i = 0; i < ticksPerFrame; i++) {
+          simStep(NEUTRAL_INPUT);
+          for (const e of view.world.events) count(e);
+        }
+        simClock += ticksPerFrame * DT * 1000;
+        render(ticksPerFrame * DT, simClock, 1);
+        // Let the compositor present this frame before the recorder screenshots it.
+        await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+        const m = view.world.match;
+        return { tick: view.world.tick, phase: m.phase, goals: m.goals, sets: m.sets, winner: m.winner };
+      },
+      summary() {
+        const w = view.world;
+        return {
+          ticks: w.tick,
+          minutes: +(w.tick / TICK_RATE / 60).toFixed(2),
+          sets: w.match.sets,
+          winner: w.match.winner,
+          players: w.players.map((p) => ({ pokemon: p.pokemonId, team: p.team, level: p.level, ...p.stats, ...tally.get(p.id) })),
+        };
+      },
+    },
+  });
+} else {
   requestAnimationFrame(frame);
 }
-requestAnimationFrame(frame);
