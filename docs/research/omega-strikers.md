@@ -99,6 +99,18 @@ kit upgrades it (e.g. X's ultimate). Ability slots in the game files: Q = Strike
 Pattern: **primary ≈ 10–12 s, secondary ≈ 18–20 s, special ≈ 24–40 s**. Strike sits at <1 s and is the main
 way you touch the Core. Abilities hit the Core only a bit harder than Strike, but they can do it from range or in an area.
 
+### 4.2b Core physics (wiki "Core" page, "fun Core facts")
+| Rule | Value | Our implementation |
+|---|---|---|
+| Hit sets speed | Core knockback is **capped at 2000** (Energy Burst: knockback and cap ×1.5) | `hitBall()` sets speed = min(knockback, cap) |
+| Redirect | Within a **~90° cone** of its path: keeps current speed **+ ~2.5 %** of the hit | dot ≥ cos 45° and the Core is faster than the hit |
+| Friction | Loses **~50 % of its speed per second** | half-life 1.0 s, plus a dead stop below 25 |
+| Walls | Each rebound changes speed by **~100**: gains if slow, loses if fast | ±100 around a pivot of **1000 ⚠** (undocumented) |
+| Red Core | Hit > **1750** → ignores friction below **2000** for **1 s** | `redTicks` |
+| Visual | Yellow trail and brighter glow above **700** speed | glow/trail threshold 700 |
+| Stun | A stunned Core takes no knockback and ignores gravity wells | M3 (abilities) |
+| Body blocking | Not documented. Believed: strikers don't block the Core | `bodyBlocking: false` (switch in data) |
+
 ### 4.3 Stagger
 - At 0 Stagger you're **Staggered**: you take +254.5 % knockback and −75 % damage. It ends once the bar refills to **50 %**.
   The bar regenerates fast while Staggered, but new damage delays that.

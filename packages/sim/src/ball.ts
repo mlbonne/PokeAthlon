@@ -1,13 +1,56 @@
 import { gameplay } from '@pokeathlon/data';
 import { confine } from './arena';
-import { DT } from './constants';
+import { DT, ticks } from './constants';
+import type { Vec2 } from './vec';
 import type { World } from './world';
 
+/**
+ * The ball is a sliding puck that behaves like the Omega Strikers Core
+ * (omegastrikers.wiki.gg/wiki/Core):
+ *  - a hit SETS the speed to the hit's knockback (capped at 2000)…
+ *  - …unless it redirects the puck within ~90° of its path while the puck is already faster:
+ *    then it keeps its speed and gains ~2.5 % of the hit
+ *  - friction halves the speed every second
+ *  - each wall rebound nudges speed by ~100 towards a middle value
+ *  - hits over 1750 make a "Red Core" that ignores friction (below 2000) for 1 s
+ */
 const B = gameplay.ball;
-const DRAG_PER_TICK = B.dragPerSecond * DT;
-const DECEL_PER_TICK = B.linearDecel * DT;
+/** Linearised per-tick retention for the configured half-life (IEEE-exact ops only). */
+const FRICTION_PER_TICK = (Math.LN2 / B.frictionHalfLife) * DT;
+const HITSTOP = ticks(B.hitstop);
+const RED_TICKS = ticks(B.redDuration);
 /** Ignore tiny bounces when emitting feedback events. */
 const EVENT_MIN_IMPACT = 150;
+
+/**
+ * Apply a knockback hit to the ball. `dir` must be a unit vector.
+ * The ball freezes for the hitstop, then launches. Returns the launch speed.
+ */
+export function hitBall(world: World, playerId: number, dir: Vec2, knockback: number): number {
+  const b = world.ball;
+  const cur = b.hitstop > 0 ? b.launchVel : b.vel;
+  const curSpeed = Math.sqrt(cur.x * cur.x + cur.y * cur.y);
+  const kb = Math.min(knockback, B.knockbackCap);
+
+  let speed = kb;
+  let redirect = false;
+  if (curSpeed > kb) {
+    const dot = (dir.x * cur.x + dir.y * cur.y) / curSpeed;
+    if (dot >= B.redirectMinDot) {
+      speed = curSpeed + kb * B.redirectBonus;
+      redirect = true;
+    }
+  }
+
+  b.launchVel = { x: dir.x * speed, y: dir.y * speed };
+  b.vel = { x: 0, y: 0 };
+  // +1: the ball steps later in this same tick, which consumes one hitstop tick immediately.
+  b.hitstop = HITSTOP + 1;
+  b.lastHitBy = playerId;
+  b.redTicks = knockback > B.redThreshold ? RED_TICKS : 0;
+  world.events.push({ type: 'ballHit', playerId, pos: { ...b.pos }, speed, redirect, red: b.redTicks > 0 });
+  return speed;
+}
 
 export function stepBall(world: World): void {
   const b = world.ball;
@@ -22,17 +65,35 @@ export function stepBall(world: World): void {
     return;
   }
 
-  // Friction: proportional drag + constant deceleration, then a dead-stop threshold.
+  // Friction (skipped while a Red Core is still below its frictionless ceiling).
   const speed = Math.sqrt(b.vel.x * b.vel.x + b.vel.y * b.vel.y);
-  if (speed > 0) {
-    const next = Math.max(0, speed - speed * DRAG_PER_TICK - DECEL_PER_TICK);
+  const red = b.redTicks > 0;
+  if (red) b.redTicks--;
+  if (speed > 0 && !(red && speed < B.redFrictionlessBelow)) {
+    const next = speed - speed * FRICTION_PER_TICK;
     const k = next < B.stopSpeed ? 0 : next / speed;
     b.vel = { x: b.vel.x * k, y: b.vel.y * k };
   }
 
   b.pos = { x: b.pos.x + b.vel.x * DT, y: b.pos.y + b.vel.y * DT };
 
-  // Bodies block the ball (goalies can save with their body).
+  if (B.bodyBlocking) collideBodies(world);
+
+  // Elastic rebound, then OS's speed nudge towards the middle.
+  const impact = confine(b.pos, b.vel, b.radius, world.arena, 1);
+  if (impact > 0) {
+    const s = Math.sqrt(b.vel.x * b.vel.x + b.vel.y * b.vel.y);
+    if (s > 0) {
+      const target = s < B.wallSpeedPivot ? s + B.wallSpeedDelta : Math.max(B.wallSpeedPivot, s - B.wallSpeedDelta);
+      const k = target / s;
+      b.vel = { x: b.vel.x * k, y: b.vel.y * k };
+    }
+    if (impact > EVENT_MIN_IMPACT) world.events.push({ type: 'ballWall', pos: { ...b.pos }, impact });
+  }
+}
+
+function collideBodies(world: World): void {
+  const b = world.ball;
   for (const p of world.players) {
     const dx = b.pos.x - p.pos.x;
     const dy = b.pos.y - p.pos.y;
@@ -42,9 +103,7 @@ export function stepBall(world: World): void {
     const d = Math.sqrt(d2);
     const nx = d > 0 ? dx / d : 1;
     const ny = d > 0 ? dy / d : 0;
-    // Push the ball out of the body.
     b.pos = { x: p.pos.x + nx * min, y: p.pos.y + ny * min };
-    // Reflect the relative velocity (players are treated as immovable).
     const rvx = b.vel.x - p.vel.x;
     const rvy = b.vel.y - p.vel.y;
     const vn = rvx * nx + rvy * ny;
@@ -55,15 +114,5 @@ export function stepBall(world: World): void {
         world.events.push({ type: 'ballBody', playerId: p.id, pos: { ...b.pos }, impact: -vn });
       }
     }
-  }
-
-  const impact = confine(b.pos, b.vel, b.radius, world.arena, B.wallRestitution);
-  if (impact > EVENT_MIN_IMPACT) world.events.push({ type: 'ballWall', pos: { ...b.pos }, impact });
-
-  // Clamp after collisions (body pushes can add speed).
-  const s2 = b.vel.x * b.vel.x + b.vel.y * b.vel.y;
-  if (s2 > B.maxSpeed * B.maxSpeed) {
-    const k = B.maxSpeed / Math.sqrt(s2);
-    b.vel = { x: b.vel.x * k, y: b.vel.y * k };
   }
 }

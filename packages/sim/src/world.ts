@@ -38,6 +38,8 @@ export interface Ball {
   hitstop: number;
   launchVel: Vec2;
   lastHitBy: number;
+  /** Ticks left of Red Core friction immunity. */
+  redTicks: number;
 }
 
 export interface World {
@@ -70,6 +72,7 @@ export function createWorld(spawns: PlayerSpawn[], stageId = 'viridian-pitch'): 
       hitstop: 0,
       launchVel: { x: 0, y: 0 },
       lastHitBy: -1,
+      redTicks: 0,
     },
     events: [],
   };
@@ -120,6 +123,7 @@ export function resetBall(world: World): void {
   b.hitstop = 0;
   b.launchVel = { x: 0, y: 0 };
   b.lastHitBy = -1;
+  b.redTicks = 0;
 }
 
 /**

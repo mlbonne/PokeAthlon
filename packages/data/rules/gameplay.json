@@ -1,19 +1,25 @@
 {
-  "$comment": "Global gameplay tuning. World units; OS-like scale (see docs/design/GAME_BREAKDOWN.md §4). Times in seconds.",
+  "$comment": "Global gameplay tuning. World units; OS-like scale (see docs/design/GAME_BREAKDOWN.md §4). Times in seconds. Ball values follow the OS Core (omegastrikers.wiki.gg/wiki/Core); ⚠ = not documented, our guess.",
   "movement": {
     "accelTime": 0.08,
     "decelTime": 0.1
   },
   "ball": {
     "radius": 70,
-    "dragPerSecond": 0.25,
-    "linearDecel": 100,
-    "stopSpeed": 12,
-    "maxSpeed": 3200,
-    "wallRestitution": 0.85,
+    "frictionHalfLife": 1.0,
+    "stopSpeed": 25,
+    "knockbackCap": 2000,
+    "redirectMinDot": 0.7071,
+    "redirectBonus": 0.025,
+    "wallSpeedDelta": 100,
+    "wallSpeedPivot": 1000,
+    "redThreshold": 1750,
+    "redDuration": 1.0,
+    "redFrictionlessBelow": 2000,
+    "glowSpeed": 700,
+    "bodyBlocking": false,
     "playerRestitution": 0.45,
-    "hitstop": 0.07,
-    "momentumCarry": 0.12
+    "hitstop": 0.07
   },
   "strike": {
     "cooldown": 0.9,

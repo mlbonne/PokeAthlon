@@ -7,21 +7,35 @@ const Scaling = z.object({ base: z.number().nonnegative(), powerRatio: z.number(
 
 export const GameplayRules = z.object({
   movement: z.object({ accelTime: pos, decelTime: pos }),
+  /** The ball behaves like the OS Core (a sliding puck). */
   ball: z.object({
     radius: pos,
-    /** Fraction of current speed lost per second (applied linearly per tick). */
-    dragPerSecond: z.number().min(0).max(5),
-    /** Constant deceleration, units/s². */
-    linearDecel: z.number().nonnegative(),
+    /** Seconds for friction to halve the speed (OS: ~50 % lost per second → 1.0). */
+    frictionHalfLife: pos,
     /** Below this speed the ball stops completely. */
     stopSpeed: z.number().nonnegative(),
-    maxSpeed: pos,
-    wallRestitution: z.number().min(0).max(1),
+    /** Max knockback a hit can apply (OS: 2000). Hits set speed = min(knockback, cap). */
+    knockbackCap: pos,
+    /** A hit whose direction has dot ≥ this with the current travel direction is a "redirect" (~90° cone → cos 45°). */
+    redirectMinDot: z.number().min(-1).max(1),
+    /** On redirect the ball keeps its speed and gains this fraction of the hit's knockback (OS: ~2.5 %). */
+    redirectBonus: z.number().min(0).max(1),
+    /** Each wall rebound changes speed by this much: + when slower than the pivot, − when faster (OS: ~100). */
+    wallSpeedDelta: z.number().nonnegative(),
+    wallSpeedPivot: pos,
+    /** Hits above this knockback make a "Red Core" (OS: 1750). */
+    redThreshold: pos,
+    /** Red Core ignores friction for this long… */
+    redDuration: z.number().nonnegative(),
+    /** …while slower than this (OS: 2000). */
+    redFrictionlessBelow: pos,
+    /** Visual only: glow/trail above this speed (OS: 700). */
+    glowSpeed: pos,
+    /** Whether player bodies deflect the ball (OS: believed no). */
+    bodyBlocking: z.boolean(),
     playerRestitution: z.number().min(0).max(1),
     /** Freeze on hit before launch (impact feel), seconds. */
     hitstop: z.number().nonnegative(),
-    /** Fraction of the ball's incoming speed added to a hit's launch speed. */
-    momentumCarry: z.number().min(0).max(1),
   }),
   strike: z.object({
     cooldown: pos,
