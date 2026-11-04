@@ -3,7 +3,7 @@
 > Working title. A free, non-commercial fan game: 3v3 Pokémon "strike-ball" — part soccer,
 > part air hockey, part sumo — inspired by the *feel* of Omega Strikers.
 
-Status: **Draft v0.1** · Lead programmer: Claude · Owner: CHIAKI
+Status: **Draft v0.2** (rules revised after OS research) · Lead programmer: Claude · Owner: CHIAKI
 
 ---
 
@@ -32,66 +32,86 @@ All three reference folders are **git-ignored**. They stay local reference mater
 
 ## 3. Core game rules (v1 target, all values tunable)
 
-**Format:** 3v3. Every player is a Pokémon. Each team has a goal at one end of the arena.
+> Revised after the Omega Strikers study. See [research/omega-strikers.md](research/omega-strikers.md) for the source numbers.
 
-**The ball** (our "core"): a physics puck. Pokémon move it by hitting it with their basic **Strike** or with moves.
-Each hit adds speed. Rally speed slowly decays, so long passing chains get faster and more dangerous.
+**Format:** 3v3. Every player is a Pokémon. Each team defends a goal on one short side of a rectangular arena with cut corners.
 
-**Goal barrier and target** (the twist we're keeping):
-1. Each goal is closed off by a **barrier**.
-2. In front of each goal there's a **target** (e.g. a glowing Poké-totem).
-   When the ball hits the enemy target, their barrier **drops for N seconds** (start at 6s).
-3. While the barrier is down, a ball that crosses the goal line scores. Otherwise the ball bounces off.
-4. After a goal, both barriers reset and there's a kickoff from centre.
+**The ball** (our "core"): a heavy physics puck. Pokémon move it with **Strike** or with moves.
+Every hit has its own *ball knockback* value. The ball slows down through friction and bounces off every edge.
 
-**Knockback, stagger and KO (the sumo part):**
-- Each Pokémon has **Stagger HP**. Hits reduce it. At 0 the Pokémon is **Staggered**: it takes extra knockback and can't use moves for a short time.
-- Arena edges are a mix of **walls** (the ball and players bounce) and **KO zones** (open edges).
-  Getting knocked past a KO edge = **KO**: you respawn after a few seconds and your team plays a player short.
-- KOs don't score points directly. They open space to score.
+**Barriers → gate → goal:**
+1. Each goal is protected by **1–3 barriers** (set per stage). **The barriers are the targets.**
+   When the ball touches a barrier, the barrier breaks and stays broken for the rest of the round.
+2. Shortly after a team's last barrier breaks (~1 s), their **Goal Gate opens**.
+3. With the gate open, the ball crossing the goal line scores. A goal ends the **round**: barriers, Stagger and
+   positions reset, then kickoff.
 
-**Match:** first to **5 goals** wins a set, best of 3 sets. Short break between sets to swap held items. (Tunable.)
+**Knockback, Stagger and KO (the sumo part):**
+- Each Pokémon has **Stagger** (a health pool). Hits reduce it. At 0 the Pokémon is **Staggered**: +254.5 % knockback taken,
+  −75 % damage taken. It ends when Stagger refills to 50 % (fast regen while Staggered). Passive regen 4 %/s after ~2.4 s without being hit.
+- **Every arena edge is a KO edge for players** (the ball bounces). Knocked out = removed for ~5 s, then a respawn
+  with brief immunity. KOs don't score. They create power plays.
+- **Goal Arc:** standing in your own arc gives knockback resistance and shorter debuffs. It's the goalie's home.
+- **Power Orbs:** 3 spawn points (midfield and each arc). First at 10 s, then every 20 s. They give Stagger, XP and Energy.
 
-**Universal actions every Pokémon has:**
+**Match flow:** round (one goal) → **set** (first to **3 goals**) → **match** (first to **2 sets**). Overtime after 60 s
+in a round: ball knockback +20 %. Between sets: Boost draft (see §5). All tunable.
+
+**In-match levels 1–10:** XP from ball hits, saves, orbs, KOs, goals and assists. Each level adds max Stagger. **The Special unlocks at level 2.**
+
+**Stats per Pokémon:** Power (scales all hits), Speed (soft caps at 750/900), Stagger (+ growth per level),
+Cooldown Rate (`cd × 100/(100+CDR)`), Size (hurtbox and melee reach).
+Every hit has 3 values: `ballKB`, `playerKB`, `damage`, each `base + ratio × Power`.
+
+**Actions every Pokémon has:**
 | Input | Action |
 |---|---|
 | Move | Analog movement |
-| Strike (LMB / RT) | Short-range hit on the ball or on enemies, short cooldown |
-| Dash / Evade (Space / A) | Short burst with brief i-frames, medium cooldown |
-| Move 1 / Move 2 (Q, E) | Pokémon-specific abilities |
-| Special (R) | Pokémon-specific ultimate, charges over time and through play |
+| Strike (LMB / RT) | Shared melee hit on the ball and enemies, **~0.9 s cooldown**. The main way to touch the ball |
+| Move 1, Primary (Q) | Pokémon-specific, ~10–12 s cooldown |
+| Move 2, Secondary (E) | Pokémon-specific, usually mobility, ~18–20 s cooldown |
+| Special (R) | Pokémon-specific, ~25–40 s cooldown, unlocks at level 2 |
+| Evade (Space / A) | Costs 1 Energy bar: 1.5 s untouchable. At 3 bars it becomes **Energy Burst**: push nearby enemies away, briefly control the ball, next ball hit +50 % |
+
+**Energy:** 3 bars (75). Start each set and each respawn with 25. +1 per light hit (Strike), +3 per normal hit, +7.5 per orb.
 
 ## 4. Roles
 
-| Role | Job | Typical tools |
-|---|---|---|
-| **Striker** (forward) | Hits the target and finishes goals | Ball redirects, speed boosts, long-range ball hits |
-| **Passer** (midfield) | Sets up shots, controls tempo | Pulls, ball lobs, team buffs, zone control |
-| **Goalie** | Protects the target and goal | Walls, wide hitboxes, high mass, self-shields |
-| **Brawler** | Wins fights and gets KOs | High knockback, gap-closers, stagger damage |
+**Team slots** (chosen at select, they decide which held items you can pick): **2 Forwards + 1 Goalie**.
 
-Pokémon get a **primary role** and can be flexed through held items.
+Each Pokémon also has an **archetype** that describes how it plays. Any archetype can fill either slot, but some fit one better:
+| Archetype | Job | Typical tools | Usual slot |
+|---|---|---|---|
+| **Striker** | Breaks barriers, finishes goals | Ball redirects, speed boosts, long-range ball hits | Forward |
+| **Passer / Controller** | Sets up shots, controls space | Pulls, teleports, buffs, creations | Either |
+| **Wall** | Protects barriers and goal | Walls, wide hitboxes, big size, shields | Goalie |
+| **Brawler** | Wins fights, gets KOs | High knockback, gap-closers, Stagger damage | Forward |
 
 ## 5. Starting roster (8). Sprite sets verified in SpriteCollab
 
 All of these have Walk, Idle, Attack, Hurt, Charge and Swing animations, plus Shoot or Strike.
 
-| # | Pokémon | Role | Kit sketch (Move 1 / Move 2 / Special) |
+| # | Pokémon | Archetype | Kit sketch (Move 1 / Move 2 / Special) |
 |---|---|---|---|
 | 0025 | **Pikachu** | Striker | Quick Attack (dash that hits the ball) / Thunder Shock (skillshot, short stun) / Volt Tackle (long piercing charge) |
 | 0658 | **Greninja** | Striker | Water Shuriken (3 small ball nudges) / Shadow Sneak (blink behind target) / Hydro Cannon |
 | 0065 | **Alakazam** | Passer | Psychic (grab and redirect the ball) / Teleport (swap places with an ally) / Future Sight (delayed AoE) |
 | 0468 | **Togekiss** | Passer | Air Slash (lob pass) / Follow Me (pulls enemies' aggro) / Wish (team shield) |
-| 0143 | **Snorlax** | Goalie | Block (wall segment) / Body Slam (AoE knockback) / Rest (heals stagger, becomes immovable) |
-| 0009 | **Blastoise** | Goalie | Withdraw (shell shield) / Rapid Spin (spin that deflects) / Hydro Pump (pushback beam) |
+| 0143 | **Snorlax** | Wall | Block (wall segment) / Body Slam (AoE knockback) / Rest (heals stagger, becomes immovable) |
+| 0009 | **Blastoise** | Wall | Withdraw (shell shield) / Rapid Spin (spin that deflects) / Hydro Pump (pushback beam) |
 | 0448 | **Lucario** | Brawler | Aura Sphere (homing knockback) / Close Combat (combo) / Extreme Speed |
 | 0068 | **Machamp** | Brawler | Cross Chop / Seismic Toss (grab and throw) / Dynamic Punch (big knockback, confuse) |
 
 Backups with full sprite sets: Gengar, Garchomp, Dragonite, Gardevoir, Charizard, Blaziken, Gyarados, Politoed, Sylveon, Raichu.
 
-**Held items (our "gear and awakenings"):** players pick 1 held item before the match and 1 more per set.
-Examples: *Choice Scarf* (+speed, −stagger HP), *Muscle Band* (+knockback), *Focus Sash* (one stagger saved per round),
-*Quick Claw* (−dash cooldown), *Expert Belt* (+ball hit power).
+**Loadout, two layers:**
+- **Held Item** (like OS Gear): pick 1 at select. **Locked to your slot.** Goalie items stop working on the enemy half.
+  Forward ideas: *Choice Scarf* (speed after ball hits), *Muscle Band* (+knockback), *Shell Bell* (heal from damage dealt).
+  Goalie ideas: *Rocky Helmet* (+size, damage reduction), *Eject Pack* (blink back after your secondary), *Quick Claw* (speed builds over time, lost when hit).
+- **Boosts** (like OS Awakenings): 2 random ones shown to everyone at select, and each player takes one. After each set,
+  there's a shared pool of 8 drafted one at a time, with pick order set by XP that set. Examples: *Bulk Up* (+Stagger),
+  *Agility* (+dash range), *Sniper* (+hit power at long range), *Helping Hand* (passes to allies hit harder),
+  *Sturdy* (the first KO each set is prevented).
 
 **Types (stretch):** a light type layer. Ally moves that combo (Water then Electric = "Soaked + Shocked")
 apply short status effects. No full damage chart: keeps it readable.
@@ -146,7 +166,7 @@ Each milestone ends in something you can play, a git tag, and a short changelog.
 |---|---|---|
 | **M0** | **Foundation** | Repo, TS/Vite/Vitest/ESLint, CI, sprite import tool, credits generation. One Pikachu walking with the Walk/Idle animations |
 | **M1** | **Sandbox** | Arena with walls, ball physics, Strike and Dash, camera, hit feedback. Hit the ball around solo |
-| **M2** | **Rules** | Targets, barriers, goals, KO zones, stagger, respawn, score, sets. A full match is possible (1v1 local) |
+| **M2** | **Rules** | Barriers, gates, goals, KO edges, Goal Arc, Stagger, Energy (Evade/Burst), orbs, levels, rounds and sets. A full match is possible (1v1 local) |
 | **M3** | **Kits** | Data-driven move system (hitboxes, projectiles, dashes, status, cooldowns). First 4 Pokémon (one per role) |
 | **M4** | **Bots and 3v3** | Role-aware AI (striker chases, goalie guards). 3v3 against bots, gamepad support |
 | **M5** | **Meta** | Draft/pick screen, held items, all 8 Pokémon, match results screen |

@@ -26,3 +26,6 @@ desktop.ini
 !.vscode/extensions.json
 !.vscode/settings.json
 .idea/
+
+# FModel exports from Omega Strikers: private research data, never commit
+/docs/research/fmodel-export/
