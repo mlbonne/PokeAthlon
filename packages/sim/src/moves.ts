@@ -267,10 +267,10 @@ function fire(world: World, p: Player, pa: PendingAction): void {
         if (a.hit) {
           const hitSpec = a.hit;
           for (const o of enemies(world, p)) {
-            if (segDist2(o.pos, wall.a, wall.b) <= (wall.r + o.hurtRadius) ** 2) hitPlayer(world, p, o, hitSpec, d, c);
+            if (segDist2(o.pos, wall.a, wall.b) <= (wall.r + o.hurtRadius) ** 2) hitPlayer(world, p, o, hitSpec, d, c, pa.moveId);
           }
           const b = world.ball;
-          if (segDist2(b.pos, wall.a, wall.b) <= (wall.r + b.radius) ** 2) hitBallWith(world, p, hitSpec, d, c);
+          if (segDist2(b.pos, wall.a, wall.b) <= (wall.r + b.radius) ** 2) hitBallWith(world, p, hitSpec, d, c, pa.moveId);
         }
       }
       world.events.push({ type: 'wall', playerId: p.id, moveId: pa.moveId });
@@ -302,9 +302,9 @@ function fireArea(world: World, p: Player, pa: PendingAction, a: Extract<MoveAct
   };
 
   if (a.hit) {
-    for (const o of enemies(world, p)) if (inside(o.pos, o.hurtRadius)) hitPlayer(world, p, o, a.hit, dir, center);
+    for (const o of enemies(world, p)) if (inside(o.pos, o.hurtRadius)) hitPlayer(world, p, o, a.hit, dir, center, pa.moveId);
     const b = world.ball;
-    if (a.hitsBall && !b.scored && inside(b.pos, b.radius)) hitBallWith(world, p, a.hit, dir, center);
+    if (a.hitsBall && !b.scored && inside(b.pos, b.radius)) hitBallWith(world, p, a.hit, dir, center, pa.moveId);
   }
   if (a.allyHealPct > 0) {
     for (const o of world.players) {
@@ -344,18 +344,19 @@ function knockDir(hit: MoveHit, travel: Vec2, center: Vec2, owner: Player, targe
 }
 
 /** Apply a move's hit to an enemy player. */
-export function hitPlayer(world: World, owner: Player, target: Player, hit: MoveHit, travel: Vec2, center: Vec2): void {
+export function hitPlayer(world: World, owner: Player, target: Player, hit: MoveHit, travel: Vec2, center: Vec2, source: string): void {
   applyHit(world, owner.id, target, {
     dir: knockDir(hit, travel, center, owner, target.pos),
     knockback: hit.player ? scaled(hit.player, owner.power) : 0,
     damage: hit.damage ? scaled(hit.damage, owner.power) : 0,
     ...(hit.light ? { light: true } : {}),
     ...(hit.stun ? { stun: hit.stun } : {}),
+    source,
   });
 }
 
 /** Apply a move's hit to the ball (knockback or stun). */
-export function hitBallWith(world: World, owner: Player, hit: MoveHit, travel: Vec2, center: Vec2): void {
+export function hitBallWith(world: World, owner: Player, hit: MoveHit, travel: Vec2, center: Vec2, source: string): void {
   const b = world.ball;
   if (b.scored || b.stunTicks > 0) return;
   if (b.controlBy >= 0 && b.controlBy !== owner.id) return;
@@ -365,11 +366,11 @@ export function hitBallWith(world: World, owner: Player, hit: MoveHit, travel: V
     b.launchVel = { x: 0, y: 0 };
     b.hitstop = 0;
     owner.lastBallTouchTick = world.tick;
-    world.events.push({ type: 'ballStun', playerId: owner.id, pos: { ...b.pos } });
+    world.events.push({ type: 'ballStun', playerId: owner.id, pos: { ...b.pos }, source });
     return;
   }
   if (!hit.ball) return;
-  hitBall(world, owner.id, knockDir(hit, travel, center, owner, b.pos), scaled(hit.ball, owner.power));
+  hitBall(world, owner.id, knockDir(hit, travel, center, owner, b.pos), scaled(hit.ball, owner.power), source);
   gainEnergy(owner, hit.light ? gameplay.energy.lightHit : gameplay.energy.normalHit);
 }
 
@@ -390,7 +391,7 @@ export function stepProjectiles(world: World): void {
       }
       if (pr.hitsBall && !pr.ballHit && !ball.scored && dist2(pr.pos, ball.pos) <= (pr.radius + ball.radius) ** 2) {
         pr.ballHit = true;
-        hitBallWith(world, owner, pr.hit, pr.dir, pr.pos);
+        hitBallWith(world, owner, pr.hit, pr.dir, pr.pos, pr.moveId);
         if (!pr.pierce) dead = true;
       }
       for (const o of world.players) {
@@ -398,7 +399,7 @@ export function stepProjectiles(world: World): void {
         if (o.team === pr.team || !isTargetable(o) || pr.hitIds.includes(o.id)) continue;
         if (dist2(pr.pos, o.pos) > (pr.radius + o.hurtRadius) ** 2) continue;
         pr.hitIds.push(o.id);
-        hitPlayer(world, owner, o, pr.hit, pr.dir, pr.pos);
+        hitPlayer(world, owner, o, pr.hit, pr.dir, pr.pos, pr.moveId);
         if (!pr.pierce) dead = true;
       }
     }
@@ -432,13 +433,13 @@ export function stepDash(world: World, p: Player): void {
       if (d.hitIds.includes(o.id)) continue;
       if (dist2(o.pos, p.pos) > (p.radius + o.hurtRadius) ** 2) continue;
       d.hitIds.push(o.id);
-      hitPlayer(world, p, o, d.hit, dir, p.pos);
+      hitPlayer(world, p, o, d.hit, dir, p.pos, d.moveId);
       if (d.stopOnHit) d.ticks = 1;
     }
     const b = world.ball;
     if (!d.ballHit && !b.scored && dist2(b.pos, p.pos) <= (p.radius + b.radius) ** 2) {
       d.ballHit = true;
-      hitBallWith(world, p, d.hit, dir, p.pos);
+      hitBallWith(world, p, d.hit, dir, p.pos, d.moveId);
     }
   }
   if (--d.ticks <= 0) p.dash = null;

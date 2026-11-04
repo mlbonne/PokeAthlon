@@ -60,5 +60,6 @@ export function hashWorld(w: World): string {
   mixU32(m.sets[0]);
   mixU32(m.sets[1]);
   mixU32(m.roundTicks);
+  for (const r of w.ai.rng) mixU32(r);
   return (h >>> 0).toString(16).padStart(8, '0');
 }

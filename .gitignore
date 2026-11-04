@@ -41,3 +41,6 @@ __pycache__/
 
 # Match recordings (large binaries)
 /recordings/
+
+# Headless sim / balance reports (regenerated)
+/reports/

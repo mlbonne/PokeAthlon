@@ -19,6 +19,7 @@ npm run check        # typecheck + lint + tests
 npm run build        # production build → packages/client/dist
 npm run import-sprites   # re-import roster sprites from ./SpriteCollab-master and regenerate CREDITS.md
 npm run record -- --a pikachu --b lucario   # record a CPU vs CPU match to recordings/*.mp4 + a balance report (needs npm run build + vite preview on :4173, and Edge)
+npm run sim -- --lineup pikachu/lucario --games 1000 --swap   # headless bot-vs-bot batch: win rates (95 % CI) + per-Pokémon telemetry → reports/*.json (3v3: a,b,c/d,e,f)
 ```
 
 Spectate a CPU match live: `http://localhost:5173/?cpu=pikachu,lucario`.

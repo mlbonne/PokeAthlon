@@ -23,6 +23,8 @@ export interface HitSpec {
   light?: boolean;
   /** Stun seconds (in addition to the knockback slide). */
   stun?: number;
+  /** What caused the hit: a move id, `strike` or `burst` (telemetry). */
+  source?: string;
 }
 
 /**
@@ -47,7 +49,7 @@ export function applyHit(world: World, attackerId: number, target: Player, hit: 
   target.regenDelay = ticks(wasStaggered ? S.staggeredRegenDelayOnHit : hit.light ? S.regenDelayLight : S.regenDelay);
   if (!wasStaggered && target.stagger === 0) {
     target.staggered = true;
-    world.events.push({ type: 'staggered', playerId: target.id });
+    world.events.push({ type: 'staggered', playerId: target.id, by: attackerId });
   }
 
   if (hit.light) target.slowTicks = Math.max(target.slowTicks, ticks(K.lightSlowTime));
@@ -67,6 +69,8 @@ export function applyHit(world: World, attackerId: number, target: Player, hit: 
     damage,
     light: !!hit.light,
     pos: { ...target.pos },
+    source: hit.source ?? 'other',
+    staggered: wasStaggered,
   });
   return true;
 }
