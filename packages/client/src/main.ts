@@ -5,6 +5,7 @@ import {
   createWorld,
   DT,
   NEUTRAL_INPUT,
+  practiceClearCooldowns,
   setPokemon,
   step,
   ticks,
@@ -16,12 +17,14 @@ import {
 } from '@pokeathlon/sim';
 import { getKit } from '@pokeathlon/data';
 import { AbilityBar } from './abilityBar';
+import { DebugMenu } from './debug/menu';
 import type { FrameRecorder } from './recorder';
 import { Hud, nameOf, TEAM_NAMES } from './hud';
 import { InputSource } from './input';
 import { AimIndicator } from './render/aim';
 import { buildArena } from './render/arena';
 import { BallView } from './render/ball';
+import { DebugOverlay } from './render/debugOverlay';
 import { Effects } from './render/effects';
 import { facingRow, PmdSprite } from './render/pmdSprite';
 import { MoveViews } from './render/moves';
@@ -50,10 +53,13 @@ const hudRoot = document.querySelector<HTMLElement>('#hud')!;
 // URL modes:
 //   ?cpu=pikachu,lucario   CPU vs CPU spectator match (both sides played by bots)
 //   &record=1              no real-time loop; frames are advanced by window.__rec (match recorder)
+//   &meter=1               open the F3 debug menu on start (also bakes it into recordings)
+//   ?practice=1            practice sandbox: no kickoff, an idle enemy dummy (F3 → Practice)
 const params = new URLSearchParams(location.search);
 const cpuLineup = params.get('cpu')?.split(',').filter((id) => roster.some((r) => r.id === id));
 const SPECTATE = !!cpuLineup && cpuLineup.length === 2;
 const RECORD = params.get('record') === '1';
+const PRACTICE = params.get('practice') === '1' && !SPECTATE;
 const ME = 0;
 let myPokemon = SPECTATE ? cpuLineup![0]! : 'pikachu';
 const BOT_POKEMON = SPECTATE ? cpuLineup![1]! : 'lucario';
@@ -69,13 +75,14 @@ interface MatchView {
   aim: AimIndicator;
   hud: Hud;
   moves: MoveViews;
+  overlay: DebugOverlay;
   bar: AbilityBar;
   prevPos: Vec2[];
   prevBall: Vec2;
 }
 
 let arena: THREE.Group | null = null;
-let view: MatchView;
+let view!: MatchView;
 
 function dexOf(id: string): string {
   return roster.find((r) => r.id === id)!.dex;
@@ -92,7 +99,7 @@ function startMatch(): void {
       { pokemonId: myPokemon, team: 0 },
       { pokemonId: BOT_POKEMON, team: 1 },
     ],
-    { mode: 'match' },
+    { mode: PRACTICE ? 'sandbox' : 'match', ...(PRACTICE ? { ballPos: { x: -400, y: 0 } } : {}) },
   );
   if (!arena) {
     arena = buildArena(world.stage);
@@ -104,13 +111,10 @@ function startMatch(): void {
   const aim = new AimIndicator();
   const ball = new BallView(world.ball.radius, gameplay.ball.glowSpeed);
   const moves = new MoveViews(world);
-  group.add(structures.object, effects.object, aim.object, ball.object, moves.object);
-  const sprites = world.players.map((p) => {
-    const s = new PmdSprite();
-    group.add(s.object);
-    void s.load(dexOf(p.pokemonId));
-    return s;
-  });
+  const overlay = new DebugOverlay();
+  overlay.object.visible = menu.visible;
+  group.add(structures.object, effects.object, aim.object, ball.object, moves.object, overlay.object);
+  const sprites = makeSprites(world, group);
   scene.add(group);
   aim.setReach(world.players[ME]!.strikeRadius * WORLD_TO_THREE);
   view = {
@@ -123,6 +127,7 @@ function startMatch(): void {
     aim,
     hud: new Hud(hudRoot, world),
     moves,
+    overlay,
     bar: new AbilityBar(hudRoot),
     prevPos: world.players.map((p) => ({ ...p.pos })),
     prevBall: { ...world.ball.pos },
@@ -136,11 +141,39 @@ function startMatch(): void {
   } else showCard(roster.find((r) => r.id === myPokemon)!);
 }
 
+function makeSprites(world: World, group: THREE.Group): PmdSprite[] {
+  return world.players.map((p) => {
+    const s = new PmdSprite();
+    group.add(s.object);
+    void s.load(dexOf(p.pokemonId));
+    return s;
+  });
+}
+
+/** Players were added or removed (practice): rebuild sprites and nameplates. */
+function playersChanged(): void {
+  const { world } = view;
+  for (const s of view.sprites) view.group.remove(s.object);
+  view.sprites = makeSprites(world, view.group);
+  hudRoot.querySelectorAll('.scoreboard, .banner, .plate').forEach((e) => e.remove());
+  view.hud = new Hud(hudRoot, world);
+  view.prevPos = world.players.map((p) => ({ ...p.pos }));
+}
+
+// ---------- Debug menu (F3) ----------
+const debugHooks = {
+  world: () => view.world,
+  me: SPECTATE ? -1 : ME,
+  playersChanged,
+  enemyMode: (PRACTICE ? 'dummy' : 'bot') as 'dummy' | 'bot',
+  noCooldowns: false,
+};
+const menu = new DebugMenu(hudRoot, debugHooks);
+
 // ---------- Card ----------
 const $name = document.querySelector<HTMLDivElement>('#mon-name')!;
 const $info = document.querySelector<HTMLDivElement>('#mon-info')!;
 const $portrait = document.querySelector<HTMLImageElement>('#portrait')!;
-const $debug = document.querySelector<HTMLDivElement>('#debug')!;
 function showCard(def: PokemonDef): void {
   $name.textContent = `${def.name}  #${def.dex}`;
   const s = def.stats;
@@ -287,7 +320,14 @@ function simStep(mine: PlayerInput): void {
   const { world } = view;
   world.players.forEach((p, i) => (view.prevPos[i] = { ...p.pos }));
   view.prevBall = { ...world.ball.pos };
-  step(world, world.players.map((p) => (p.id === ME && !SPECTATE ? mine : botInput(world, p.id))));
+  const myTeam = world.players[ME]?.team ?? 0;
+  step(
+    world,
+    world.players.map((p) =>
+      p.id === ME && !SPECTATE ? mine : debugHooks.enemyMode === 'dummy' && p.team !== myTeam && !SPECTATE ? NEUTRAL_INPUT : botInput(world, p.id),
+    ),
+  );
+  if (debugHooks.noCooldowns) practiceClearCooldowns(world);
   for (const e of world.events) onEvent(e);
 }
 
@@ -323,6 +363,10 @@ function resize(): void {
 window.addEventListener('resize', resize);
 resize();
 startMatch();
+if (params.get('meter') === '1') {
+  menu.toggle();
+  view.overlay.object.visible = true;
+}
 
 function frame(now: number): void {
   const dt = Math.min(0.25, (now - last) / 1000);
@@ -339,7 +383,10 @@ function frame(now: number): void {
     showCard(def);
   }
   for (const a of input.takeActions()) {
-    if (a === 'debug') $debug.hidden = !$debug.hidden;
+    if (a === 'debug') {
+      menu.toggle();
+      view.overlay.object.visible = menu.visible;
+    }
     if (a === 'restart') startMatch();
   }
 
@@ -421,15 +468,8 @@ function render(dt: number, now: number, alpha: number): void {
   for (const s of sprites) s.faceCamera(camera);
 
   view.hud.update(dt, world, project);
-
-  if (!$debug.hidden) {
-    const me = world.players[ME]!;
-    $debug.textContent =
-      `fps    ${fps.toFixed(0)}\ntick   ${world.tick} (${TICK_RATE} Hz)  ${world.match.phase}\n` +
-      `me     ${me.pos.x.toFixed(0)}, ${me.pos.y.toFixed(0)}  ${Math.hypot(me.vel.x, me.vel.y).toFixed(0)} u/s\n` +
-      `stg    ${me.stagger.toFixed(0)}/${me.maxStagger.toFixed(0)}  nrg ${me.energy.toFixed(1)}  xp ${me.xp} lv ${me.level}\n` +
-      `ball   ${Math.hypot(b.vel.x, b.vel.y).toFixed(0)} u/s`;
-  }
+  view.overlay.update(world, menu.focusId);
+  menu.update(dt, fps);
 
   renderer.render(scene, camera);
 }

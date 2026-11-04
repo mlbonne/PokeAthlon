@@ -1,0 +1,6 @@
+{
+  "$comment": "Sim tier snapshot, written by `npm run balance` (M4.6). Empty until the first balance run.",
+  "generatedAt": null,
+  "difficulty": "balance",
+  "entries": []
+}

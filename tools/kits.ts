@@ -75,7 +75,7 @@ const MOVE_HEAD = [
 ];
 
 const summary = table(
-  ['Pokémon', 'Size', 'Power', 'Speed', 'Stagger L1→L10', 'Kit DPS', 'Combo dmg', 'Combos to Stagger', 'Ball pressure /s', 'Max ball', 'Mobility', 'Control', 'Max KO reach', 'Survive (s)', 'Budget'],
+  ['Pokémon', 'Size', 'Power', 'Speed', 'Stagger L1→L10', 'Kit DPS', 'Combo dmg', 'Combos to Stagger', 'Ball pressure /s', 'Max ball', 'Mobility', 'Control', 'Max KO reach', 'Survive (s)', 'Budget', 'Theory tier'],
   fighters.map((f) => [
     `**${f.name}**`,
     f.size,
@@ -92,6 +92,7 @@ const summary = table(
     pct(f.maxKoReach),
     n1(f.survivability),
     `**${f.budget.toFixed(0)}**`,
+    `**${f.theoryTier}**`,
   ]),
 );
 
