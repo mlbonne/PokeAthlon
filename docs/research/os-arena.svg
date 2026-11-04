@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4000 2600" font-family="Segoe UI, sans-serif">
+<rect width="4000" height="2600" fill="#14112a"/>
+<style>text{fill:#e8e6f5;font-size:34px} .s{font-size:26px;fill:#b9b4d6}</style>
+<polygon points="520.0,300.0 3480.0,300.0 3800.0,620.0 3800.0,1980.0 3480.0,2300.0 520.0,2300.0 200.0,1980.0 200.0,620.0" fill="none" stroke="#7aa8ff" stroke-width="6" stroke-dasharray="30 18"/>
+<polygon points="998.0,390.0 3002.0,390.0 3343.0,731.0 3360.5,738.0 3674.5,738.0 3674.5,1862.0 3360.5,1862.0 3343.0,1869.0 3002.0,2210.0 998.0,2210.0 657.0,1869.0 639.5,1862.0 325.5,1862.0 325.5,738.0 639.5,738.0 657.0,731.0" fill="#2f6b3c" stroke="#e8e6f5" stroke-width="6"/>
+<line x1="2000.0" y1="390.0" x2="2000.0" y2="2210.0" stroke="#e8e6f5" stroke-width="3" opacity="0.6"/>
+<clipPath id="c1"><rect x="2000.0" y="0" width="1360.5" height="2600"/></clipPath>
+<ellipse cx="3250.0" cy="1300.0" rx="400" ry="460" fill="#ffd23f" fill-opacity="0.12" stroke="#ffd23f" stroke-width="4" clip-path="url(#c1)"/>
+<rect x="3510.0" y="750.0" width="100" height="1100" fill="#3ddc84" fill-opacity="0.45"/>
+<rect x="3535.0" y="750.0" width="100" height="1100" fill="none" stroke="#ff4d5e" stroke-width="5" stroke-dasharray="14 10"/>
+<rect x="3375.0" y="802.5" width="125" height="995.0" fill="#ff9a3a" fill-opacity="0.35" stroke="#ff9a3a" stroke-width="3"/>
+<circle cx="3360.5" cy="713.0" r="25" fill="#e8e6f5"/>
+<rect x="900.0" y="254.0" width="2200" height="100" fill="#ff4d5e" fill-opacity="0.45"/>
+<rect x="3230.0" y="595.0" width="140" height="670" fill="#8fd3ff" fill-opacity="0.75"/>
+<circle cx="3000.0" cy="1050.0" r="46" fill="#ff4d5e"/>
+<circle cx="3360.5" cy="1887.0" r="25" fill="#e8e6f5"/>
+<rect x="900.0" y="2246.0" width="2200" height="100" fill="#ff4d5e" fill-opacity="0.45"/>
+<rect x="3230.0" y="1335.0" width="140" height="670" fill="#8fd3ff" fill-opacity="0.75"/>
+<circle cx="3000.0" cy="1550.0" r="46" fill="#ff4d5e"/>
+<circle cx="3100.0" cy="1300.0" r="65" fill="#ff4d5e" stroke="#fff" stroke-width="4"/>
+<circle cx="2950.0" cy="2000.0" r="30" fill="none" stroke="#e8e6f5" stroke-width="4" stroke-dasharray="8 6"/>
+<circle cx="2000.0" cy="700.0" r="47.5" fill="#ffd23f"/>
+<circle cx="3250.0" cy="1050.0" r="22" fill="#b06cff"/>
+<circle cx="3250.0" cy="1550.0" r="22" fill="#b06cff"/>
+<clipPath id="c-1"><rect x="639.5" y="0" width="1360.5" height="2600"/></clipPath>
+<ellipse cx="750.0" cy="1300.0" rx="400" ry="460" fill="#ffd23f" fill-opacity="0.12" stroke="#ffd23f" stroke-width="4" clip-path="url(#c-1)"/>
+<rect x="390.0" y="750.0" width="100" height="1100" fill="#3ddc84" fill-opacity="0.45"/>
+<rect x="365.0" y="750.0" width="100" height="1100" fill="none" stroke="#ff4d5e" stroke-width="5" stroke-dasharray="14 10"/>
+<rect x="500.0" y="802.5" width="125" height="995.0" fill="#ff9a3a" fill-opacity="0.35" stroke="#ff9a3a" stroke-width="3"/>
+<circle cx="639.5" cy="713.0" r="25" fill="#e8e6f5"/>
+<rect x="900.0" y="254.0" width="2200" height="100" fill="#ff4d5e" fill-opacity="0.45"/>
+<rect x="630.0" y="595.0" width="140" height="670" fill="#8fd3ff" fill-opacity="0.75"/>
+<circle cx="1000.0" cy="1050.0" r="46" fill="#3d7bff"/>
+<circle cx="639.5" cy="1887.0" r="25" fill="#e8e6f5"/>
+<rect x="900.0" y="2246.0" width="2200" height="100" fill="#ff4d5e" fill-opacity="0.45"/>
+<rect x="630.0" y="1335.0" width="140" height="670" fill="#8fd3ff" fill-opacity="0.75"/>
+<circle cx="1000.0" cy="1550.0" r="46" fill="#3d7bff"/>
+<circle cx="900.0" cy="1300.0" r="65" fill="#3d7bff" stroke="#fff" stroke-width="4"/>
+<circle cx="1050.0" cy="600.0" r="30" fill="none" stroke="#e8e6f5" stroke-width="4" stroke-dasharray="8 6"/>
+<circle cx="2000.0" cy="1900.0" r="47.5" fill="#ffd23f"/>
+<circle cx="750.0" cy="1050.0" r="22" fill="#b06cff"/>
+<circle cx="750.0" cy="1550.0" r="22" fill="#b06cff"/>
+<circle cx="1000.0" cy="1050.0" r="125" fill="none" stroke="#fff" stroke-width="3" opacity="0.7"/>
+<line x1="200.0" y1="2530" x2="1200.0" y2="2530" stroke="#fff" stroke-width="6"/><text x="200.0" y="2510">1000 units</text>
+<rect x="80" y="60" width="36" height="36" fill="#2f6b3c"/><text x="130" y="90">OS field (Core walls)</text>
+<rect x="1060" y="60" width="36" height="36" fill="#ff4d5e"/><text x="1110" y="90">KO zones</text>
+<rect x="2040" y="60" width="36" height="36" fill="#3ddc84"/><text x="2090" y="90">Score volume</text>
+<rect x="3020" y="60" width="36" height="36" fill="#ff9a3a"/><text x="3070" y="90">Goal gates</text>
+<rect x="80" y="120" width="36" height="36" fill="#8fd3ff"/><text x="130" y="150">Barriers (Night Market)</text>
+<rect x="1060" y="120" width="36" height="36" fill="#ffd23f"/><text x="1110" y="150">Core spawns / Goal Arc</text>
+<rect x="2040" y="120" width="36" height="36" fill="#b06cff"/><text x="2090" y="150">Orb spawns</text>
+<rect x="3020" y="120" width="36" height="36" fill="#7aa8ff"/><text x="3070" y="150">PokéAthlon M1 pitch (dashed)</text>
+<text class="s" x="80" y="2570">Omega Strikers standard arena, to scale (OS units). Starts: forwards ●, goalie ◉, respawn ◌. White ring = Strike reach (r 125).</text>
+</svg>

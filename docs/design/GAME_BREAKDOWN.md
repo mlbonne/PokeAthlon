@@ -61,6 +61,9 @@ Draftable Awakenings, Draft Pick Order (by highest/lowest XP).*
 
 ## 3. The arena
 
+> Exact geometry, sizes and goal-line logic (data-mined from the game files) are in
+> [research/os-arena-geometry.md](../research/os-arena-geometry.md), with a to-scale diagram.
+
 ```
  ┌─╲──────────────────────────────────────────╱─┐   ← every edge = KO line for players
  │  ╲                                        ╱  │     (Core bounces off it)
