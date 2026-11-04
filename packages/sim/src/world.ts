@@ -1,13 +1,11 @@
-import { getPokemon, SIZE_TABLE } from '@pokeathlon/data';
-import { ACCEL_TIME, DECEL_TIME, DEFAULT_ARENA, DT } from './constants';
-import { AXIS_MAX, type PlayerInput } from './input';
-import { approach, clampLen, type Vec2 } from './vec';
-
-export interface Arena {
-  halfWidth: number;
-  halfHeight: number;
-  cornerCut: number;
-}
+import { gameplay, getPokemon, getStage, SIZE_TABLE } from '@pokeathlon/data';
+import { arenaFromStage, type Arena } from './arena';
+import { stepBall } from './ball';
+import type { SimEvent } from './events';
+import type { PlayerInput } from './input';
+import { stepMovement } from './movement';
+import { stepStrike } from './strike';
+import type { Vec2 } from './vec';
 
 export interface Player {
   id: number;
@@ -15,17 +13,41 @@ export interface Player {
   team: 0 | 1;
   pos: Vec2;
   vel: Vec2;
-  /** Last non-zero movement direction (unit-ish); used for sprite facing. */
+  /** Last movement or strike direction (unit). Used for sprite facing and default aim. */
   facing: Vec2;
   radius: number;
   /** Max move speed, world units per second. */
   speed: number;
+  power: number;
+  /** Strike reach (circle radius around the player). */
+  strikeRadius: number;
+  /** Ticks until Strike is ready again. */
+  strikeCooldown: number;
+  /** Ticks the current Strike hitbox stays active. */
+  strikeActive: number;
+  strikeDir: Vec2;
+  /** The current Strike already connected with the ball. */
+  strikeConnected: boolean;
+}
+
+export interface Ball {
+  pos: Vec2;
+  vel: Vec2;
+  radius: number;
+  /** Ticks of freeze left after a hit; `launchVel` is applied when it reaches 0. */
+  hitstop: number;
+  launchVel: Vec2;
+  lastHitBy: number;
 }
 
 export interface World {
   tick: number;
+  stageId: string;
   arena: Arena;
   players: Player[];
+  ball: Ball;
+  /** Events produced by the most recent step. */
+  events: SimEvent[];
 }
 
 export interface PlayerSpawn {
@@ -34,89 +56,84 @@ export interface PlayerSpawn {
   pos: Vec2;
 }
 
-export function createWorld(spawns: PlayerSpawn[], arena: Arena = DEFAULT_ARENA): World {
+export function createWorld(spawns: PlayerSpawn[], stageId = 'viridian-pitch'): World {
+  const stage = getStage(stageId);
   return {
     tick: 0,
-    arena: { ...arena },
+    stageId,
+    arena: arenaFromStage(stage),
     players: spawns.map((s, i) => makePlayer(i, s)),
+    ball: {
+      pos: { ...stage.spawns.ball },
+      vel: { x: 0, y: 0 },
+      radius: gameplay.ball.radius,
+      hitstop: 0,
+      launchVel: { x: 0, y: 0 },
+      lastHitBy: -1,
+    },
+    events: [],
   };
 }
 
 function makePlayer(id: number, s: PlayerSpawn): Player {
-  const def = getPokemon(s.pokemonId);
-  return {
+  const p: Player = {
     id,
-    pokemonId: def.id,
+    pokemonId: '',
     team: s.team,
     pos: { x: s.pos.x, y: s.pos.y },
     vel: { x: 0, y: 0 },
     facing: { x: s.team === 0 ? 1 : -1, y: 0 },
-    radius: SIZE_TABLE[def.stats.size].radius,
-    speed: def.stats.speed,
+    radius: 0,
+    speed: 0,
+    power: 0,
+    strikeRadius: 0,
+    strikeCooldown: 0,
+    strikeActive: 0,
+    strikeDir: { x: 1, y: 0 },
+    strikeConnected: false,
   };
+  applyPokemon(p, s.pokemonId);
+  return p;
+}
+
+function applyPokemon(p: Player, pokemonId: string): void {
+  const def = getPokemon(pokemonId);
+  const size = SIZE_TABLE[def.stats.size];
+  p.pokemonId = def.id;
+  p.radius = size.radius;
+  p.speed = def.stats.speed;
+  p.power = def.stats.power;
+  p.strikeRadius = size.strikeWidth / 2;
 }
 
 /** Swap a player's Pokémon in place (sandbox helper), keeping position. */
 export function setPokemon(world: World, playerId: number, pokemonId: string): void {
   const p = world.players[playerId];
-  if (!p) return;
-  const def = getPokemon(pokemonId);
-  p.pokemonId = def.id;
-  p.radius = SIZE_TABLE[def.stats.size].radius;
-  p.speed = def.stats.speed;
+  if (p) applyPokemon(p, pokemonId);
+}
+
+/** Put the ball back on its spawn, at rest. */
+export function resetBall(world: World): void {
+  const b = world.ball;
+  b.pos = { ...getStage(world.stageId).spawns.ball };
+  b.vel = { x: 0, y: 0 };
+  b.hitstop = 0;
+  b.launchVel = { x: 0, y: 0 };
+  b.lastHitBy = -1;
 }
 
 /**
  * Advance the world by one tick. `inputs[i]` belongs to `world.players[i]`;
  * missing entries count as neutral. Mutates and returns `world`.
+ *
+ * Order: movement → strikes → ball. Strikes see this tick's positions; the ball
+ * moves last so a hit and its hitstop start on the same tick.
  */
 export function step(world: World, inputs: readonly (PlayerInput | undefined)[]): World {
-  for (const p of world.players) {
-    const inp = inputs[p.id];
-    stepMovement(p, inp);
-    confineToArena(p, world.arena);
-  }
+  world.events = [];
+  for (const p of world.players) stepMovement(world, p, inputs[p.id]);
+  for (const p of world.players) stepStrike(world, p, inputs[p.id]);
+  stepBall(world);
   world.tick++;
   return world;
-}
-
-function stepMovement(p: Player, inp: PlayerInput | undefined): void {
-  const raw: Vec2 = inp ? { x: inp.moveX / AXIS_MAX, y: inp.moveY / AXIS_MAX } : { x: 0, y: 0 };
-  // Analog stick: magnitude up to 1; diagonals on keyboard normalised.
-  const dir = clampLen(raw, 1);
-  const target = { x: dir.x * p.speed, y: dir.y * p.speed };
-  const moving = dir.x !== 0 || dir.y !== 0;
-  const rate = p.speed / (moving ? ACCEL_TIME : DECEL_TIME);
-  p.vel = approach(p.vel, target, rate * DT);
-  p.pos = { x: p.pos.x + p.vel.x * DT, y: p.pos.y + p.vel.y * DT };
-  if (moving) p.facing = { x: dir.x, y: dir.y };
-}
-
-/**
- * M0: keep players inside the arena polygon (rectangle with cut corners).
- * M2 replaces this with KO edges.
- */
-function confineToArena(p: Player, a: Arena): void {
-  const r = p.radius;
-  const maxX = a.halfWidth - r;
-  const maxY = a.halfHeight - r;
-  if (p.pos.x > maxX) { p.pos.x = maxX; p.vel.x = Math.min(0, p.vel.x); }
-  if (p.pos.x < -maxX) { p.pos.x = -maxX; p.vel.x = Math.max(0, p.vel.x); }
-  if (p.pos.y > maxY) { p.pos.y = maxY; p.vel.y = Math.min(0, p.vel.y); }
-  if (p.pos.y < -maxY) { p.pos.y = -maxY; p.vel.y = Math.max(0, p.vel.y); }
-
-  // Corner cuts: the line |x| + |y| = halfWidth + halfHeight - cornerCut. Push inwards along (±1, ±1)/√2.
-  const limit = a.halfWidth + a.halfHeight - a.cornerCut - r * Math.SQRT2;
-  const sx = p.pos.x >= 0 ? 1 : -1;
-  const sy = p.pos.y >= 0 ? 1 : -1;
-  const over = sx * p.pos.x + sy * p.pos.y - limit;
-  if (over > 0) {
-    p.pos.x -= (sx * over) / 2;
-    p.pos.y -= (sy * over) / 2;
-    const vn = (sx * p.vel.x + sy * p.vel.y) / 2;
-    if (vn > 0) {
-      p.vel.x -= sx * vn;
-      p.vel.y -= sy * vn;
-    }
-  }
 }
