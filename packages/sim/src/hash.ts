@@ -25,6 +25,15 @@ export function hashWorld(w: World): string {
     mixF64(p.pos.y);
     mixF64(p.vel.x);
     mixF64(p.vel.y);
+    mixU32(p.strikeCooldown);
+    mixU32(p.strikeActive);
   }
+  const b = w.ball;
+  mixF64(b.pos.x);
+  mixF64(b.pos.y);
+  mixF64(b.vel.x);
+  mixF64(b.vel.y);
+  mixU32(b.hitstop);
+  mixU32(b.lastHitBy + 1);
   return (h >>> 0).toString(16).padStart(8, '0');
 }

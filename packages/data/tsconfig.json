@@ -4,5 +4,5 @@
     "outDir": "../../.tsbuild/data",
     "rootDir": "."
   },
-  "include": ["src", "pokemon/*.json", "test"]
+  "include": ["src", "pokemon/*.json", "rules/*.json", "stages/*.json", "test"]
 }

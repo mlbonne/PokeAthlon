@@ -1,0 +1,16 @@
+{
+  "$comment": "Baseline stage. Origin at centre, +x towards the right goal, +y towards the top edge. World units.",
+  "id": "viridian-pitch",
+  "name": "Viridian Pitch",
+  "biome": "forest",
+  "halfWidth": 1800,
+  "halfHeight": 1000,
+  "cornerCut": 320,
+  "goalHalfWidth": 250,
+  "barriersPerSide": 2,
+  "spawns": {
+    "ball": { "x": 0, "y": 0 },
+    "team0": [{ "x": -700, "y": 0 }, { "x": -500, "y": 450 }, { "x": -1500, "y": 0 }],
+    "team1": [{ "x": 700, "y": 0 }, { "x": 500, "y": -450 }, { "x": 1500, "y": 0 }]
+  }
+}
