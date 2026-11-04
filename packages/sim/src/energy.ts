@@ -50,6 +50,7 @@ function burst(world: World, p: Player): void {
       knockback: scaled(BU.playerKnockback, p.power),
       damage: scaled(BU.damage, p.power),
       stun: BU.stun,
+      source: 'burst',
     });
   }
 

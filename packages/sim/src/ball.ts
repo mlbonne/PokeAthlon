@@ -31,7 +31,7 @@ const SUBSTEP_FRACTION = 0.5;
  * Apply a knockback hit to the ball. `dir` must be a unit vector.
  * The ball freezes for the hitstop, then launches. Returns the launch speed.
  */
-export function hitBall(world: World, playerId: number, dir: Vec2, knockback: number): number {
+export function hitBall(world: World, playerId: number, dir: Vec2, knockback: number, source = 'other'): number {
   const b = world.ball;
   const p = world.players[playerId];
   let kb = knockback;
@@ -67,7 +67,7 @@ export function hitBall(world: World, playerId: number, dir: Vec2, knockback: nu
   b.controlBy = -1;
   b.controlTicks = 0;
   if (p) p.lastBallTouchTick = world.tick;
-  world.events.push({ type: 'ballHit', playerId, pos: { ...b.pos }, speed, redirect, red: b.redTicks > 0, boosted });
+  world.events.push({ type: 'ballHit', playerId, pos: { ...b.pos }, speed, redirect, red: b.redTicks > 0, boosted, source });
   return speed;
 }
 

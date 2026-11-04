@@ -438,25 +438,6 @@ if (RECORD) {
   // Deterministic capture: the recorder advances the game exactly `ticks` per video frame.
   let simClock = 0;
   let recorder: FrameRecorder | null = null;
-  // Per-player balance stats for the recording report.
-  const tally = new Map<number, Record<string, number>>();
-  const bump = (id: number, key: string, n = 1) => {
-    const t = tally.get(id) ?? {};
-    t[key] = (t[key] ?? 0) + n;
-    tally.set(id, t);
-  };
-  const count = (e: SimEvent) => {
-    if (e.type === 'cast') bump(e.playerId, `cast:${e.moveId}`);
-    if (e.type === 'hit') {
-      bump(e.attacker, 'hitsLanded');
-      bump(e.attacker, 'damageDealt', Math.round(e.damage));
-      bump(e.target, 'damageTaken', Math.round(e.damage));
-    }
-    if (e.type === 'ballHit') bump(e.playerId, 'ballTouches');
-    if (e.type === 'burst') bump(e.playerId, 'energyBursts');
-    if (e.type === 'staggered') bump(e.playerId, 'timesStaggered');
-    if (e.type === 'orb') bump(e.playerId, 'orbs');
-  };
   Object.assign(window, {
     __rec: {
       /** Set up in-page H.264 capture; frames are streamed out via window.__writeChunk. */
@@ -468,7 +449,6 @@ if (RECORD) {
       async advance(ticksPerFrame: number) {
         for (let i = 0; i < ticksPerFrame; i++) {
           simStep(NEUTRAL_INPUT);
-          for (const e of view.world.events) count(e);
         }
         simClock += ticksPerFrame * DT * 1000;
         render(ticksPerFrame * DT, simClock, 1);
@@ -487,7 +467,7 @@ if (RECORD) {
           minutes: +(w.tick / TICK_RATE / 60).toFixed(2),
           sets: w.match.sets,
           winner: w.match.winner,
-          players: w.players.map((p) => ({ pokemon: p.pokemonId, team: p.team, level: p.level, ...p.stats, ...tally.get(p.id) })),
+          players: w.telemetry.players,
         };
       },
     },

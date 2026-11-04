@@ -216,7 +216,7 @@ impact = w1·goal share + w2·assist share + w3·ball progress share
 
 | Step | Branch | Delivers | Done when |
 |---|---|---|---|
-| **4.1** | `feat/telemetry-headless` | B1 telemetry, seeded AI RNG, Node headless runner (`npm run sim`) | 1000 bot-vs-bot matches run headless; same seed gives the same hash |
+| **4.1** ✅ | `feat/telemetry-headless` | B1 telemetry, seeded AI RNG, Node headless runner (`npm run sim`) | 1000 bot-vs-bot matches run headless; same seed gives the same hash |
 | **4.2** | `feat/kit-analyzer` | B2 analyzer + `npm run kits` table | Every kit's metrics are printed; tests check reach, area and DPS for known shapes |
 | **4.3** | `feat/debug-meter` | B3 F3 overlay + hitbox/reach drawing | Meter matches the telemetry totals at the end of a match |
 | **4.4** | `feat/ai-v2` | Part A (perception, coordinator, utility, move model, difficulty) + bot ladder | v2 beats v1 ≥ 80 % in mirrors; 3v3 bots rotate jobs, pass, guard and dodge |

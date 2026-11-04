@@ -60,7 +60,7 @@ function tryHitBall(world: World, p: Player): void {
   if (!ballInReach(world, p)) return;
 
   p.strikeConnected = true;
-  hitBall(world, p.id, p.strikeDir, scaled(gameplay.strike.ballKnockback, p.power));
+  hitBall(world, p.id, p.strikeDir, scaled(gameplay.strike.ballKnockback, p.power), 'strike');
   // Strike is a LIGHT hit for energy purposes (OS: +1).
   gainEnergy(p, gameplay.energy.lightHit);
   addXp(world, p, gameplay.xp.strikeBall);

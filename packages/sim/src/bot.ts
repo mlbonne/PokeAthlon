@@ -1,6 +1,7 @@
 import { gameplay } from '@pokeathlon/data';
 import { Button, NEUTRAL_INPUT, quantizeInput, type PlayerInput } from './input';
-import type { Vec2 } from './vec';
+import { randInt } from './rng';
+import { rotateDeg, type Vec2 } from './vec';
 import type { World } from './world';
 
 /**
@@ -9,7 +10,12 @@ import type { World } from './world';
  *   The target is the nearest standing enemy barrier, else the enemy goal.
  * - Defending: if the ball is heading for our goal on our half, cut it off.
  * - Energy Burst when full and an enemy is close.
+ * - Aim wobbles by up to ±BOT_AIM_JITTER_DEG from the world's seeded bot RNG, so different seeds
+ *   play different matches (the same seed always replays the same one).
  */
+/** Bot aim error, degrees either side. */
+export const BOT_AIM_JITTER_DEG = 4;
+
 export function botInput(world: World, id: number): PlayerInput {
   const p = world.players[id];
   const b = world.ball;
@@ -33,7 +39,7 @@ export function botInput(world: World, id: number): PlayerInput {
   const tx = target.x - b.pos.x;
   const ty = target.y - b.pos.y;
   const tl = Math.sqrt(tx * tx + ty * ty) || 1;
-  const aim = { x: tx / tl, y: ty / tl };
+  const aim = rotateDeg({ x: tx / tl, y: ty / tl }, randInt(world.ai, id, -BOT_AIM_JITTER_DEG, BOT_AIM_JITTER_DEG));
 
   // Where to stand: behind the ball on the line to the target.
   let goal: Vec2 = { x: b.pos.x - aim.x * p.strikeRadius * 0.7, y: b.pos.y - aim.y * p.strikeRadius * 0.7 };

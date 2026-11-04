@@ -23,8 +23,10 @@ import {
 import { stepMovement } from './movement';
 import { stepOrbs } from './orbs';
 import { stepPassiveXp } from './progression';
+import { mixSeed } from './rng';
 import { buildStage, type Stage, type Team } from './stage';
 import { stepStrike } from './strike';
+import { collectTelemetry, createTelemetry, type Telemetry } from './telemetry';
 import type { Vec2 } from './vec';
 
 export type Role = 'forward' | 'goalie';
@@ -180,6 +182,12 @@ export interface World {
   nextEntityId: number;
   /** Events produced by the most recent step. */
   events: SimEvent[];
+  /** The match seed. Only bots draw random numbers; the rules themselves never do. */
+  seed: number;
+  /** Bot state: one seeded RNG stream per player (hashed, so replays stay exact). */
+  ai: { rng: number[] };
+  /** Balance telemetry, updated at the end of every step. */
+  telemetry: Telemetry;
 }
 
 export interface PlayerSpawn {
@@ -200,6 +208,8 @@ export interface WorldOptions {
   mode?: 'match' | 'sandbox';
   /** Sandbox only: ball start (default centre). */
   ballPos?: Vec2;
+  /** Seed for bot randomness (default 0). Same seed + same inputs = same match. */
+  seed?: number;
 }
 
 export function createWorld(spawns: PlayerSpawn[], opts: WorldOptions = {}): World {
@@ -249,7 +259,11 @@ export function createWorld(spawns: PlayerSpawn[], opts: WorldOptions = {}): Wor
     pending: [],
     nextEntityId: 1,
     events: [],
+    seed: opts.seed ?? 0,
+    ai: { rng: spawns.map((_, i) => mixSeed(((opts.seed ?? 0) * 16 + i) >>> 0)) },
+    telemetry: null as unknown as Telemetry,
   };
+  world.telemetry = createTelemetry(world);
   if (mode === 'match') beginKickoff(world, false);
   return world;
 }
@@ -343,7 +357,10 @@ function applyPokemon(p: Player, pokemonId: string): void {
 /** Swap a player's Pokémon in place (sandbox helper), keeping position and state. */
 export function setPokemon(world: World, playerId: number, pokemonId: string): void {
   const p = world.players[playerId];
-  if (p) applyPokemon(p, pokemonId);
+  if (!p) return;
+  applyPokemon(p, pokemonId);
+  const t = world.telemetry.players[playerId];
+  if (t) t.pokemon = p.pokemonId;
 }
 
 /** Is this player on the field and able to act? */
@@ -361,6 +378,7 @@ export const isTargetable = (p: Player): boolean => p.koTicks === 0 && p.elusive
  */
 export function step(world: World, inputs: readonly (PlayerInput | undefined)[]): World {
   world.events = [];
+  const prevPos = world.players.map((p) => ({ x: p.pos.x, y: p.pos.y }));
   stepMatchStart(world);
   for (const p of world.players) stepCombatTimers(world, p);
   for (const p of world.players) stepMovement(world, p, inputs[p.id]);
@@ -374,6 +392,7 @@ export function step(world: World, inputs: readonly (PlayerInput | undefined)[])
   stepOrbs(world);
   stepPassiveXp(world);
   stepMatchEnd(world);
+  collectTelemetry(world, prevPos);
   world.tick++;
   return world;
 }

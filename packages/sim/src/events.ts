@@ -8,7 +8,7 @@ import type { Vec2 } from './vec';
 export type SimEvent =
   // Ball & Strike
   | { type: 'strike'; playerId: number; dir: Vec2 }
-  | { type: 'ballHit'; playerId: number; pos: Vec2; speed: number; redirect: boolean; red: boolean; boosted: boolean }
+  | { type: 'ballHit'; playerId: number; pos: Vec2; speed: number; redirect: boolean; red: boolean; boosted: boolean; source: string }
   | { type: 'ballLaunch'; playerId: number; speed: number }
   | { type: 'ballWall'; pos: Vec2; impact: number }
   | { type: 'ballBody'; playerId: number; pos: Vec2; impact: number }
@@ -23,8 +23,20 @@ export type SimEvent =
   | { type: 'setWon'; team: Team; sets: [number, number] }
   | { type: 'matchWon'; team: Team }
   // Combat
-  | { type: 'hit'; attacker: number; target: number; knockback: number; damage: number; light: boolean; pos: Vec2 }
-  | { type: 'staggered'; playerId: number }
+  | {
+      type: 'hit';
+      attacker: number;
+      target: number;
+      knockback: number;
+      damage: number;
+      light: boolean;
+      pos: Vec2;
+      /** Move id, `strike`, `burst` or `other`. */
+      source: string;
+      /** The target was already Staggered (took boosted knockback). */
+      staggered: boolean;
+    }
+  | { type: 'staggered'; playerId: number; by: number }
   | { type: 'recovered'; playerId: number }
   | { type: 'ko'; playerId: number; by: number; pos: Vec2 }
   | { type: 'respawn'; playerId: number; pos: Vec2 }
@@ -52,4 +64,4 @@ export type SimEvent =
   | { type: 'dash'; playerId: number; moveId: string }
   | { type: 'buff'; playerId: number; moveId: string }
   | { type: 'wall'; playerId: number; moveId: string }
-  | { type: 'ballStun'; playerId: number; pos: Vec2 };
+  | { type: 'ballStun'; playerId: number; pos: Vec2; source: string };
