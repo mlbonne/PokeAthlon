@@ -31,6 +31,10 @@ export interface MoveModel {
   wallDistance: number;
   /** Can other moves be cast during it (dash). */
   castWhile: boolean;
+  /** Which way its hit pushes players: along the aim, away from the centre, or toward the caster. */
+  push: 'travel' | 'radial' | 'pull';
+  /** Cone full angle (cone areas), 360 for circles, 0 otherwise. */
+  angleDeg: number;
 }
 
 const cache = new Map<string, MoveModel[]>();
@@ -67,6 +71,8 @@ function model(def: MoveDef, slot: number, p: ReturnType<typeof getPokemon>): Mo
     speedPct: 0,
     wallDistance: 0,
     castWhile: false,
+    push: ('hit' in main && main.hit?.direction) || 'travel',
+    angleDeg: main.type === 'area' ? (main.shape === 'cone' ? main.angleDeg : main.shape === 'circle' ? 360 : 0) : 0,
   };
   switch (main.type) {
     case 'projectile':

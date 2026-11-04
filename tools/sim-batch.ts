@@ -20,6 +20,7 @@ import { availableParallelism } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMainThread, parentPort, Worker, workerData } from 'node:worker_threads';
+import { applyTuning } from '@pokeathlon/data/tuning';
 import { parseLineup, runHeadless, type HeadlessOptions, type PlayerSpawn, type PlayerTelemetry } from '@pokeathlon/sim';
 
 interface Job {
@@ -30,6 +31,8 @@ interface Job {
   opts: HeadlessOptions;
   /** Brain for lineup A and lineup B (they follow their lineup when sides swap). */
   brains: [string, string];
+  /** What-if tuning applied in every worker (see packages/data/src/tuning.ts). */
+  sets?: string[];
 }
 
 /** One game, reported from lineup A's point of view. */
@@ -70,6 +73,7 @@ function playGame(job: Job, seed: number): GameResult {
 
 if (!isMainThread) {
   const job = workerData as Job;
+  applyTuning(job.sets ?? []);
   for (const seed of job.seeds) parentPort!.postMessage(playGame(job, seed));
 } else {
   await main();
@@ -152,7 +156,10 @@ async function main(): Promise<void> {
   const until = arg('until', 'match') as HeadlessOptions['until'];
   const opts: HeadlessOptions = { maxMinutes: Number(arg('max-minutes', '30')), ...(until ? { until } : {}) };
   const brains = arg('brains', 'v2,v2').split(',') as [string, string];
-  const job: Omit<Job, 'seeds'> = { lineupA, lineupB, swap: flag('swap'), opts, brains };
+  const sets: string[] = [];
+  process.argv.forEach((a, i) => a === '--set' && process.argv[i + 1] && sets.push(process.argv[i + 1]!));
+  applyTuning(sets);
+  const job: Omit<Job, 'seeds'> = { lineupA, lineupB, swap: flag('swap'), opts, brains, sets };
 
   console.log(`Simulating ${games} × ${lineupA} (${brains[0]}) vs ${lineupB} (${brains[1]}) (until ${until}${job.swap ? ', sides swapped every other game' : ''}) on ${threads} threads…`);
   const t0 = Date.now();

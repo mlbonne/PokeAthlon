@@ -2,7 +2,7 @@
   "$comment": "Global gameplay tuning. OS units. Times in seconds. Sources: OS wiki + data-mining (docs/research). Keys listed in 'unverified' are our guesses (⚠).",
   "unverified": [
     "ball.wallSpeedPivot", "knock.*", "stagger.staggeredRegenPerSecond", "burst.radius", "burst.stun",
-    "burst.ballControl", "burst.boostWindow", "evade.cancelsOnStrike", "respawn.*", "xp.*", "match.goalsPerSet",
+    "burst.ballControl", "burst.boostWindow", "evade.cancelsOnStrike", "xp.*", "match.goalsPerSet",
     "match.setsToWin", "match.kickoff", "match.goalPause", "match.setPause", "match.gateOpenDelay", "orbs.radius"
   ],
   "movement": {
@@ -46,7 +46,8 @@
     "lightSlowTime": 0.25
   },
   "stagger": {
-    "regenDelay": 2.375,
+    "$comment": "regenDelay 2.375 is the OS value; 3.0 is our brawling-rework choice so a sustained fight's damage sticks.",
+    "regenDelay": 3.0,
     "regenDelayLight": 1.625,
     "regenPerSecond": 0.04,
     "staggeredRegenPerSecond": 0.25,
@@ -76,7 +77,9 @@
     "boostMultiplier": 1.5
   },
   "respawn": {
-    "time": 5,
+    "$comment": "OS: 8 s, 11 s in overtime (patch notes). Brawling rework 2026-11-04.",
+    "time": 8,
+    "overtimeTime": 11,
     "immune": 1.5
   },
   "orbs": {

@@ -19,7 +19,7 @@
           "radius": 45,
           "hit": {
             "ball": { "base": 1300, "powerRatio": 1.5 },
-            "player": { "base": 200, "powerRatio": 0.9 },
+            "player": { "base": 375, "powerRatio": 1.688 },
             "damage": { "base": 200, "powerRatio": 0.9 }
           }
         }
@@ -42,7 +42,7 @@
           "castWhileDashing": true,
           "hit": {
             "ball": { "base": 1150, "powerRatio": 1.0 },
-            "player": { "base": 150, "powerRatio": 0.6 },
+            "player": { "base": 282, "powerRatio": 1.125 },
             "damage": { "base": 120, "powerRatio": 0.5 }
           }
         }
@@ -66,7 +66,7 @@
           "repeat": 4,
           "repeatInterval": 0.12,
           "hitsBall": false,
-          "hit": { "player": { "base": 40, "powerRatio": 0.2 }, "damage": { "base": 60, "powerRatio": 0.3 }, "light": true }
+          "hit": { "player": { "base": 75, "powerRatio": 0.375 }, "damage": { "base": 60, "powerRatio": 0.3 }, "light": true }
         },
         {
           "type": "area",
@@ -77,7 +77,7 @@
           "angleDeg": 90,
           "hit": {
             "ball": { "base": 1450, "powerRatio": 2.0 },
-            "player": { "base": 330, "powerRatio": 1.5 },
+            "player": { "base": 618, "powerRatio": 2.812 },
             "damage": { "base": 300, "powerRatio": 1.3 }
           }
         }

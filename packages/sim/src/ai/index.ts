@@ -16,7 +16,7 @@ export type Brain = (world: World, id: number) => PlayerInput;
 export const BRAINS: Record<string, Brain> = {
   v1: botInput,
   v2: (w, id) => smartBotInput(w, id, 'balance'),
-  ...Object.fromEntries((['easy', 'normal', 'hard', 'balance'] as Difficulty[]).map((d) => [`v2-${d}`, (w: World, id: number) => smartBotInput(w, id, d)])),
+  ...Object.fromEntries((['easy', 'normal', 'hard', 'balance', 'crowd'] as Difficulty[]).map((d) => [`v2-${d}`, (w: World, id: number) => smartBotInput(w, id, d)])),
 };
 
 export function getBrain(name: string): Brain {

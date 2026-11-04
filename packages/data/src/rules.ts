@@ -90,7 +90,7 @@ export const GameplayRules = z.object({
     boostWindow: nonneg,
     boostMultiplier: pos,
   }),
-  respawn: z.object({ time: nonneg, immune: nonneg }),
+  respawn: z.object({ time: nonneg, overtimeTime: nonneg, immune: nonneg }),
   orbs: z.object({
     first: nonneg,
     interval: pos,

@@ -9,6 +9,7 @@ import { isTargetable, type Player, type World } from '../world';
 import { DIFFICULTY, type Difficulty, type DifficultyParams } from './difficulty';
 import type { BotMemory, Job } from './memory';
 import { moveModels, type MoveModel } from './model';
+import { bestKnockMove, burstKnock, finisherSpot, killLine, knockOn, moveKnock, nearestEdge, pushDir, pushValue } from './brawl';
 import { bestShot, danger, evaluateShot, launchSpeed, perceive, strikeKnockback, strikeReach, type Perception } from './perceive';
 
 /**
@@ -37,12 +38,20 @@ export function smartBotInput(world: World, id: number, difficulty: Difficulty =
   const job = teamJobs(world, p.team, perc, D)[id] ?? 'striker';
 
   // ---- Where to go ----
-  let { target, action } = positionFor(world, p, job, perc);
+  let { target, action } = positionFor(world, p, job, perc, D);
   // Low on Stagger near an edge with enemies around: back off toward the middle.
   const near = enemies(world, p).filter((o) => dist(o.pos, p.pos) < 450);
   if (danger(world, p) > 0.9 && near.length > 0 && perc.intercept[id]!.t > 20) {
     target = { x: p.pos.x, y: p.pos.y * 0.3 };
     action = 'retreat';
+  }
+  // Standing where an enemy's ready knockback would send us off the arena: step off that line.
+  if (action !== 'finish' && perc.intercept[id]!.t > 12) {
+    const safe = killLine(world, p);
+    if (safe) {
+      target = { x: p.pos.x + safe.x * 260, y: p.pos.y + safe.y * 260 };
+      action = `${action}·avoid`;
+    }
   }
 
   // ---- Strike aim: re-evaluated as a touch gets close ----
@@ -197,18 +206,27 @@ export function teamJobs(world: World, team: Team, perc: Perception, D: Difficul
       for (const f of forwards) if (jobs[f.id] === 'support') jobs[f.id] = 'goalie';
     }
   }
-  for (const m of members) if (jobs[m.id] === null) jobs[m.id] = prev?.jobs[m.id] ?? 'support';
+  // KO'd players get no striker or goalie job (they could respawn into a stale one before the next plan).
+  for (const m of members) if (jobs[m.id] === null) jobs[m.id] = m.koTicks > 0 ? 'support' : (prev?.jobs[m.id] ?? 'support');
   world.ai.teams[team] = { nextTick: world.tick + D.decisionTicks, jobs };
   return jobs;
 }
 
 // ---------------------------------------------------------------- positioning
 
-function positionFor(world: World, p: Player, job: Job, perc: Perception): { target: Vec2; action: string } {
+function positionFor(world: World, p: Player, job: Job, perc: Perception, D: DifficultyParams): { target: Vec2; action: string } {
   const it = perc.intercept[p.id]!;
   const ball = world.ball;
   if (ball.scored) return { target: homeSpot(world, p), action: 'reset' };
   const enemyT = Math.min(Infinity, ...enemies(world, p).map((o) => perc.intercept[o.id]!.t));
+
+  // Finish: an enemy one hit from going off the edge. Forwards go to the field side of them.
+  // (Not when a man down, unless they're Staggered; never the goalie; never right before our touch.)
+  if (job !== 'goalie' && it.t > 25) {
+    const fin = finisherSpot(world, p);
+    const short = onField(world, p.team) < onField(world, p.team === 0 ? 1 : 0);
+    if (fin && (!short || fin.target.staggered)) return { target: fin.spot, action: 'finish' };
+  }
 
   if (job === 'striker') {
     // The enemy gets there clearly first: stand goal-side of where they'll touch it, so their
@@ -230,8 +248,10 @@ function positionFor(world: World, p: Player, job: Job, perc: Perception): { tar
     return { target: guardSpot(world, p, perc), action: 'guard' };
   }
 
-  // Support.
-  if (it.t < 22 && it.t <= enemyT + 5) return { target: it.pos, action: 'take' };
+  // Support. Take the ball only when it comes to us clearly before our own striker gets it.
+  const mates = world.players.filter((m) => m.team === p.team && m.id !== p.id && m.koTicks === 0);
+  const mateT = Math.min(Infinity, ...mates.map((m) => perc.intercept[m.id]!.t));
+  if (it.t < 22 && it.t <= enemyT + 5 && (!D.spacing || it.t + 10 < mateT)) return { target: it.pos, action: 'take' };
   const orb = orbNearby(world, p, 450, it.t);
   if (orb) return { target: orb, action: 'orb' };
   // Peel: an enemy is about to contest the ball near our striker and we can hit them.
@@ -239,13 +259,68 @@ function positionFor(world: World, p: Player, job: Job, perc: Perception): { tar
     .filter((o) => perc.intercept[o.id]!.t < 40)
     .sort((a, b) => perc.intercept[a.id]!.t - perc.intercept[b.id]!.t)[0];
   if (contester && hasEngage(p) && dist(contester.pos, p.pos) < 700) {
-    const toward = normalize({ x: p.pos.x - contester.pos.x, y: p.pos.y - contester.pos.y });
-    return { target: { x: contester.pos.x + toward.x * 160, y: contester.pos.y + toward.y * 160 }, action: 'peel' };
+    // Hit them from the field side so the push goes toward their nearest edge, from the move's
+    // range: the support fights from outside the scrum instead of joining it.
+    const edge = nearestEdge(world, contester.pos);
+    const km = bestKnockMove(p);
+    const standOff = D.spacing ? Math.max(230, Math.min(520, (km?.stats.reach ?? 300) * 0.75)) : 160;
+    return { target: { x: contester.pos.x - edge.dir.x * standOff, y: contester.pos.y - edge.dir.y * standOff }, action: 'peel' };
   }
-  return { target: supportSpot(world, p, perc), action: 'support' };
+  // Punish a clump: two or more enemies bunched up and we hold an area hit or a Burst.
+  if (D.spacing) {
+    const clump = enemyClump(world, p);
+    if (clump) return { target: clump, action: 'punish' };
+  }
+  // Spacing discipline: hold a lane well away from the scrum.
+  let spot = supportSpot(world, p, perc, D.spacing);
+  if (!D.spacing) return { target: spot, action: 'support' };
+  const q = perc.ballAt(10);
+  if (dist(spot, q) < SUPPORT_GAP) {
+    const v = normalize({ x: spot.x - q.x, y: spot.y - q.y }, { x: -world.stage.goals[p.team].side, y: q.y > 0 ? -1 : 1 });
+    spot = { x: clamp(q.x + v.x * SUPPORT_GAP, 1150), y: clamp(q.y + v.y * SUPPORT_GAP, 760) };
+  }
+  // Walk around the scrum, not through it.
+  return { target: detour(p.pos, spot, q, SUPPORT_GAP - 60), action: 'support' };
 }
 
 const MAX_T = 120;
+/** How far the support keeps from the ball (spacing discipline). */
+const SUPPORT_GAP = 560;
+
+/** If the straight walk from `from` to `to` passes within `r` of `obstacle`, aim for a point beside it instead. */
+function detour(from: Vec2, to: Vec2, obstacle: Vec2, r: number): Vec2 {
+  const ex = to.x - from.x;
+  const ey = to.y - from.y;
+  const l2 = ex * ex + ey * ey;
+  if (l2 < 1) return to;
+  const t = ((obstacle.x - from.x) * ex + (obstacle.y - from.y) * ey) / l2;
+  if (t <= 0 || t >= 1) return to;
+  const c = { x: from.x + ex * t, y: from.y + ey * t };
+  if (dist(c, obstacle) >= r) return to;
+  const side = normalize({ x: c.x - obstacle.x, y: c.y - obstacle.y }, { x: -ey, y: ex });
+  return { x: clamp(obstacle.x + side.x * (r + 40), 1150), y: clamp(obstacle.y + side.y * (r + 40), 760) };
+}
+
+/** Where to stand to hit 2+ bunched enemies with a ready area move or Burst (or null). */
+function enemyClump(world: World, p: Player): Vec2 | null {
+  const area = moveModels(p.pokemonId).find(
+    (m) => m.delivery === 'selfArea' && m.hitsPlayers && (p.moves[m.slot]?.cooldown ?? 1) === 0 && (m.slot < 2 || p.level >= gameplay.xp.specialUnlockLevel),
+  );
+  const burst = p.energy >= gameplay.energy.max && p.evadeCooldown === 0;
+  if (!area && !burst) return null;
+  const radius = Math.max(area ? area.radius : 0, burst ? gameplay.burst.radius : 0);
+  const foes = world.players.filter((o) => o.team !== p.team && isTargetable(o));
+  for (const a of foes) {
+    const group = foes.filter((b) => dist(a.pos, b.pos) < radius * 1.1);
+    if (group.length < 2) continue;
+    const c = { x: group.reduce((s, b) => s + b.pos.x, 0) / group.length, y: group.reduce((s, b) => s + b.pos.y, 0) / group.length };
+    if (dist(c, p.pos) > 900) continue;
+    return c;
+  }
+  return null;
+}
+
+const onField = (world: World, team: Team) => world.players.filter((o) => o.team === team && o.koTicks === 0).length;
 
 /** A point `d` units from `ball` toward our own goal mouth. */
 function goalSide(world: World, p: Player, ball: Vec2, d: number): Vec2 {
@@ -270,20 +345,22 @@ function guardSpot(world: World, p: Player, perc: Perception): Vec2 {
 }
 
 /** Open space ahead of the ball, on the other side from the striker, for passes and rebounds. */
-function supportSpot(world: World, p: Player, perc: Perception): Vec2 {
+function supportSpot(world: World, p: Player, perc: Perception, wide = true): Vec2 {
   const enemyGoal = world.stage.goals[p.team === 0 ? 1 : 0];
   const ownSide = world.stage.goals[p.team].side;
   const q = perc.ballAt(20);
   const mates = world.players.filter((m) => m.team === p.team && m.id !== p.id && m.koTicks === 0);
   const striker = mates.reduce<Player | null>((a, m) => (!a || perc.intercept[m.id]!.t < perc.intercept[a.id]!.t ? m : a), null);
   const side = striker && striker.pos.y > q.y ? -1 : 1;
-  if (q.x * ownSide > 300) {
+  // Power play: a man up, push higher; a man down, stay home.
+  const diff = onField(world, p.team) - onField(world, p.team === 0 ? 1 : 0);
+  if (q.x * ownSide > 300 || diff < 0) {
     // Ball deep on our half: cover the middle between it and our goal.
     const own = world.stage.goals[p.team];
     return { x: (q.x + own.mouthX) / 2, y: clamp(q.y * 0.5 + side * 250, 700) };
   }
-  const x = q.x + (enemyGoal.score.x - q.x) * 0.3;
-  return { x: clamp(x, 1150), y: clamp(q.y + side * 380, 720) };
+  const x = q.x + (enemyGoal.score.x - q.x) * (diff > 0 ? 0.45 : 0.3);
+  return { x: clamp(x, 1150), y: clamp(q.y + side * (wide ? 520 : 380), 720) };
 }
 
 function homeSpot(world: World, p: Player): Vec2 {
@@ -359,15 +436,10 @@ function chooseCast(world: World, p: Player, job: Job, perc: Perception, D: Diff
         const d = dist(q, p.pos);
         const r = m.delivery === 'selfArea' ? m.radius + o.hurtRadius - 20 : reach - 25;
         if (d > r) continue;
-        const v = hitValue(world, m, o);
-        if (m.aimed || m.delivery !== 'selfArea') {
-          if (v > value) {
-            value = v;
-            aimAt = q;
-          }
-        } else {
-          value += v; // circles hit everyone inside
-          aimAt ??= q;
+        const v = m.delivery === 'selfArea' ? areaValue(world, m, p, q, foes) : hitValue(world, m, p, o, q);
+        if (v > value) {
+          value = v;
+          aimAt = q;
         }
       }
       if (aimAt && value > 0) {
@@ -378,7 +450,7 @@ function chooseCast(world: World, p: Player, job: Job, perc: Perception, D: Diff
           if (e.score < -20) value = 0;
           else value += Math.max(0, e.score) * 0.3;
         }
-        if (value >= 28) consider({ slot: m.slot, aim: dir, dist: 0, value, label: `${m.id}:hit` });
+        if (value >= 26) consider({ slot: m.slot, aim: dir, dist: 0, value, label: `${m.id}:hit` });
       }
     }
 
@@ -404,7 +476,7 @@ function chooseCast(world: World, p: Player, job: Job, perc: Perception, D: Diff
           if (m.delay > 0.5 && !slow) continue;
           const q = { x: o.pos.x + o.vel.x * m.delay, y: o.pos.y + o.vel.y * m.delay };
           if (dist(q, p.pos) > m.range + m.radius * 0.6) continue;
-          consider({ slot: m.slot, aim: normalize({ x: q.x - p.pos.x, y: q.y - p.pos.y }), dist: Math.max(1, dist(q, p.pos)), value: hitValue(world, m, o), label: `${m.id}:area` });
+          consider({ slot: m.slot, aim: normalize({ x: q.x - p.pos.x, y: q.y - p.pos.y }), dist: Math.max(1, dist(q, p.pos)), value: hitValue(world, m, p, o, q), label: `${m.id}:area` });
         }
       }
     }
@@ -429,13 +501,42 @@ function chooseCast(world: World, p: Player, job: Job, perc: Perception, D: Diff
   return best;
 }
 
-/** How much hitting enemy `o` with move `m` is worth (damage, KO chance, Stagger). */
-function hitValue(world: World, m: MoveModel, o: Player): number {
+/**
+ * Value of a self-centred area (circle or cone) aimed at `aim`: the sum over every enemy it covers.
+ * This is what makes a clump of enemies a gift to a brawler.
+ */
+function areaValue(world: World, m: MoveModel, p: Player, aim: Vec2, foes: Player[]): number {
+  const dir = normalize({ x: aim.x - p.pos.x, y: aim.y - p.pos.y }, p.facing);
+  const cosHalf = m.angleDeg >= 360 ? -1 : rotateDeg({ x: 1, y: 0 }, m.angleDeg / 2).x;
+  let v = 0;
+  for (const o of foes) {
+    const dx = o.pos.x - p.pos.x;
+    const dy = o.pos.y - p.pos.y;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    if (d > m.radius + o.hurtRadius - 20) continue;
+    if (d > 1 && (dx * dir.x + dy * dir.y) / d < cosHalf) continue;
+    v += hitValue(world, m, p, o, o.pos);
+  }
+  return v;
+}
+
+/**
+ * How much hitting enemy `o` (predicted at `at`) with move `m` is worth. Edges, not damage, decide
+ * fights: the value is mostly where the push leaves them (a KO is worth more than anything but a
+ * goal), plus a little for damage that builds toward a Stagger.
+ */
+function hitValue(world: World, m: MoveModel, p: Player, o: Player, at: Vec2): number {
   const st = m.stats;
-  // Damage alone rarely wins; it matters when it sets up a KO.
-  let v = st.damagePerCast / 18;
-  if (st.knockback > 0 || o.staggered) v += danger(world, o) * 45;
-  if (o.staggered) v += 15;
+  const k = moveKnock(m);
+  const kb = knockOn(world, o, k.base, k.light);
+  const pv = pushValue(world, { ...o, pos: at }, pushDir(m, p, at, at), kb);
+  let v = st.damagePerCast / 18 + pv * 95;
+  // Pressure: damage that Staggers them (the KO setup), or adds to a fight already going.
+  if (!o.staggered) {
+    if (st.damagePerCast >= o.stagger) v += 40;
+    else v += (30 * st.damagePerCast) / Math.max(1, o.maxStagger) + 20 * (1 - o.stagger / Math.max(1, o.maxStagger));
+  }
+  if (o.staggered) v += 10;
   if (st.stun > 0) v += 8;
   return v;
 }
@@ -450,7 +551,11 @@ function wantsEvade(world: World, p: Player, mem: BotMemory, D: DifficultyParams
     const r = gameplay.burst.radius;
     const close = enemies(world, p).filter((o) => isTargetable(o) && dist(o.pos, p.pos) < r + o.hurtRadius);
     if (close.length >= 2) return 'burst';
-    if (close.some((o) => danger(world, o) > 0.6)) return 'burst-ko';
+    const kos = close.filter((o) => {
+      const dir = normalize({ x: o.pos.x - p.pos.x, y: o.pos.y - p.pos.y });
+      return pushValue(world, o, dir, knockOn(world, o, burstKnock(p), false)) >= 1;
+    });
+    if (kos.length > 0) return 'burst-ko';
     const contested = enemies(world, p).some((o) => perc.intercept[o.id]!.t < 12);
     if (dist(world.ball.pos, p.pos) < r && contested && p.strikeCooldown > 0) return 'burst-ball';
   }

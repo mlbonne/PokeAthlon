@@ -21,7 +21,7 @@
           "radius": 32,
           "hit": {
             "ball": { "base": 700, "powerRatio": 0.32 },
-            "player": { "base": 60, "powerRatio": 0.25 },
+            "player": { "base": 112, "powerRatio": 0.468 },
             "damage": { "base": 60, "powerRatio": 0.25 },
             "light": true
           }
@@ -55,7 +55,7 @@
           "time": 0.3,
           "hit": {
             "ball": { "base": 1400, "powerRatio": 2.1 },
-            "player": { "base": 240, "powerRatio": 1.2 },
+            "player": { "base": 450, "powerRatio": 2.25 },
             "damage": { "base": 240, "powerRatio": 1.2 },
             "direction": "travel"
           }

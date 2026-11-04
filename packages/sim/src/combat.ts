@@ -95,7 +95,7 @@ export function gainEnergy(p: Player, amount: number): void {
 
 /** Remove a player from the field (knocked past an edge). */
 export function knockOut(world: World, p: Player): void {
-  p.koTicks = ticks(gameplay.respawn.time);
+  p.koTicks = ticks(world.match.overtime ? gameplay.respawn.overtimeTime : gameplay.respawn.time);
   p.knockTicks = 0;
   p.dash = null;
   p.cast = null;
