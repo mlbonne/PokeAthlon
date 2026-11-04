@@ -38,15 +38,17 @@ export const GameplayRules = z.object({
     /** Whether player bodies deflect the ball (OS: believed no). */
     bodyBlocking: z.boolean(),
     playerRestitution: frac,
-    /** Freeze on hit before launch (impact feel), seconds. */
+    /** Freeze on hit before launch, seconds. OS: none (0) — the Core redirects instantly. */
     hitstop: nonneg,
   }),
   strike: z.object({
     cooldown: pos,
     activeTime: pos,
     ballKnockback: Scaling,
-    /** How much of the ball radius counts toward Strike reach. */
+    /** How much of the ball radius counts toward Strike reach (OS: hit volume overlaps the Core → 1.0). */
     reachBallFraction: frac,
+    /** OS "Hold To Strike Mode": holding Strike auto-strikes the moment the ball is in reach (no whiff). */
+    holdToStrike: z.boolean(),
   }),
   /** Player knockback model. */
   knock: z.object({

@@ -12,13 +12,10 @@ function setup(dx = -130, by = 0): World {
 }
 
 describe('strike', () => {
-  it('launches the ball in the aimed direction at base + ratio × power, after hitstop', () => {
+  it('launches the ball instantly in the aimed direction at base + ratio × power (OS: no hit freeze)', () => {
     const w = setup();
     step(w, [STRIKE(0, 1)]);
-    expect(w.events.map((e) => e.type)).toEqual(['strike', 'ballHit']);
-    expect(w.ball.vel).toEqual({ x: 0, y: 0 }); // frozen during hitstop
-    const evs = run(w, ticks(gameplay.ball.hitstop), [idle]);
-    expect(evs.some((e) => e.type === 'ballLaunch')).toBe(true);
+    expect(w.events.map((e) => e.type)).toEqual(['strike', 'ballHit', 'ballLaunch']);
     expect(w.ball.vel.x).toBeCloseTo(0, 9);
     expect(speedOf(w)).toBeCloseTo(PIKACHU_KB, 6);
     expect(w.ball.lastHitBy).toBe(0);
@@ -30,17 +27,43 @@ describe('strike', () => {
     expect(w.events.some((e) => e.type === 'ballHit')).toBe(true);
   });
 
-  it('misses when the ball is out of reach (reach = 125 + half the ball radius)', () => {
-    const w = setup(-150);
-    step(w, [STRIKE(1, 0)]);
-    expect(w.events.map((e) => e.type)).toEqual(['strike']);
+  it('reach = hit-volume radius + full ball radius (OS overlap): 125 + 47.5 for Normal', () => {
+    const hit = setup(-172);
+    step(hit, [STRIKE(1, 0)]);
+    expect(hit.events.some((e) => e.type === 'ballHit')).toBe(true);
+    const miss = setup(-174);
+    step(miss, [STRIKE(1, 0)]);
+    expect(miss.events.map((e) => e.type)).toEqual(['strike']);
   });
 
-  it('respects the 0.9 s cooldown and connects once per strike', () => {
-    const w = setup();
-    const evs = run(w, TICK_RATE, [STRIKE(0, 1)]);
+  it('Very Large strikers (Snorlax) get the OS Large Strike: diameter 285', () => {
+    const w = sandbox([{ pokemonId: 'snorlax', team: 0, pos: { x: -189, y: 0 } }], { x: 0, y: 0 });
+    expect(w.players[0]!.strikeRadius).toBe(142.5);
+    step(w, [STRIKE(1, 0)]);
+    expect(w.events.some((e) => e.type === 'ballHit')).toBe(true);
+  });
+
+  it('a press always swings: a whiff costs the 0.9 s cooldown', () => {
+    const w = setup(-400);
+    const evs = [];
+    for (let i = 0; i < TICK_RATE; i++) {
+      step(w, [i % 2 === 0 ? STRIKE(1, 0) : idle]); // mash: press, release, press…
+      evs.push(...w.events);
+    }
+    // 0.9 s cooldown → swings at tick 0 and tick 54 only.
     expect(evs.filter((e) => e.type === 'strike')).toHaveLength(2);
-    expect(evs.filter((e) => e.type === 'ballHit')).toHaveLength(1);
+    expect(evs.some((e) => e.type === 'ballHit')).toBe(false);
+  });
+
+  it('holding Strike never whiffs and auto-strikes the moment the ball comes into reach', () => {
+    const w = setup(-600);
+    w.players[0]!.prevButtons = Button.Strike; // already holding from before
+    w.ball.vel = { x: -800, y: 0 }; // ball rolling towards the player
+    const evs = run(w, TICK_RATE, [STRIKE(0, 1)]);
+    const strikes = evs.filter((e) => e.type === 'strike');
+    expect(strikes).toHaveLength(1);
+    expect(evs.some((e) => e.type === 'ballHit')).toBe(true);
+    expect(w.ball.vel.y).toBeGreaterThan(0); // sent where we aimed
   });
 
   it('uses facing when there is no aim input', () => {
@@ -92,14 +115,14 @@ describe('ball physics', () => {
     const w = sandbox(
       [
         { pokemonId: 'pikachu', team: 0, pos: { x: -130, y: -600 } },
-        { pokemonId: 'snorlax', team: 1, pos: { x: 400, y: -600 } },
+        { pokemonId: 'snorlax', team: 1, pos: { x: 500, y: -600 } },
       ],
       { x: 0, y: -600 },
     );
     step(w, [STRIKE(1, 0), idle]);
     const evs = run(w, TICK_RATE, [idle, idle]);
     expect(evs.some((e) => e.type === 'ballBody')).toBe(false);
-    expect(w.ball.pos.x).toBeGreaterThan(400);
+    expect(w.ball.pos.x).toBeGreaterThan(500);
   });
 });
 

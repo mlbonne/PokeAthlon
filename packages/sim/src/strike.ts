@@ -11,16 +11,24 @@ const COOLDOWN = ticks(gameplay.strike.cooldown);
 const ACTIVE = ticks(gameplay.strike.activeTime);
 
 /**
- * Strike: the shared basic action. It only affects the ball (OS rule). The hitbox is a circle
- * around the player that stays active briefly. The ball is sent in the *aimed* direction,
- * even if it is slightly behind the player.
+ * Strike: the shared basic action (OS GA_Strike). It only affects the ball. The hit volume is a
+ * circle centred on the player (diameter 250/265/285 by size) that stays active for 0.15 s;
+ * it connects when it overlaps the ball. The ball is sent in the *aimed* direction, even if
+ * it is slightly behind the player.
+ *
+ * Input (OS "Hold To Strike Mode"): pressing Strike always swings (a whiff still costs the
+ * 0.9 s cooldown). Holding it auto-strikes the moment the ball comes into reach, so a held
+ * button never whiffs.
  */
 export function stepStrike(world: World, p: Player, inp: PlayerInput | undefined): void {
   if (p.strikeCooldown > 0) p.strikeCooldown--;
   if (p.strikeActive > 0) p.strikeActive--;
   if (p.koTicks > 0 || p.knockTicks > 0 || p.stunTicks > 0 || frozenPhase(world)) return;
 
-  if (inp && (inp.buttons & Button.Strike) !== 0 && p.strikeCooldown === 0) {
+  const held = !!inp && (inp.buttons & Button.Strike) !== 0;
+  const pressed = held && (p.prevButtons & Button.Strike) === 0;
+  const autoStrike = held && !pressed && gameplay.strike.holdToStrike && ballInReach(world, p);
+  if (inp && (pressed || autoStrike) && p.strikeCooldown === 0) {
     const ax = inp.aimX / AXIS_MAX;
     const ay = inp.aimY / AXIS_MAX;
     const al = Math.sqrt(ax * ax + ay * ay);
@@ -37,14 +45,19 @@ export function stepStrike(world: World, p: Player, inp: PlayerInput | undefined
   if (p.strikeActive > 0 && !p.strikeConnected) tryHitBall(world, p);
 }
 
-function tryHitBall(world: World, p: Player): void {
+/** Can this player's Strike hit volume touch the ball right now? */
+function ballInReach(world: World, p: Player): boolean {
   const b = world.ball;
-  if (b.scored) return;
-  if (b.controlBy >= 0 && b.controlBy !== p.id) return; // another player's Energy Burst owns it
+  if (b.scored) return false;
+  if (b.controlBy >= 0 && b.controlBy !== p.id) return false; // another player's Energy Burst owns it
   const dx = b.pos.x - p.pos.x;
   const dy = b.pos.y - p.pos.y;
   const reach = p.strikeRadius + b.radius * gameplay.strike.reachBallFraction;
-  if (dx * dx + dy * dy > reach * reach) return;
+  return dx * dx + dy * dy <= reach * reach;
+}
+
+function tryHitBall(world: World, p: Player): void {
+  if (!ballInReach(world, p)) return;
 
   p.strikeConnected = true;
   hitBall(world, p.id, p.strikeDir, scaled(gameplay.strike.ballKnockback, p.power));

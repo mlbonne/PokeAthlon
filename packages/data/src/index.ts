@@ -7,12 +7,13 @@ export type SizeClass = z.infer<typeof SizeClass>;
 
 /**
  * Collision sizes per size class (OS data-mined, docs/research/os-arena-geometry.md):
- * body = movement capsule radius, hurt = where abilities hit, strikeWidth = Strike diameter.
+ * body = movement capsule radius, hurt = where abilities hit,
+ * strikeWidth = Strike hit-volume diameter (OS GA_Strike 250 / GA_Strike_Med 265 / GA_Strike_Large 285).
  */
 export const SIZE_TABLE: Record<SizeClass, { radius: number; hurtRadius: number; strikeWidth: number }> = {
   normal: { radius: 46, hurtRadius: 55, strikeWidth: 250 },
   large: { radius: 60, hurtRadius: 70, strikeWidth: 265 },
-  'very-large': { radius: 65, hurtRadius: 75, strikeWidth: 270 },
+  'very-large': { radius: 65, hurtRadius: 75, strikeWidth: 285 },
 };
 
 export const Archetype = z.enum([
