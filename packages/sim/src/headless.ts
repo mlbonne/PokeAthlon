@@ -1,4 +1,4 @@
-import { botInput } from './bot';
+import { getBrain, type Brain } from './ai/index';
 import { TICK_RATE } from './constants';
 import { hashWorld } from './hash';
 import type { Telemetry } from './telemetry';
@@ -14,6 +14,8 @@ export interface HeadlessOptions extends Pick<WorldOptions, 'terrain'> {
   maxMinutes?: number;
   /** Stop condition (default: the match is over). */
   until?: 'goal' | 'set' | 'match';
+  /** Brain per team (default `v2`, the M4 brain at balance difficulty). See `BRAINS`. */
+  brains?: [string, string];
 }
 
 export interface HeadlessResult {
@@ -40,7 +42,9 @@ export function runHeadless(lineup: PlayerSpawn[], opts: HeadlessOptions = {}): 
     if (until === 'goal') return w.telemetry.goals[0] + w.telemetry.goals[1] > 0;
     return false;
   };
-  while (!done() && w.tick < limit) step(w, w.players.map((p) => botInput(w, p.id)));
+  const names = opts.brains ?? ['v2', 'v2'];
+  const brains: [Brain, Brain] = [getBrain(names[0]), getBrain(names[1])];
+  while (!done() && w.tick < limit) step(w, w.players.map((p) => brains[p.team](w, p.id)));
   return {
     seed,
     winner: w.match.winner,

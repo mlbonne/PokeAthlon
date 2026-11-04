@@ -196,3 +196,21 @@ describe('OS Core rules', () => {
     expect(w.ball.launchVel.x).toBeCloseTo(1200, 9);
   });
 });
+
+describe('ball containment', () => {
+  it('a wall created on top of the ball near a corner cannot push it out of the arena', async () => {
+    const { pointInPolygon, practiceDisableBarriers } = await import('../src/index');
+    const w = sandbox([{ pokemonId: 'snorlax', team: 1, pos: { x: 700, y: 650 } }], { x: 1025, y: 797 });
+    practiceDisableBarriers(w);
+    // Snorlax's Block (3 walls, 330 out) aimed at the ball in the corner — the M4.4 escape case.
+    step(w, [quantizeInput(0, 0, 0.9, 0.42, Button.Signature)]);
+    w.players[0]!.level = 2;
+    w.players[0]!.moves[2]!.cooldown = 0;
+    step(w, [quantizeInput(0, 0, 0.9, 0.42, 0)]);
+    step(w, [quantizeInput(0, 0, 0.9, 0.42, Button.Signature)]);
+    for (let i = 0; i < 120; i++) {
+      step(w, [quantizeInput(0, 0)]);
+      expect(pointInPolygon(w.ball.pos, w.stage.ballOutline)).toBe(true);
+    }
+  });
+});

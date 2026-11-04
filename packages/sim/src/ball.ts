@@ -1,6 +1,6 @@
 import { gameplay } from '@pokeathlon/data';
 import { DT, ticks } from './constants';
-import { circleOverlapsBox, collideBox, collideCircle, collideSegment } from './geometry';
+import { circleOverlapsBox, collideBox, collideCircle, collideSegment, pointInPolygon } from './geometry';
 import { scoreGoal } from './match';
 import { addXp } from './progression';
 import type { Vec2 } from './vec';
@@ -110,9 +110,13 @@ export function stepBall(world: World): void {
   const travel = Math.sqrt(b.vel.x * b.vel.x + b.vel.y * b.vel.y) * DT;
   const n = Math.max(1, Math.min(8, Math.ceil(travel / (b.radius * SUBSTEP_FRACTION))));
   for (let i = 0; i < n; i++) {
+    const prev = b.pos;
     b.pos = { x: b.pos.x + (b.vel.x * DT) / n, y: b.pos.y + (b.vel.y * DT) / n };
     collideBall(world);
     if (b.scored) return;
+    // Safety net: a push-out (e.g. a creation wall spawned on top of the ball) must never carry
+    // the ball through the arena wall. Undo the substep; the bounce already turned its velocity.
+    if (!deepInside(world, b.pos, 0) && !pointInPolygon(b.pos, world.stage.ballOutline)) b.pos = prev;
   }
 }
 
@@ -121,9 +125,11 @@ function collideBall(world: World): void {
   const stage = world.stage;
 
   if (B.bodyBlocking) collideBodies(world);
+  // Well inside the arena nothing but creation walls can touch the ball: skip the rest.
+  const inner = deepInside(world, b.pos, b.radius);
 
   // Barriers: rebound and break.
-  for (let i = 0; i < world.barriers.length; i++) {
+  for (let i = 0; i < world.barriers.length && !inner; i++) {
     const bar = world.barriers[i]!;
     if (!bar.alive) continue;
     const impact = collideBox(b.pos, b.vel, b.radius, bar.box, 1);
@@ -132,10 +138,12 @@ function collideBall(world: World): void {
 
   // Walls, posts and closed gates: elastic rebound + OS speed nudge.
   let impact = 0;
-  for (const s of stage.ballWalls) impact = Math.max(impact, collideSegment(b.pos, b.vel, b.radius, s, 1));
-  for (const c of stage.posts) impact = Math.max(impact, collideCircle(b.pos, b.vel, b.radius, c, 1));
-  for (const g of world.gates) {
-    if (!g.open) impact = Math.max(impact, collideBox(b.pos, b.vel, b.radius, stage.goals[g.team].gate, 1));
+  if (!inner) {
+    for (const s of stage.ballWalls) impact = Math.max(impact, collideSegment(b.pos, b.vel, b.radius, s, 1));
+    for (const c of stage.posts) impact = Math.max(impact, collideCircle(b.pos, b.vel, b.radius, c, 1));
+    for (const g of world.gates) {
+      if (!g.open) impact = Math.max(impact, collideBox(b.pos, b.vel, b.radius, stage.goals[g.team].gate, 1));
+    }
   }
   for (const c of world.creations) {
     const seg = { ax: c.a.x, ay: c.a.y, bx: c.b.x, by: c.b.y };
@@ -147,12 +155,33 @@ function collideBall(world: World): void {
   }
 
   // Goals.
+  if (inner) return;
   for (const goal of stage.goals) {
     if (circleOverlapsBox(b.pos, b.radius, goal.score)) {
       scoreGoal(world, goal.team === 0 ? 1 : 0);
       return;
     }
   }
+}
+
+const innerCache = new WeakMap<object, { x: number; y: number }>();
+
+/**
+ * Is a circle of radius `r` at `pos` clear of every arena wall, post, gate, barrier and goal?
+ * The outline's straight sides run at ±sideY up to ±cornerStartX; everything else is further out.
+ */
+function deepInside(world: World, pos: Vec2, r: number): boolean {
+  let box = innerCache.get(world.stage);
+  if (!box) {
+    let y = 0;
+    for (const q of world.stage.ballOutline) y = Math.max(y, Math.abs(q.y));
+    let x = Infinity;
+    for (const q of world.stage.ballOutline) if (Math.abs(q.y) === y) x = Math.min(x, Math.abs(q.x));
+    for (const bar of world.stage.barriers) x = Math.min(x, Math.abs(bar.box.x) - bar.box.hx);
+    box = { x, y };
+    innerCache.set(world.stage, box);
+  }
+  return Math.abs(pos.x) <= box.x - r - 1 && Math.abs(pos.y) <= box.y - r - 1;
 }
 
 /** OS: each rebound changes speed by ~100, towards the pivot. */
@@ -204,6 +233,14 @@ export interface BallPrediction {
   goalAgainst: -1 | 0 | 1;
   /** Ticks until that goal, or the full look-ahead. */
   ticks: number;
+  /** Indices of barriers the ball would break on the way. */
+  barriersBroken: number[];
+}
+
+/** A hypothetical hit for {@link predictBall}: the ball launched from `pos` (default: where it is) at `vel`. */
+export interface BallLaunch {
+  pos?: Vec2;
+  vel: Vec2;
 }
 
 /**
@@ -211,12 +248,25 @@ export interface BallPrediction {
  * barriers) but no players, and report where it goes. Pure: the world is not changed.
  * Used by telemetry (shots/saves), the debug overlay and, later, the bots.
  */
-export function predictBall(world: World, lookAhead: number): BallPrediction {
+export function predictBall(world: World, lookAhead: number, launch?: BallLaunch): BallPrediction {
   const b = world.ball;
+  const ghostBall = { ...b, pos: { ...b.pos }, vel: { ...b.vel }, launchVel: { ...b.launchVel }, lastHitBy: -1 };
+  if (launch) {
+    // Same as a hit: speed set, Red Core if it is hard enough, no freeze.
+    if (launch.pos) ghostBall.pos = { ...launch.pos };
+    ghostBall.vel = { ...launch.vel };
+    ghostBall.launchVel = { x: 0, y: 0 };
+    ghostBall.hitstop = 0;
+    ghostBall.stunTicks = 0;
+    ghostBall.controlTicks = 0;
+    ghostBall.scored = false;
+    const s = Math.sqrt(launch.vel.x * launch.vel.x + launch.vel.y * launch.vel.y);
+    ghostBall.redTicks = s > B.redThreshold ? RED_TICKS : 0;
+  }
   const ghost: World = {
     ...world,
     players: [],
-    ball: { ...b, pos: { ...b.pos }, vel: { ...b.vel }, launchVel: { ...b.launchVel }, lastHitBy: -1 },
+    ball: ghostBall,
     barriers: world.barriers.map((x) => ({ ...x })),
     gates: [{ ...world.gates[0] }, { ...world.gates[1] }],
     match: { ...world.match, phase: 'play', rulesEnabled: true, goals: [0, 0] },
@@ -234,9 +284,17 @@ export function predictBall(world: World, lookAhead: number): BallPrediction {
     path.push({ ...ghost.ball.pos });
     if (ghost.ball.scored) {
       // goals[team] counts goals FOR team, so the goal is against the other one.
-      return { path, goalAgainst: ghost.match.goals[0] > 0 ? 1 : 0, ticks: t + 1 };
+      return { path, goalAgainst: ghost.match.goals[0] > 0 ? 1 : 0, ticks: t + 1, barriersBroken: broken(world, ghost) };
     }
     if (ghost.ball.vel.x === 0 && ghost.ball.vel.y === 0 && ghost.ball.hitstop === 0 && ghost.ball.stunTicks === 0) break;
   }
-  return { path, goalAgainst: -1, ticks: lookAhead };
+  return { path, goalAgainst: -1, ticks: lookAhead, barriersBroken: broken(world, ghost) };
+}
+
+function broken(world: World, ghost: World): number[] {
+  const out: number[] = [];
+  world.barriers.forEach((bar, i) => {
+    if (bar.alive && !ghost.barriers[i]!.alive) out.push(i);
+  });
+  return out;
 }

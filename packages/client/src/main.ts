@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { gameplay, roster, type PokemonDef } from '@pokeathlon/data';
 import {
-  botInput,
+  botLabel,
+  getBrain,
+  parseLineup,
   createWorld,
   DT,
   NEUTRAL_INPUT,
@@ -56,13 +58,27 @@ const hudRoot = document.querySelector<HTMLElement>('#hud')!;
 //   &meter=1               open the F3 debug menu on start (also bakes it into recordings)
 //   ?practice=1            practice sandbox: no kickoff, an idle enemy dummy (F3 → Practice)
 const params = new URLSearchParams(location.search);
-const cpuLineup = params.get('cpu')?.split(',').filter((id) => roster.some((r) => r.id === id));
-const SPECTATE = !!cpuLineup && cpuLineup.length === 2;
+//   ?cpu=a,b,c/d,e,f       3v3 spectator match (last of each team is the goalie)
+//   &diff=easy|normal|hard bot skill (default: normal when you play, hard when spectating)
+//   &brain=v1              the old M2/M3 bot instead
+const cpuSpec = params.get('cpu') ?? '';
+const cpuLineup = (() => {
+  try {
+    const spec = cpuSpec.includes('/') ? cpuSpec : cpuSpec.split(',').slice(0, 2).join('/');
+    const l = parseLineup(spec);
+    return l.every((s) => roster.some((r) => r.id === s.pokemonId)) ? l : null;
+  } catch {
+    return null;
+  }
+})();
+const SPECTATE = !!cpuLineup;
+const DIFF = params.get('diff') ?? (SPECTATE ? 'hard' : 'normal');
+const brain = getBrain(params.get('brain') ?? `v2-${DIFF}`);
 const RECORD = params.get('record') === '1';
 const PRACTICE = params.get('practice') === '1' && !SPECTATE;
 const ME = 0;
-let myPokemon = SPECTATE ? cpuLineup![0]! : 'pikachu';
-const BOT_POKEMON = SPECTATE ? cpuLineup![1]! : 'lucario';
+let myPokemon = SPECTATE ? cpuLineup![0]!.pokemonId : 'pikachu';
+const BOT_POKEMON = 'lucario';
 if (SPECTATE) document.body.classList.add('spectate');
 
 interface MatchView {
@@ -95,10 +111,12 @@ function startMatch(): void {
     hudRoot.querySelectorAll('.scoreboard, .banner, .plate, .pop').forEach((e) => e.remove());
   }
   const world = createWorld(
-    [
-      { pokemonId: myPokemon, team: 0 },
-      { pokemonId: BOT_POKEMON, team: 1 },
-    ],
+    SPECTATE
+      ? cpuLineup!
+      : [
+          { pokemonId: myPokemon, team: 0 },
+          { pokemonId: BOT_POKEMON, team: 1 },
+        ],
     { mode: PRACTICE ? 'sandbox' : 'match', ...(PRACTICE ? { ballPos: { x: -400, y: 0 } } : {}) },
   );
   if (!arena) {
@@ -133,11 +151,10 @@ function startMatch(): void {
     prevBall: { ...world.ball.pos },
   };
   if (SPECTATE) {
-    const a = roster.find((r) => r.id === myPokemon)!;
-    const b = roster.find((r) => r.id === BOT_POKEMON)!;
-    $name.textContent = `CPU vs CPU`;
-    $info.textContent = `Blue ${a.name}  vs  Red ${b.name}`;
-    $portrait.src = `portraits/${a.dex}/Normal.png`;
+    const team = (t: number) => cpuLineup!.filter((s) => s.team === t).map((s) => roster.find((r) => r.id === s.pokemonId)!.name).join(', ');
+    $name.textContent = `CPU vs CPU · ${DIFF}`;
+    $info.textContent = `Blue ${team(0)}  vs  Red ${team(1)}`;
+    $portrait.src = `portraits/${dexOf(myPokemon)}/Normal.png`;
   } else showCard(roster.find((r) => r.id === myPokemon)!);
 }
 
@@ -324,7 +341,7 @@ function simStep(mine: PlayerInput): void {
   step(
     world,
     world.players.map((p) =>
-      p.id === ME && !SPECTATE ? mine : debugHooks.enemyMode === 'dummy' && p.team !== myTeam && !SPECTATE ? NEUTRAL_INPUT : botInput(world, p.id),
+      p.id === ME && !SPECTATE ? mine : debugHooks.enemyMode === 'dummy' && p.team !== myTeam && !SPECTATE ? NEUTRAL_INPUT : brain(world, p.id),
     ),
   );
   if (debugHooks.noCooldowns) practiceClearCooldowns(world);
@@ -467,7 +484,7 @@ function render(dt: number, now: number, alpha: number): void {
   camera.position.add(view.effects.shakeOffset());
   for (const s of sprites) s.faceCamera(camera);
 
-  view.hud.update(dt, world, project);
+  view.hud.update(dt, world, project, menu.visible ? (id) => botLabel(world, id) : null);
   view.overlay.update(world, menu.focusId);
   menu.update(dt, fps);
 

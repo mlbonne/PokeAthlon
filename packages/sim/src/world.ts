@@ -23,6 +23,7 @@ import {
 import { stepMovement } from './movement';
 import { stepOrbs } from './orbs';
 import { stepPassiveXp } from './progression';
+import type { BotMemory, TeamPlan } from './ai/memory';
 import { mixSeed } from './rng';
 import { buildStage, type Stage, type Team } from './stage';
 import { stepStrike } from './strike';
@@ -184,8 +185,11 @@ export interface World {
   events: SimEvent[];
   /** The match seed. Only bots draw random numbers; the rules themselves never do. */
   seed: number;
-  /** Bot state: one seeded RNG stream per player (hashed, so replays stay exact). */
-  ai: { rng: number[] };
+  /**
+   * Bot state: one seeded RNG stream per player (hashed, so replays stay exact), each bot's
+   * memory and each team's job plan. Plain data, a pure function of the match so far.
+   */
+  ai: { rng: number[]; bots: (BotMemory | null)[]; teams: [TeamPlan | null, TeamPlan | null] };
   /** Balance telemetry, updated at the end of every step. */
   telemetry: Telemetry;
 }
@@ -260,7 +264,7 @@ export function createWorld(spawns: PlayerSpawn[], opts: WorldOptions = {}): Wor
     nextEntityId: 1,
     events: [],
     seed: opts.seed ?? 0,
-    ai: { rng: spawns.map((_, i) => mixSeed(((opts.seed ?? 0) * 16 + i) >>> 0)) },
+    ai: { rng: spawns.map((_, i) => mixSeed(((opts.seed ?? 0) * 16 + i) >>> 0)), bots: spawns.map(() => null), teams: [null, null] },
     telemetry: null as unknown as Telemetry,
   };
   world.telemetry = createTelemetry(world);
@@ -402,6 +406,8 @@ export function addPlayer(world: World, spawn: PlayerSpawn): Player {
   const p = makePlayer(world.players.length, spawn, world.stage);
   world.players.push(p);
   world.ai.rng.push(mixSeed((world.seed * 16 + p.id) >>> 0));
+  world.ai.bots.push(null);
+  world.ai.teams = [null, null];
   world.telemetry.players.push(playerTelemetry(p));
   world.telemetry.lastHit.push(null);
   world.telemetry.lastBallSource.push(null);
@@ -416,6 +422,8 @@ export function removePlayers(world: World, keep: (p: Player) => boolean): void 
   const kept = world.players.map((p, i) => ({ p, i })).filter(({ p }) => keep(p));
   world.players = kept.map(({ p }, id) => Object.assign(p, { id }));
   world.ai.rng = kept.map(({ i }) => world.ai.rng[i]!);
+  world.ai.bots = kept.map(() => null);
+  world.ai.teams = [null, null];
   const tel = world.telemetry;
   tel.players = kept.map(({ i }, id) => Object.assign(tel.players[i]!, { id }));
   tel.lastHit = kept.map(() => null);

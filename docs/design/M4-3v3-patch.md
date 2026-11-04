@@ -124,10 +124,55 @@ Each job scores a short list of candidate actions, and the best one wins. Candid
 - The noise is the same on both teams.
 
 ### A6. Bot ladder (quality gate)
-`npm run ladder -- --a v2 --b v1 --games 200`:
+`npm run ladder -- --games 60 --brains v2,v1`:
 - Mirror matches with the same Pokémon on both sides, swapping sides.
 - Brain v2 must beat v1 **≥ 80 %**.
 - Each later brain change must not lose to the previous version (gate: ≥ 50 % with a 95 % CI).
+
+### A7. What shipped in 4.4 (and what we learned)
+Code: `packages/sim/src/ai/` (`perceive.ts`, `model.ts`, `brain.ts`, `difficulty.ts`, `memory.ts`); brains are
+picked by name (`BRAINS`: `v1`, `v2`, `v2-easy|normal|hard|balance`) in `runHeadless`, `npm run sim -- --brains`
+and the client (`&diff=`, `&brain=`).
+
+- **Strike aim, not position, decides where the ball goes.** OS Strikes send the ball where you aim, so the
+  striker only has to *reach* the ball, and all the skill goes into choosing the aim. When a touch is
+  ≤ 14 ticks away, the bot scores candidate directions with a ghost ball run on the real physics: the goal
+  mouth, enemy barriers, bank shots off both side walls, passes to teammates and clears. Each candidate gets
+  a goal / barrier / progress value, minus how early an enemy can cut the path off.
+- **Hold-to-strike + scrum timing was the big win.** The first v2 only drew with v1 (3–3). The match logs
+  showed most goals came from scrums: v2 swung the moment the ball arrived, v1 counter-swung 2–5 ticks later
+  while v2 was on its 0.9 s cooldown, and scored. Fixes:
+  1. **Wait out contests.** Don't swing first while an enemy can hit the ball with Strike ready, unless the
+     shot is a clean goal or the ball is going into our goal anyway. A random 8–24 tick patience keeps two
+     v2 bots from staring at the ball forever.
+  2. **Shadow goal-side.** When the enemy will touch the ball clearly first, stand between that touch and
+     our goal instead of arriving late at the same spot.
+
+  Result: 9–1, then a 98.5 % ladder.
+- **Never whiff.** Strike is held down so it auto-fires on contact. It is only released while waiting out
+  a contest, and re-pressed when the ball is surely in reach. Whiffs went from about 60 per bot per match
+  to 2–5.
+- **Moves from data:** a move is used when it beats walking up and Striking:
+  - projectile or dash ball shots when the push line scores well;
+  - hits on enemies valued by KO danger, Stagger and stun (damage alone counts little);
+  - speed buffs to win races or escape; heals on hurt allies;
+  - walls placed on a shot heading into our goal.
+- **Found by the bots:** Snorlax's Block could spawn a wall on top of the ball, and the push-out carried the
+  ball through the corner wall, leaving it stuck outside the arena for the rest of the match. The ball physics
+  now never lets a collision step leave the ball outside the arena outline (regression test in `ball.test.ts`).
+- **Speed:** sharing one ball prediction per tick, and skipping wall checks deep inside the arena, gives about
+  100–200× real time per thread with v2 bots. v1 ran at about 8,000×; the shot look-aheads are the remaining
+  cost.
+
+Ladder results (2026-11-04):
+
+| Match-up | Result |
+|---|---|
+| v2 vs v1, 40 games per lineup | **98.5 %** (95 % CI 95.7–99.5) — Pikachu, Togekiss, Snorlax mirrors 97.5 %; Lucario and 3v3 mirrors 100 % |
+| hard vs normal | 69 % |
+| normal vs easy | 77 % |
+| easy vs v1 | 85 % |
+| v2 vs v2, 3v3 mirror, sides fixed | 44 / 56 % (CI includes 50 %) |
 
 ---
 
@@ -299,7 +344,7 @@ Before 4.6 has produced a snapshot, only theory tiers show.
 | **4.1** ✅ | `feat/telemetry-headless` | B1 telemetry, seeded AI RNG, Node headless runner (`npm run sim`) | 1000 bot-vs-bot matches run headless; same seed gives the same hash |
 | **4.2** ✅ | `feat/kit-analyzer` | B2 analyzer + `npm run kits` table | Every kit's metrics are printed; tests check reach, area and DPS for known shapes |
 | **4.3** ✅ | `feat/debug-meter` | B3 F3 debug menu (Meter, Practice, Kit, Tiers tabs), hitbox/reach drawing, shots/saves/redirects/ball-speed telemetry, theory tiers | Meter matches the telemetry totals at the end of a match; every Practice control works |
-| **4.4** | `feat/ai-v2` | Part A (perception, coordinator, utility, move model, difficulty) + bot ladder | v2 beats v1 ≥ 80 % in mirrors; 3v3 bots rotate jobs, pass, guard and dodge |
+| **4.4** ✅ | `feat/ai-v2` | Part A (perception, coordinator, utility, move model, difficulty) + bot ladder | v2 beats v1 ≥ 80 % in mirrors; 3v3 bots rotate jobs, pass, guard and dodge |
 | **4.5** | `feat/3v3-playable` | Part C | A full 3v3 is playable with keyboard or gamepad against `normal` bots |
 | **4.6** | `feat/balance-report` | B4 batch sim + B5 impact score + B6 sim tiers (per role) + HTML report | `npm run balance` makes the win-rate matrix and the per-role T0–F tier snapshot for the 4 kits, with confidence intervals |
 
