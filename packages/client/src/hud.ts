@@ -35,18 +35,28 @@ export class Hud {
     this.bannerUntil = this.now + seconds;
   }
 
-  /** Floating text at a screen position (e.g. "Blasted off!"). */
+  private pops: { el: HTMLElement; age: number }[] = [];
+
+  /** Floating text at a screen position (e.g. "Blasted off!"). Animated in game time. */
   pop(text: string, x: number, y: number, cls = ''): void {
     const p = el('div', `pop ${cls}`);
     p.textContent = text;
     p.style.left = `${x}px`;
     p.style.top = `${y}px`;
     this.root.append(p);
-    setTimeout(() => p.remove(), 1200);
+    this.pops.push({ el: p, age: 0 });
   }
 
   update(dt: number, world: World, project: (x: number, y: number, h: number) => { x: number; y: number; visible: boolean }): void {
     this.now += dt;
+    this.pops = this.pops.filter((p) => {
+      p.age += dt;
+      const t = Math.min(1, p.age / 1.2);
+      p.el.style.opacity = String(1 - t * t);
+      p.el.style.marginTop = `${-60 * (1 - (1 - t) * (1 - t))}px`;
+      if (t >= 1) p.el.remove();
+      return t < 1;
+    });
     const m = world.match;
 
     // Scoreboard.

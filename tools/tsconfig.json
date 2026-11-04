@@ -3,8 +3,21 @@
   "compilerOptions": {
     "outDir": "../.tsbuild/tools",
     "rootDir": "..",
-    "types": ["node"]
+    "types": [
+      "node"
+    ],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ]
   },
-  "include": ["*.ts"],
-  "references": [{ "path": "../packages/data" }]
+  "include": [
+    "*.ts"
+  ],
+  "references": [
+    {
+      "path": "../packages/data"
+    }
+  ]
 }

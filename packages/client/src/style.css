@@ -253,7 +253,6 @@ body {
   font-size: 22px;
   color: #fff;
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
-  animation: rise 1.2s ease-out forwards;
   pointer-events: none;
   white-space: nowrap;
 }
@@ -374,4 +373,10 @@ body {
     height: 44px;
     font-size: 10px;
   }
+}
+
+/* CPU vs CPU spectator / recording */
+body.spectate #help,
+body.spectate .abilities {
+  display: none;
 }
