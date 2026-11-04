@@ -165,7 +165,7 @@ Each milestone ends in something you can play, a git tag, and a short changelog.
 | # | Milestone | Done when |
 |---|---|---|
 | **M0** ✅ | **Foundation** | Repo, TS/Vite/Vitest/ESLint, CI, sprite import tool, credits generation. One Pikachu walking with the Walk/Idle animations |
-| **M1** | **Sandbox** | Arena with walls, ball physics, Strike and Dash, camera, hit feedback. Hit the ball around solo |
+| **M1** ✅ | **Sandbox** | Arena walls, ball physics (friction, bounces, body blocking, hitstop), Strike with aim + cooldown, camera, hit feedback. Hit the ball around solo. (Evade moved to M2 with Energy, matching OS) |
 | **M2** | **Rules** | Barriers, gates, goals, KO edges, Goal Arc, Stagger, Energy (Evade/Burst), orbs, levels, rounds and sets. A full match is possible (1v1 local) |
 | **M3** | **Kits** | Data-driven move system (hitboxes, projectiles, dashes, status, cooldowns). First 4 Pokémon (one per role) |
 | **M4** | **Bots and 3v3** | Role-aware AI (striker chases, goalie guards). 3v3 against bots, gamepad support |
