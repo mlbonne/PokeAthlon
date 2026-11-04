@@ -20,7 +20,7 @@
           "pierce": true,
           "hit": {
             "ball": { "base": 1250, "powerRatio": 1.5 },
-            "player": { "base": 60, "powerRatio": 0.3 },
+            "player": { "base": 112, "powerRatio": 0.562 },
             "damage": { "base": 80, "powerRatio": 0.4 },
             "light": true
           }
@@ -68,7 +68,7 @@
           "allyHealPct": 0.25,
           "hit": {
             "ball": { "base": 1200, "powerRatio": 1.2 },
-            "player": { "base": 250, "powerRatio": 1.0 },
+            "player": { "base": 468, "powerRatio": 1.875 },
             "damage": { "base": 150, "powerRatio": 0.8 },
             "direction": "radial"
           }

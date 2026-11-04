@@ -39,13 +39,15 @@ interface Metrics {
   mateSamples: number;
   touches: number;
   passes: number;
+  cleanPasses: number;
   contested: number;
+  powerPlayGoals: number;
   minutes: number;
 }
 const zero = (): Metrics => ({
   liveTicks: 0, goals: 0, kos: 0, staggers: 0, convertedStaggers: 0, hits: 0, damage: 0, lifeSum: 0, lives: 0,
   koPlayerTicks: 0, staggeredPlayerTicks: 0, playerTicks: 0, nearBallSum: 0, crowdTicks: 0, fwdBallDistSum: 0,
-  fwdSamples: 0, mateSpreadSum: 0, mateSamples: 0, touches: 0, passes: 0, contested: 0, minutes: 0,
+  fwdSamples: 0, mateSpreadSum: 0, mateSamples: 0, touches: 0, passes: 0, cleanPasses: 0, contested: 0, powerPlayGoals: 0, minutes: 0,
 });
 
 function playOne(seed: number, kits: string[]): Metrics {
@@ -56,17 +58,22 @@ function playOne(seed: number, kits: string[]): Metrics {
   const m = zero();
   const spawnTick = w.players.map(() => 0);
   const staggeredAt = w.players.map(() => -1e9);
-  let lastTouch = { id: -1, tick: -1e9 };
+  let lastTouch = { id: -1, tick: -1e9, x: 0, y: 0 };
   const limit = TICK_RATE * 60 * 20;
   while (w.match.phase !== 'matchOver' && w.tick < limit) {
     step(w, w.players.map((p) => brain(w, p.id)));
     for (const e of w.events) {
       if (e.type === 'kickoff') {
         w.players.forEach((_, i) => (spawnTick[i] = w.tick));
-        lastTouch = { id: -1, tick: -1e9 };
+        lastTouch = { id: -1, tick: -1e9, x: 0, y: 0 };
       }
       if (e.type === 'respawn') spawnTick[e.playerId] = w.tick;
-      if (e.type === 'goal') m.goals++;
+      if (e.type === 'goal') {
+        m.goals++;
+        // Scored while the scoring team had more players on the field (a KO power play).
+        const on = (t: number) => w.players.filter((p) => p.team === t && p.koTicks === 0).length;
+        if (on(e.team) > on(e.team === 0 ? 1 : 0)) m.powerPlayGoals++;
+      }
       if (e.type === 'hit') {
         m.hits++;
         m.damage += e.damage;
@@ -85,9 +92,15 @@ function playOne(seed: number, kits: string[]): Metrics {
         m.touches++;
         const by = w.players[e.playerId]!;
         const prev = w.players[lastTouch.id];
-        if (prev && prev.id !== by.id && w.tick - lastTouch.tick <= PASS_WINDOW && prev.team === by.team) m.passes++;
+        if (prev && prev.id !== by.id && w.tick - lastTouch.tick <= PASS_WINDOW && prev.team === by.team) {
+          m.passes++;
+          // Clean: travelled at least 300 units and no enemy was in strike reach of the receiver.
+          const far = Math.hypot(e.pos.x - lastTouch.x, e.pos.y - lastTouch.y) >= 300;
+          const free = !w.players.some((o) => o.team !== by.team && o.koTicks === 0 && Math.hypot(o.pos.x - e.pos.x, o.pos.y - e.pos.y) < 220);
+          if (far && free) m.cleanPasses++;
+        }
         if (prev && prev.team !== by.team && w.tick - lastTouch.tick <= CONTEST_WINDOW) m.contested++;
-        lastTouch = { id: by.id, tick: w.tick };
+        lastTouch = { id: by.id, tick: w.tick, x: e.pos.x, y: e.pos.y };
       }
     }
     if (w.match.phase !== 'play' || w.ball.scored) continue;
@@ -168,6 +181,8 @@ function report(name: string, m: Metrics, games: number): Record<string, string>
     'fwd spread': (m.mateSpreadSum / Math.max(1, m.mateSamples)).toFixed(0),
     'passes/live min': f1(m.passes / liveMin),
     'pass share': pc(m.passes / Math.max(1, m.touches)),
+    'clean passes/min': f1(m.cleanPasses / liveMin),
+    'power-play goals': pc(m.powerPlayGoals / Math.max(1, m.goals)),
     'contested touches': pc(m.contested / Math.max(1, m.touches)),
   };
 }

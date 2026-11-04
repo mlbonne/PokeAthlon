@@ -21,7 +21,7 @@
           "radius": 70,
           "hit": {
             "ball": { "base": 1320, "powerRatio": 1.7 },
-            "player": { "base": 170, "powerRatio": 0.78 },
+            "player": { "base": 318, "powerRatio": 1.462 },
             "damage": { "base": 170, "powerRatio": 0.78 },
             "stun": 0.3
           }
@@ -45,7 +45,7 @@
           "shape": "circle",
           "radius": 220,
           "hit": {
-            "player": { "base": 200, "powerRatio": 1.0 },
+            "player": { "base": 375, "powerRatio": 1.875 },
             "damage": { "base": 200, "powerRatio": 1.0 },
             "stun": 0.5,
             "ballStun": 0.25,
@@ -74,7 +74,7 @@
           "duration": 2.5,
           "hit": {
             "ball": { "base": 1340, "powerRatio": 1.79 },
-            "player": { "base": 180, "powerRatio": 0.89 },
+            "player": { "base": 338, "powerRatio": 1.669 },
             "damage": { "base": 180, "powerRatio": 0.89 },
             "direction": "radial"
           }

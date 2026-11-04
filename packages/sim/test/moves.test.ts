@@ -158,7 +158,8 @@ describe('Lucario (Flexible Brawler)', () => {
     cast(w, 0, Button.Move1);
     const evs = run(w, 20, [idle, idle]);
     const hit = evs.find((e) => e.type === 'hit');
-    expect(hit && hit.type === 'hit' && hit.knockback).toBeCloseTo(200 + 0.9 * 105, 6);
+    // Player knockback 375 + 168.8 % Power since the brawling rework (×1.25 × 1.5).
+    expect(hit && hit.type === 'hit' && hit.knockback).toBeCloseTo(375 + 1.688 * 105, 6);
   });
 
   it('Extreme Speed dashes ~520 and Aura Sphere can be cast mid-dash', () => {

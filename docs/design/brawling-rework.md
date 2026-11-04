@@ -111,3 +111,88 @@ Then re-run `npm run balance`: tiers will move, since brawlers like Lucario shou
 1. `feat/brawl-rules`: the rule changes and an overtime respawn rule; metric "clean passes".
 2. `feat/brawl-bots`: finishers, edge-aware hits, danger-aware spacing, pass value, power play.
 3. Measure against the targets; tune rules per kit; re-run the balance report; human playtest.
+
+---
+
+## 4. What shipped (2026-11-04)
+
+### The question that mattered: what is the most beneficial play?
+You (the user) pointed out that in high-level OS you barely see crowding around the Core, because a crowd
+is what a brawler, or even a goalie, punishes with KOs. So the test is not "do the bots spread out" but
+**"does a team that crowds lose to a team that spreads out?"**
+
+Two bots, identical in everything but positioning: `v2` (spacing discipline) and `v2-crowd` (the
+pre-rework positioning). Mirror 3v3 (Pikachu, Lucario, Snorlax both sides), 60–90 games, sides swapped
+(`npm run sim -- --brains v2,v2-crowd --set …`).
+
+| Rules | Spaced team wins |
+|---|---|
+| Pre-rework (5 s respawn, original knockback) | 30 % |
+| Respawn 8 s + knockback ×1.25 | 36 % |
+| + Burst ×2 knockback, radius 380 | 23 % |
+| + area moves ×1.6 knockback | 25 % |
+| + ball (Strike) ×1.2 | 37 % |
+| **+ all knockback ×1.5** (shipped) | **45 %** |
+| + all knockback ×1.5 and ball ×1.2 | 48 % |
+| + all knockback ×1.8 and ball ×1.2 | 39 % |
+
+**Reading:**
+- Before the rework, **crowding was simply the best play** (70 %). More bodies at the ball win more scrums,
+  and KOs were too rare to cost anything.
+- Bot skill can't fix that: making the spaced team punish clumps with area moves and Bursts didn't help on
+  its own.
+- What changes it is **how deadly fights are overall**. Making only the area tools or the Burst stronger
+  doesn't help, because KOs have to be common everywhere for a crowd to be a liability.
+- Too much knockback (×1.8) flips back: fights become random and numbers win again.
+- **About 45 % for the spaced side is the target for the current four kits** (agreed). Future Pokémon that
+  specialise in passing or brawling will move it.
+
+### Shipped rules
+| Change | Value |
+|---|---|
+| Respawn | 8 s, **11 s in overtime** (OS) — new `respawn.overtimeTime` |
+| Player knockback, every move | ×1.25 × 1.5 ≈ **×1.9** of the M3 values (in the kit JSON) |
+| Stagger regen delay | 2.375 → **3.0 s** (deliberate deviation from OS) |
+| Strike / ball speed, Energy Burst | unchanged (OS data-mined values) |
+
+### Shipped bot behaviour (`packages/sim/src/ai/brawl.ts`, `brain.ts`)
+- **Edge-aware hits:** a hit's value is mostly where the push leaves the target. A KO is worth about
+  95, and damage only adds to that, plus extra for a hit that Staggers or adds to a fight already going.
+- **Finishers:** forwards move to the field side of an enemy one hit from going off the edge, then hit
+  toward that edge. Burst is used the same way.
+- **Kill-line avoidance:** step off any line where an enemy's ready knockback would carry us off the arena.
+- **Spacing discipline:**
+  - the support holds a lane at least 560 from the ball and walks around scrums;
+  - it peels from its move's range, and only takes the ball when it clearly beats our own striker to it.
+- **Area moves count every enemy they cover**; the support goes in to punish 2+ bunched enemies.
+- **Passes:** open teammates are worth more, especially when we are contested.
+- **Power play:** a man up, the support pushes higher; a man down, it stays home.
+- `v2-crowd` keeps the old positioning as an experiment control.
+
+### Measured (`npm run playstyle`, 30 random-comp 3v3s, same seeds)
+| Metric | Before | After | Target |
+|---|---|---|---|
+| KOs per live minute | 0.6 | **2.4** | 1.5–2.0 (a bit above: fine for now) |
+| Staggers → KO | 13 % | **31 %** | ≥ 35 % (close) |
+| Goals scored on a power play | 4 % | **21 %** | — |
+| Time KO'd | 1 % | 4 % | — |
+| Crowded (3+ of 4 forwards near the ball) | 30 % | **16 %** | ≤ 15 % (close) |
+| Forward spread | 286 | **472** | — |
+| Clean passes per live minute | 7.3 | **10.2** (+40 %) | +50 % (close) |
+| Contested touches | 39 % | 36 % | ≤ 25 % (**missed**: strikers still duel at the ball) |
+| Goals per live minute | 2.3 | 2.0 | about the same ✓ |
+
+v2 still beats v1 94 % (ladder, 20 games per lineup). Strike-war scrums between the two strikers remain
+the main open item. In OS these are part of the game too ("ping-pong"), so that waits for human playtesting.
+
+### Balance after the rework (`npm run balance`, 600 3v3s + 360 duels)
+| Pokémon | Before → after (overall) | Forward | Goalie |
+|---|---|---|---|
+| Snorlax | T0 → **T0** | T0 (69 %) | T0 (70 %) |
+| Togekiss | A → **A** | C? (46 %) | A? (55 %) |
+| Pikachu | T0 → **B** | B? (48 %) | B? (48 %) |
+| Lucario | F → **D** | D? (44 %, was 34 %) | F (35 %) |
+
+- Duels are much closer: Lucario is now about even with Pikachu and Togekiss (52 / 52 %, was 28 / 25 %).
+- Snorlax still dominates 3v3, and its duels are its weakness (10–27 %). Its size, walls and stuns gain even
+  more now that edges matter. It is the first candidate when kit tuning starts.

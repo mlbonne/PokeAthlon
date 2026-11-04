@@ -161,7 +161,10 @@ export function evaluateShot(world: World, team: Team, from: Vec2, dir: Vec2, sp
     score -= (kind === 'goal' ? 70 : kind === 'barrier' ? 30 : 15) * (0.4 + 0.6 * early);
   }
   if (mateCut < enemyCut && mateCut < 70 && kind === 'advance') {
-    score += 18;
+    // A pass is worth most to an open teammate (no enemy near where they receive it).
+    const at = pred.path[Math.min(mateCut, n - 1)]!;
+    const open = !world.players.some((o) => o.team !== team && o.koTicks === 0 && Math.sqrt((o.pos.x - at.x) ** 2 + (o.pos.y - at.y) ** 2) < 300);
+    score += open ? 32 : 12;
     kind = 'pass';
   }
   if (kind === 'advance' && ((end.x - from.x) * enemySide < 0 || from.x * ownSide > 0)) kind = 'clear';
@@ -196,8 +199,13 @@ export function shotCandidates(world: World, team: Team, from: Vec2, self: numbe
 /** Best Strike (or ball-move) direction for player `p` hitting the ball at `from`. */
 export function bestShot(world: World, p: Player, from: Vec2, ballVel: Vec2, kb: number): ShotEval {
   let best: ShotEval | null = null;
+  // Under pressure (an enemy can hit the ball too), moving it on to a teammate beats a scrum.
+  const contested = world.players.some(
+    (o) => o.team !== p.team && o.koTicks === 0 && Math.sqrt((o.pos.x - from.x) ** 2 + (o.pos.y - from.y) ** 2) <= strikeReach(world, o) + 40,
+  );
   for (const dir of shotCandidates(world, p.team, from, p.id)) {
     const e = evaluateShot(world, p.team, from, dir, launchSpeed(world, p, kb, dir, ballVel), p.id);
+    if (contested && e.kind === 'pass') e.score += 15;
     if (!best || e.score > best.score) best = e;
   }
   return best!;
