@@ -1,0 +1,36 @@
+{
+  "name": "pokeathlon",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Non-commercial 3v3 Pokémon strike-ball fan game",
+  "type": "module",
+  "license": "UNLICENSED",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "npm run dev -w @pokeathlon/client",
+    "build": "npm run build -w @pokeathlon/client",
+    "preview": "npm run preview -w @pokeathlon/client",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "import-sprites": "tsx tools/import-sprites.ts"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.6",
+    "eslint": "^10.14.0",
+    "fast-xml-parser": "^5.12.0",
+    "globals": "^17.14.0",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.1.0"
+  }
+}

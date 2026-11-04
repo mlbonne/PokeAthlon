@@ -1,0 +1,12 @@
+{
+  "name": "@pokeathlon/sim",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@pokeathlon/data": "0.1.0"
+  }
+}

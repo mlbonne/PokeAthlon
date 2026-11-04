@@ -32,3 +32,9 @@ desktop.ini
 /out/
 FModel.exe
 __pycache__/
+
+# Build output
+.tsbuild/
+
+# Local Claude preview config (machine-specific paths)
+.claude/launch.json
