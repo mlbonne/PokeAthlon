@@ -1,7 +1,12 @@
 import { gameplay } from '@pokeathlon/data';
 import { TICK_RATE, type Player } from '@pokeathlon/sim';
 
-const KEYS = ['Q', 'E', 'R'];
+/** Button prompts per input device (keyboard + mouse, or an Xbox-layout gamepad). */
+const PROMPTS = {
+  keyboard: { strike: 'LMB', moves: ['Q', 'E', 'R'], evade: 'Space' },
+  pad: { strike: 'A / RT', moves: ['X', 'Y', 'LT'], evade: 'B / LB' },
+} as const;
+export type InputDevice = keyof typeof PROMPTS;
 
 /** Bottom-centre ability bar: Strike, the three moves and Evade, with cooldowns. */
 export class AbilityBar {
@@ -18,14 +23,15 @@ export class AbilityBar {
     this.el.remove();
   }
 
-  update(p: Player): void {
-    const sig = p.pokemonId + p.moves.map((m) => m.def.id).join();
+  update(p: Player, device: InputDevice = 'keyboard'): void {
+    const sig = p.pokemonId + p.moves.map((m) => m.def.id).join() + device;
     if (sig !== this.signature) {
       this.signature = sig;
+      const k = PROMPTS[device];
       const slots = [
-        `<div class="ab" data-k="strike"><b>LMB</b><span>Strike</span><i></i></div>`,
-        ...p.moves.map((m, i) => `<div class="ab" data-k="m${i}" title="${m.def.desc}"><b>${KEYS[i]}</b><span>${m.def.name}</span><i></i></div>`),
-        `<div class="ab" data-k="evade"><b>Space</b><span>Evade</span><i></i></div>`,
+        `<div class="ab" data-k="strike"><b>${k.strike}</b><span>Strike</span><i></i></div>`,
+        ...p.moves.map((m, i) => `<div class="ab" data-k="m${i}" title="${m.def.desc}"><b>${k.moves[i]}</b><span>${m.def.name}</span><i></i></div>`),
+        `<div class="ab" data-k="evade"><b>${k.evade}</b><span>Evade</span><i></i></div>`,
       ];
       if (p.moves.length === 0) slots.splice(1, 0, `<div class="ab none"><span>No kit yet</span></div>`);
       this.el.innerHTML = slots.join('');

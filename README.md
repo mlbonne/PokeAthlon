@@ -14,7 +14,7 @@ Requires Node.js 22+ (developed on v26 LTS). On the dev machine a portable Node 
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173  (WASD move, mouse aim, click Strike, Q/E/R moves, Space Evade/Burst, 1–8 Pokémon, Backspace restart, F3 debug menu)
+npm run dev          # http://localhost:5173  (WASD move, mouse aim, click Strike, Q/E/R moves, Space Evade/Burst, 1–8 Pokémon, Backspace restart, Esc match setup, F3 debug menu; gamepad: left stick move, right stick aim, A/RT Strike, X/Y/LT moves, B/LB Evade, Start setup, Back debug)
 npm run check        # typecheck + lint + tests
 npm run build        # production build → packages/client/dist
 npm run import-sprites   # re-import roster sprites from ./SpriteCollab-master and regenerate CREDITS.md
@@ -23,6 +23,8 @@ npm run sim -- --lineup pikachu/lucario --games 1000 --swap   # headless bot-vs-
 npm run ladder                               # bot quality gate: brain A vs brain B mirrors for every kit + a 3v3 mirror (default v2 vs v1, pass at >= 80 %)
 npm run kits                                 # static kit report: reach, area, timing, DPS, knockback, KO reach, ball power + power budget → reports/kits-*.md
 ```
+
+The game opens on a **match setup** screen: 1v1 or 3v3, your Pokémon and role (forward or goalie), your two CPU teammates, the three CPU enemies (or Random), CPU skill, and Play / Watch CPU vs CPU / Practice. `?quick=1` skips it.
 
 Spectate a CPU match live: `http://localhost:5173/?cpu=pikachu,lucario`, or a 3v3: `?cpu=pikachu,lucario,snorlax/togekiss,lucario,snorlax` (last of each team is the goalie). Bot skill: `&diff=easy|normal|hard` (default normal vs you, hard when spectating); `&brain=v1` for the old bot. With F3 open each bot's job and action shows under its nameplate. Practice sandbox with an enemy dummy: `?practice=1`. Add `&meter=1` to open the debug menu on start.
 

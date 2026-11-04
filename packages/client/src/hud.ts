@@ -4,20 +4,40 @@ import { TICK_RATE, type Player, type World } from '@pokeathlon/sim';
 const TEAM_NAMES = ['Blue', 'Red'] as const;
 const nameOf = (p: Player) => roster.find((r) => r.id === p.pokemonId)?.name ?? p.pokemonId;
 
-/** HTML HUD layered over the canvas: scoreboard, banners, nameplates and floating text. */
+const dexOf = (p: Player) => roster.find((r) => r.id === p.pokemonId)?.dex ?? '0025';
+
+/**
+ * HTML HUD layered over the canvas: scoreboard, team panels (portrait, level, Stagger, Energy and
+ * KO timer for every player, up to 3v3), banners, nameplates and floating text.
+ */
 export class Hud {
   private readonly root: HTMLElement;
   private readonly score: HTMLElement;
   private readonly banner: HTMLElement;
   private readonly plates: HTMLElement[] = [];
+  private readonly chips: HTMLElement[] = [];
   private bannerUntil = 0;
   private now = 0;
 
-  constructor(root: HTMLElement, world: World) {
+  /** @param me the human player's id (highlighted), −1 when spectating. */
+  constructor(root: HTMLElement, world: World, me = -1) {
     this.root = root;
     this.score = el('div', 'scoreboard');
     this.banner = el('div', 'banner');
     root.append(this.score, this.banner);
+    for (const team of [0, 1] as const) {
+      const panel = el('div', `team-hud t${team}`);
+      for (const p of world.players.filter((q) => q.team === team)) {
+        const chip = el('div', `tchip${p.id === me ? ' me' : ''}`);
+        chip.innerHTML =
+          `<img src="portraits/${dexOf(p)}/Normal.png" alt=""><div class="tinfo">` +
+          `<div class="tname"><span class="tlv"></span> ${nameOf(p)}${p.role === 'goalie' ? ' <em>G</em>' : ''}${p.id === me ? ' <em>YOU</em>' : ''}</div>` +
+          `<div class="tbar"><div class="fill"></div></div><div class="pips"><i></i><i></i><i></i></div></div><div class="tko"></div>`;
+        panel.append(chip);
+        this.chips[p.id] = chip;
+      }
+      root.append(panel);
+    }
     for (const p of world.players) {
       const plate = el('div', `plate team${p.team}`);
       plate.innerHTML =
@@ -97,6 +117,21 @@ export class Hud {
       plate.querySelector<HTMLElement>('.nm')!.textContent = out ? `${nameOf(p)} · ${Math.ceil(p.koTicks / TICK_RATE)}s` : nameOf(p);
       plate.querySelector<HTMLElement>('.fill')!.style.width = `${(100 * p.stagger) / p.maxStagger}%`;
       plate.querySelector<HTMLElement>('.ai')!.textContent = aiLabel ? aiLabel(p.id) : '';
+
+      // Team panel chip.
+      const chip = this.chips[p.id];
+      if (chip) {
+        chip.classList.toggle('ko', out);
+        chip.classList.toggle('staggered', p.staggered);
+        chip.querySelector<HTMLElement>('.tlv')!.textContent = `Lv${p.level}`;
+        chip.querySelector<HTMLElement>('.fill')!.style.width = `${(100 * p.stagger) / p.maxStagger}%`;
+        chip.querySelector<HTMLElement>('.tko')!.textContent = out ? `${Math.ceil(p.koTicks / TICK_RATE)}` : '';
+        const nrg = p.energy / (gameplay.energy.max / 3);
+        chip.querySelectorAll<HTMLElement>('.pips i').forEach((pip, k) => {
+          pip.style.setProperty('--f', String(Math.max(0, Math.min(1, nrg - k))));
+          pip.classList.toggle('full', p.energy >= gameplay.energy.max);
+        });
+      }
       const bars = p.energy / (gameplay.energy.max / 3);
       plate.querySelectorAll<HTMLElement>('.pips i').forEach((pip, k) => {
         const f = Math.max(0, Math.min(1, bars - k));

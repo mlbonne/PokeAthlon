@@ -19,6 +19,7 @@ import {
 } from '@pokeathlon/sim';
 import { getKit } from '@pokeathlon/data';
 import { AbilityBar } from './abilityBar';
+import { SetupScreen, type MatchConfig } from './setup';
 import { DebugMenu } from './debug/menu';
 import type { FrameRecorder } from './recorder';
 import { Hud, nameOf, TEAM_NAMES } from './hud';
@@ -52,7 +53,9 @@ const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 400);
 const hudRoot = document.querySelector<HTMLElement>('#hud')!;
 
 // ---------- Match ----------
-// URL modes:
+// With no URL mode the game opens the match setup screen (Esc / Start returns to it).
+// URL modes (skip the setup screen):
+//   ?quick=1               straight into a 1v1 vs a CPU Lucario
 //   ?cpu=pikachu,lucario   CPU vs CPU spectator match (both sides played by bots)
 //   &record=1              no real-time loop; frames are advanced by window.__rec (match recorder)
 //   &meter=1               open the F3 debug menu on start (also bakes it into recordings)
@@ -71,15 +74,40 @@ const cpuLineup = (() => {
     return null;
   }
 })();
-const SPECTATE = !!cpuLineup;
-const DIFF = params.get('diff') ?? (SPECTATE ? 'hard' : 'normal');
-const brain = getBrain(params.get('brain') ?? `v2-${DIFF}`);
 const RECORD = params.get('record') === '1';
-const PRACTICE = params.get('practice') === '1' && !SPECTATE;
-const ME = 0;
-let myPokemon = SPECTATE ? cpuLineup![0]!.pokemonId : 'pikachu';
-const BOT_POKEMON = 'lucario';
-if (SPECTATE) document.body.classList.add('spectate');
+const urlDiff = (params.get('diff') ?? '') as MatchConfig['diff'] | '';
+const duel = (): MatchConfig['lineup'] => [
+  { pokemonId: 'pikachu', team: 0 },
+  { pokemonId: 'lucario', team: 1 },
+];
+const urlConfig: MatchConfig | null = cpuLineup
+  ? { lineup: cpuLineup, me: -1, diff: urlDiff || 'hard', practice: false }
+  : params.get('practice') === '1'
+    ? { lineup: duel(), me: 0, diff: urlDiff || 'normal', practice: true }
+    : params.get('quick') === '1'
+      ? { lineup: duel(), me: 0, diff: urlDiff || 'normal', practice: false }
+      : null;
+
+// Current match settings (a placeholder duel runs behind the setup screen).
+let config: MatchConfig = urlConfig ?? { lineup: duel(), me: 0, diff: 'normal', practice: false };
+let SPECTATE = false;
+let PRACTICE = false;
+let ME = 0;
+let DIFF: string = config.diff;
+let brain = getBrain('v2');
+let myPokemon = 'pikachu';
+
+function applyConfig(c: MatchConfig): void {
+  config = c;
+  SPECTATE = c.me < 0;
+  PRACTICE = c.practice;
+  ME = Math.max(0, c.me);
+  DIFF = c.diff;
+  brain = getBrain(params.get('brain') ?? `v2-${DIFF}`);
+  myPokemon = c.lineup[ME]!.pokemonId;
+  document.body.classList.toggle('spectate', SPECTATE);
+  debugHooks.enemyMode = PRACTICE ? 'dummy' : 'bot';
+}
 
 interface MatchView {
   world: World;
@@ -108,17 +136,13 @@ function startMatch(): void {
   if (view) {
     scene.remove(view.group);
     view.bar.remove();
-    hudRoot.querySelectorAll('.scoreboard, .banner, .plate, .pop').forEach((e) => e.remove());
+    hudRoot.querySelectorAll('.scoreboard, .banner, .plate, .pop, .team-hud').forEach((e) => e.remove());
   }
   const world = createWorld(
-    SPECTATE
-      ? cpuLineup!
-      : [
-          { pokemonId: myPokemon, team: 0 },
-          { pokemonId: BOT_POKEMON, team: 1 },
-        ],
+    config.lineup.map((s) => ({ ...s })),
     { mode: PRACTICE ? 'sandbox' : 'match', ...(PRACTICE ? { ballPos: { x: -400, y: 0 } } : {}) },
   );
+  document.body.classList.toggle('teams3', world.players.length > 2);
   if (!arena) {
     arena = buildArena(world.stage);
     scene.add(arena);
@@ -143,7 +167,7 @@ function startMatch(): void {
     structures,
     effects,
     aim,
-    hud: new Hud(hudRoot, world),
+    hud: new Hud(hudRoot, world, SPECTATE ? -1 : ME),
     moves,
     overlay,
     bar: new AbilityBar(hudRoot),
@@ -151,7 +175,7 @@ function startMatch(): void {
     prevBall: { ...world.ball.pos },
   };
   if (SPECTATE) {
-    const team = (t: number) => cpuLineup!.filter((s) => s.team === t).map((s) => roster.find((r) => r.id === s.pokemonId)!.name).join(', ');
+    const team = (t: number) => config.lineup.filter((s) => s.team === t).map((s) => roster.find((r) => r.id === s.pokemonId)!.name).join(', ');
     $name.textContent = `CPU vs CPU · ${DIFF}`;
     $info.textContent = `Blue ${team(0)}  vs  Red ${team(1)}`;
     $portrait.src = `portraits/${dexOf(myPokemon)}/Normal.png`;
@@ -172,20 +196,43 @@ function playersChanged(): void {
   const { world } = view;
   for (const s of view.sprites) view.group.remove(s.object);
   view.sprites = makeSprites(world, view.group);
-  hudRoot.querySelectorAll('.scoreboard, .banner, .plate').forEach((e) => e.remove());
-  view.hud = new Hud(hudRoot, world);
+  hudRoot.querySelectorAll('.scoreboard, .banner, .plate, .team-hud').forEach((e) => e.remove());
+  view.hud = new Hud(hudRoot, world, SPECTATE ? -1 : ME);
   view.prevPos = world.players.map((p) => ({ ...p.pos }));
 }
 
 // ---------- Debug menu (F3) ----------
 const debugHooks = {
   world: () => view.world,
-  me: SPECTATE ? -1 : ME,
+  get me() {
+    return SPECTATE ? -1 : ME;
+  },
   playersChanged,
-  enemyMode: (PRACTICE ? 'dummy' : 'bot') as 'dummy' | 'bot',
+  enemyMode: 'bot' as 'dummy' | 'bot',
   noCooldowns: false,
 };
 const menu = new DebugMenu(hudRoot, debugHooks);
+
+// ---------- Setup screen ----------
+const setup = new SetupScreen(document.body, (c) => {
+  applyConfig(c);
+  setup.hide();
+  startMatch();
+});
+
+let toastTimer = 0;
+function toast(text: string): void {
+  let t = hudRoot.querySelector<HTMLElement>('.toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.className = 'toast';
+    hudRoot.append(t);
+  }
+  t.textContent = text;
+  t.classList.add('show');
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => t!.classList.remove('show'), 2500);
+}
 
 // ---------- Card ----------
 const $name = document.querySelector<HTMLDivElement>('#mon-name')!;
@@ -379,7 +426,9 @@ function resize(): void {
 }
 window.addEventListener('resize', resize);
 resize();
+applyConfig(config);
 startMatch();
+if (!urlConfig && !RECORD) setup.show();
 if (params.get('meter') === '1') {
   menu.toggle();
   view.overlay.object.visible = true;
@@ -394,21 +443,30 @@ function frame(now: number): void {
     const def = roster[d - 1];
     if (!def) continue;
     myPokemon = def.id;
+    config.lineup[ME] = { ...config.lineup[ME]!, pokemonId: def.id };
     setPokemon(view.world, ME, def.id);
     void view.sprites[ME]!.load(def.dex);
     view.aim.setReach(view.world.players[ME]!.strikeRadius * WORLD_TO_THREE);
     showCard(def);
   }
+  input.pollPad();
   for (const a of input.takeActions()) {
     if (a === 'debug') {
       menu.toggle();
       view.overlay.object.visible = menu.visible;
     }
-    if (a === 'restart') startMatch();
+    if (a === 'restart' && !setup.visible) startMatch();
+    if (a === 'menu') {
+      if (setup.visible) setup.hide();
+      else setup.show();
+    }
+    if (a.startsWith('nav-') && setup.visible) setup.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
+    if (a.startsWith('pad-on:')) toast(`Controller connected: ${a.slice(7).split('(')[0]!.trim()}`);
+    if (a.startsWith('pad-off:')) toast('Controller disconnected');
   }
 
-  // Fixed-step simulation.
-  acc += dt;
+  // Fixed-step simulation (paused while the setup screen is open).
+  acc += setup.visible ? 0 : dt;
   let steps = 0;
   while (acc >= DT && steps < 5) {
     const me = view.world.players[ME]!;
@@ -422,6 +480,8 @@ function frame(now: number): void {
   render(dt, now, acc / DT);
   requestAnimationFrame(frame);
 }
+
+const camFocus = { x: 0, y: 0 };
 
 /** Draw one frame. `now` (ms) only drives cosmetic blinking; `alpha` interpolates between sim ticks. */
 function render(dt: number, now: number, alpha: number): void {
@@ -463,12 +523,19 @@ function render(dt: number, now: number, alpha: number): void {
   );
   view.structures.update(dt, world);
   view.moves.update(dt, world);
-  if (!SPECTATE) view.bar.update(world.players[ME]!);
+  if (!SPECTATE) view.bar.update(world.players[ME]!, input.device);
   view.effects.update(dt);
 
-  // Camera: frame the whole stage, drift slightly towards the ball.
-  const fx = toThreeX(b.pos.x * 0.08);
-  const fz = toThreeZ(b.pos.y * 0.05);
+  // Camera: frame the whole stage (every player of a 3v3 is always on screen) and drift gently
+  // toward the action: mostly the ball, a little toward you. Smoothed so it never jerks.
+  const me = SPECTATE ? null : world.players[ME];
+  const tx = b.pos.x * 0.07 + (me && me.koTicks === 0 ? me.pos.x * 0.04 : 0);
+  const ty = b.pos.y * 0.045 + (me && me.koTicks === 0 ? me.pos.y * 0.02 : 0);
+  const k = 1 - Math.exp(-dt * 3);
+  camFocus.x += (tx - camFocus.x) * k;
+  camFocus.y += (ty - camFocus.y) * k;
+  const fx = toThreeX(camFocus.x);
+  const fz = toThreeZ(camFocus.y);
   const fitW = ((toThreeX(world.stage.halfLength) * 2 + 2) * 1.05) / camera.aspect;
   const fitH = toThreeX(world.stage.halfWidth) * 2 + 5;
   const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
