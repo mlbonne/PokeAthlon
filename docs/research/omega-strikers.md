@@ -99,6 +99,22 @@ kit upgrades it (e.g. X's ultimate). Ability slots in the game files: Q = Strike
 Pattern: **primary ≈ 10–12 s, secondary ≈ 18–20 s, special ≈ 24–40 s**. Strike sits at <1 s and is the main
 way you touch the Core. Abilities hit the Core only a bit harder than Strike, but they can do it from range or in an area.
 
+### 4.2a Strike, from the game files (`GA_Strike`, `GE_StrikeCooldown`, 2026-11-04)
+| Property | Value | Source |
+|---|---|---|
+| Cooldown | **0.9 s** | `GE_StrikeCooldown` duration |
+| Hit volume | **circle centred on the striker**, spawned on cast (`HitBoxLocation`/`HitBoxSize`), scaled by character size (`bAffectedByCharacterSize`, `CapsuleDividerForScale`). Indicator = "circle with arrow" | GA_Strike variables + names |
+| Diameter | **250** Normal (`GA_Strike`) · **265** Medium (`GA_Strike_Med`, used by X and Asher) · **285** Large (`GA_Strike_Large`) | CDO overrides |
+| Active time | **0.15 s** (`HitBoxLifeTime`) | CDO |
+| Connects when | the hit volume **overlaps** the Core (r 47.5), so centre-to-centre reach = 125 + 47.5 = **172.5** (Normal) | geometry |
+| Core knockback | 1230 + 125 % Power (cap 2000) | CDO `1230, 1.25 … 2000` |
+| Player values (kits that let Strike hit players) | knockback 150 + 75 %, damage 75 + 37.5 % | CDO |
+| Hold To Strike Mode | holding Strike **auto-strikes when the Core enters range** (`GA_Strike_Auto`, `AutoStrikeCollisionCapsule`); a press always swings | tutorial text + assets |
+| Hit freeze | none found: the Core redirects instantly | (absence) |
+| Unidentified | `0.1` (early native field; Energy Burst has 0.05), `0.625`, `2.5`, `0.3`, `0.315`, `0.25`, `0.5`, `1.67` ⚠ | CDO |
+
+`GA_Dribble` is the **Energy Burst** (Energy slot, `MaxEnergyCast`, player knockback 200 + 100 %, `DefenseDuration`, `PostCastTime`).
+
 ### 4.2b Core physics (wiki "Core" page, "fun Core facts")
 | Rule | Value | Our implementation |
 |---|---|---|

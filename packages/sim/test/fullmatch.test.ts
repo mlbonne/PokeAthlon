@@ -42,6 +42,6 @@ describe('full match (bots)', () => {
     );
     expect(w.match.phase).toBe('matchOver');
     expect(minutes).toBeLessThan(20);
-    expect(counts.hit).toBeGreaterThan(0); // Energy Bursts land
+    expect(counts.goal).toBeGreaterThanOrEqual(4);
   });
 });

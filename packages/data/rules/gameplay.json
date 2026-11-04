@@ -1,7 +1,7 @@
 {
   "$comment": "Global gameplay tuning. OS units. Times in seconds. Sources: OS wiki + data-mining (docs/research). Keys listed in 'unverified' are our guesses (⚠).",
   "unverified": [
-    "ball.wallSpeedPivot", "ball.hitstop", "knock.*", "stagger.staggeredRegenPerSecond", "burst.radius", "burst.stun",
+    "ball.wallSpeedPivot", "knock.*", "stagger.staggeredRegenPerSecond", "burst.radius", "burst.stun",
     "burst.ballControl", "burst.boostWindow", "evade.cancelsOnStrike", "respawn.*", "xp.*", "match.goalsPerSet",
     "match.setsToWin", "match.kickoff", "match.goalPause", "match.setPause", "match.gateOpenDelay", "orbs.radius"
   ],
@@ -24,13 +24,14 @@
     "glowSpeed": 700,
     "bodyBlocking": false,
     "playerRestitution": 0.45,
-    "hitstop": 0.07
+    "hitstop": 0
   },
   "strike": {
     "cooldown": 0.9,
     "activeTime": 0.15,
     "ballKnockback": { "base": 1230, "powerRatio": 1.25 },
-    "reachBallFraction": 0.5
+    "reachBallFraction": 1.0,
+    "holdToStrike": true
   },
   "knock": {
     "$comment": "Player knockback: a hit of K knockback pushes the target K × distancePerKnockback units over a short, decelerating slide.",
