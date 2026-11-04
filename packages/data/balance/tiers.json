@@ -1,6 +1,55 @@
 {
-  "$comment": "Sim tier snapshot, written by `npm run balance` (M4.6). Empty until the first balance run.",
-  "generatedAt": null,
+  "$comment": "Sim tier snapshot, written by `npm run balance` (M4.6). Do not edit by hand.",
+  "generatedAt": "2026-11-04 21:31 UTC",
   "difficulty": "balance",
-  "entries": []
+  "entries": [
+    {
+      "pokemon": "pikachu",
+      "forward": {
+        "wins": 140,
+        "games": 230
+      },
+      "goalie": {
+        "wins": 67,
+        "games": 125
+      },
+      "impact": -0.86
+    },
+    {
+      "pokemon": "togekiss",
+      "forward": {
+        "wins": 109,
+        "games": 252
+      },
+      "goalie": {
+        "wins": 70,
+        "games": 123
+      },
+      "impact": 1.3
+    },
+    {
+      "pokemon": "snorlax",
+      "forward": {
+        "wins": 142,
+        "games": 222
+      },
+      "goalie": {
+        "wins": 84,
+        "games": 128
+      },
+      "impact": 4.43
+    },
+    {
+      "pokemon": "lucario",
+      "forward": {
+        "wins": 83,
+        "games": 241
+      },
+      "goalie": {
+        "wins": 40,
+        "games": 118
+      },
+      "impact": -4.77
+    }
+  ]
 }

@@ -346,7 +346,7 @@ Before 4.6 has produced a snapshot, only theory tiers show.
 | **4.3** ✅ | `feat/debug-meter` | B3 F3 debug menu (Meter, Practice, Kit, Tiers tabs), hitbox/reach drawing, shots/saves/redirects/ball-speed telemetry, theory tiers | Meter matches the telemetry totals at the end of a match; every Practice control works |
 | **4.4** ✅ | `feat/ai-v2` | Part A (perception, coordinator, utility, move model, difficulty) + bot ladder | v2 beats v1 ≥ 80 % in mirrors; 3v3 bots rotate jobs, pass, guard and dodge |
 | **4.5** ✅ | `feat/3v3-playable` | Part C | A full 3v3 is playable with keyboard or gamepad against `normal` bots |
-| **4.6** | `feat/balance-report` | B4 batch sim + B5 impact score + B6 sim tiers (per role) + HTML report | `npm run balance` makes the win-rate matrix and the per-role T0–F tier snapshot for the 4 kits, with confidence intervals |
+| **4.6** ✅ | `feat/balance-report` | B4 batch sim + B5 impact score + B6 sim tiers (per role) + HTML report | `npm run balance` makes the win-rate matrix and the per-role T0–F tier snapshot for the 4 kits, with confidence intervals |
 
 - 4.1–4.3 come first because they are the yardstick for the AI work in 4.4.
 - Recordings (`npm run record`) keep working throughout and pick up the meter overlay after 4.3.
@@ -357,3 +357,42 @@ Before 4.6 has produced a snapshot, only theory tiers show.
   - per-move hit rates in the telemetry show this
   - the ladder includes kit-swapped mirrors
 - **False confidence.** Bot balance ≠ human balance. Reports state this, and human playtest notes remain the final say.
+
+---
+
+## M4 results: first measured balance (2026-11-04)
+
+`npm run balance`: 600 random-comp 3v3 games and 360 duels (60 per pairing), v2 bots at `balance`
+difficulty, 14 minutes on 3 threads, deterministic replay OK. Full report: `reports/balance-2026-11-04.html`
+(git-ignored). The tier snapshot is committed in `packages/data/balance/tiers.json`.
+
+| Pokémon | Overall | Forward | Goalie | Theory (budget) |
+|---|---|---|---|---|
+| Snorlax | **T0** | T0 (64 % raw, n = 222) | T0 (66 %, n = 128) | B |
+| Pikachu | **T0** | T0 (61 %, n = 230) | A? (54 %, n = 125) | C |
+| Togekiss | **A** | D? (43 %, n = 252) | A? (57 %, n = 123) | F |
+| Lucario | **F** | F (34 %, n = 241) | F (34 %, n = 118) | A |
+
+Duels (1v1, row beats column):
+
+| | Pikachu | Togekiss | Snorlax | Lucario |
+|---|---|---|---|---|
+| **Pikachu** | – | 65 % | 87 % | 72 % |
+| **Togekiss** | 35 % | – | 72 % | 75 % |
+| **Snorlax** | 13 % | 28 % | – | 58 % |
+| **Lucario** | 28 % | 25 % | 42 % | – |
+
+What it tells us:
+- **Theory and practice disagree, which is exactly why we measure.** The static budget ranked Lucario
+  first (A) and Togekiss last (F). With smart bots, Lucario is last (F) and Togekiss is a strong goalie
+  (A?). Lucario's numbers are huge, but its value is fighting, and the v2 bots rarely fight when the ball
+  matters more. Togekiss's Air Slash is a long, piercing ball shot, which the budget undervalues.
+- **The early "Lucario is too strong" read came from the v1 bots**, which brawled. That was a bot artefact,
+  not a kit problem.
+- **Mode matters:** Snorlax is the worst duellist (13 % vs Pikachu) but T0 in 3v3, in both roles. Its
+  size, walls and stuns pay off when it can hold space for a team.
+- **Role specialists:** Pikachu (Forward T0, Goalie A?) and Togekiss (Goalie A?, Forward D?).
+- **Impact model, honest caveat:** it predicts 74 % of outcomes from stat shares. However, its weights for
+  barriers and ball progress come out *negative*, because those stats are strongly correlated with goals.
+  Treat the per-Pokémon impact numbers as rough until a team-level model (M8) separates them.
+- These are bot results. Kit tuning is still deferred, as asked; these numbers are the starting point for it.
