@@ -5,6 +5,9 @@ const AIM_DEADZONE = 0.35;
 
 export type AimSource = 'stick' | 'mouse' | 'none';
 
+/** Standard-mapping gamepad buttons used outside the match input. */
+const PAD = { A: 0, BACK: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 } as const;
+
 /** Keyboard + mouse + first gamepad → quantized PlayerInput. */
 export class InputSource {
   private keys = new Set<string>();
@@ -16,6 +19,9 @@ export class InputSource {
   private pendingDigits: number[] = [];
   private pendingActions: string[] = [];
   lastAimSource: AimSource = 'none';
+  /** Last device the player touched (switches on-screen button prompts). */
+  device: 'keyboard' | 'pad' = 'keyboard';
+  private padPrev: boolean[] = [];
 
   constructor(target: Window, canvas: HTMLCanvasElement) {
     target.addEventListener('keydown', (e) => {
@@ -28,6 +34,10 @@ export class InputSource {
         e.preventDefault();
       }
       if (e.code === 'Backspace') this.pendingActions.push('restart');
+      if (e.code === 'Escape') this.pendingActions.push('menu');
+      const nav = { ArrowUp: 'nav-up', ArrowDown: 'nav-down', ArrowLeft: 'nav-left', ArrowRight: 'nav-right' }[e.code];
+      if (nav) this.pendingActions.push(nav);
+      this.device = 'keyboard';
       if (e.code === 'Space' || e.code === 'Backspace') e.preventDefault();
     });
     target.addEventListener('keyup', (e) => this.keys.delete(e.code));
@@ -52,6 +62,36 @@ export class InputSource {
       if (e.button === 2) this.mouseRight = false;
     });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    // Hot-plugging: announce controllers as they come and go.
+    target.addEventListener('gamepadconnected', (e) => {
+      this.pendingActions.push(`pad-on:${(e as GamepadEvent).gamepad.id}`);
+      this.device = 'pad';
+    });
+    target.addEventListener('gamepaddisconnected', (e) => {
+      this.pendingActions.push(`pad-off:${(e as GamepadEvent).gamepad.id}`);
+      this.padPrev = [];
+      if (!navigator.getGamepads?.().some((g) => g?.connected)) this.device = 'keyboard';
+    });
+  }
+
+  /**
+   * Per frame (also while the setup screen is open): gamepad edges for Start (menu), Back (debug)
+   * and D-pad / A (menu navigation), and which device is in use.
+   */
+  pollPad(): void {
+    const pad = navigator.getGamepads?.().find((g) => g?.connected);
+    if (!pad) return;
+    const now = pad.buttons.map((b) => b.pressed);
+    const edge = (i: number) => now[i] && !this.padPrev[i];
+    if (edge(PAD.START)) this.pendingActions.push('menu');
+    if (edge(PAD.BACK)) this.pendingActions.push('debug');
+    if (edge(PAD.UP)) this.pendingActions.push('nav-up');
+    if (edge(PAD.DOWN)) this.pendingActions.push('nav-down');
+    if (edge(PAD.LEFT)) this.pendingActions.push('nav-left');
+    if (edge(PAD.RIGHT)) this.pendingActions.push('nav-right');
+    if (edge(PAD.A)) this.pendingActions.push('nav-press');
+    if (now.some(Boolean) || pad.axes.some((a) => Math.abs(a) > 0.5)) this.device = 'pad';
+    this.padPrev = now;
   }
 
   private down(...codes: string[]): boolean {
@@ -93,12 +133,13 @@ export class InputSource {
         this.lastAimSource = 'stick';
         this.mouseActive = false;
       }
-      // A, RB, RT strike; B, LB evade; X, Y, LT moves.
-      if ([0, 5, 7].some((i) => pad.buttons[i]?.pressed)) buttons |= Button.Strike;
+      // A, RB, RT strike; B, LB evade; X, Y, LT moves. Triggers count from half-way (analog).
+      const trig = (i: number) => (pad.buttons[i]?.value ?? 0) > 0.4 || !!pad.buttons[i]?.pressed;
+      if (pad.buttons[0]?.pressed || pad.buttons[5]?.pressed || trig(7)) buttons |= Button.Strike;
       if ([1, 4].some((i) => pad.buttons[i]?.pressed)) buttons |= Button.Evade;
       if (pad.buttons[2]?.pressed) buttons |= Button.Move1;
       if (pad.buttons[3]?.pressed) buttons |= Button.Move2;
-      if (pad.buttons[6]?.pressed) buttons |= Button.Signature;
+      if (trig(6)) buttons |= Button.Signature;
     }
 
     let aimDist = 0;
