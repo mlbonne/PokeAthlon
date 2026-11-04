@@ -302,3 +302,76 @@ body {
     font-size: 13px;
   }
 }
+
+/* ---------- Ability bar (M3) ---------- */
+.abilities {
+  position: absolute;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+.ab {
+  position: relative;
+  width: 86px;
+  height: 52px;
+  padding: 4px 6px;
+  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.2;
+}
+.ab b {
+  display: block;
+  color: var(--accent);
+  font-size: 12px;
+}
+.ab span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ab i {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ab.locked i {
+  height: 100% !important;
+  font-size: 12px;
+  color: var(--muted);
+}
+.ab.full {
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(255, 210, 63, 0.6);
+}
+.ab.none {
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+}
+@media (max-width: 640px) {
+  .abilities {
+    bottom: 96px;
+    gap: 4px;
+  }
+  .ab {
+    width: 62px;
+    height: 44px;
+    font-size: 10px;
+  }
+}
