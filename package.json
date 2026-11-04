@@ -24,6 +24,7 @@
     "record": "tsx tools/record-match.ts",
     "sim": "tsx tools/sim-batch.ts",
     "ladder": "tsx tools/sim-batch.ts --ladder",
+    "balance": "tsx tools/balance.ts",
     "kits": "tsx tools/kits.ts"
   },
   "devDependencies": {
