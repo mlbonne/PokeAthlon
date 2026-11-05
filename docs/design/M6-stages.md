@@ -40,6 +40,8 @@ Also new: `exp_beacon`, `exp_vault`, `exp_crate`, `exp_crate_gold` (their expedi
 
 ## The 5 stages
 
+> **Update (2026-11-05):** stage 1 is now **Pokémon Stadium** (Smash-style, no hazard), planned in [M6-stadium.md](M6-stadium.md). We build it first; the rest wait.
+
 | # | Stage | Theme | OS model | Gimmick | Barriers |
 |---|---|---|---|---|---|
 | 1 | **Viridian Pitch** (exists) | wilds: meadow, shore edges | Night Market | Two centre walls with a **Speed Gate** between them (+100 % speed for 1.25 s, respawns after 4 s) | 2 per side (current) |

@@ -132,3 +132,28 @@ All also carry 75 (Energy max) and two constants (32, 512) ⚠ unidentified.
 **Proposal:** turn the stage JSON into **frame + terrain**, like OS. The frame is shared (walls as segments,
 KO volumes, score volumes, gates, posts, Goal Arc). Each terrain lists spawns, barriers and hazards.
 Adopt the OS sizes above at the start of M2, then re-tune camera zoom and sprite scale.
+
+## 7. The visual layer (Ahten City, read 2026-11-05)
+
+Read with `tools/research/pak.py` + `uasset.py` (name tables only; mesh and texture data not decoded).
+`Maps/EnvironmentArt/Arenas/AhtenCity/`:
+
+| Piece | File (LOD0 size) | What it is |
+|---|---|---|
+| `BP_Arena_VisualMaster` → `BP_Arena_<Map>_Master` | — | Spawns LOD0/LOD1/LOD2 children (quality levels). `BP_Arena_LODBase` has `ApplyTeamRotation`: the visuals turn 180° by `AssignedTeam`, so each player sees their own goal on the same side |
+| `SM_..._Floor` | 120 KB | The playing surface |
+| `SM_..._Decals` | 77 KB | Field markings, Goal Arc and barrier decals as a separate overlay mesh (decal atlas `T_Arena_6_Decals`) |
+| `SM_..._Sides` | 1.16 MB | The rim and outer walls: most of the detail |
+| `SM_..._Engines` + `_JetBlades` | 1.18 MB + 104 KB | The corner turbines (the arena is a flying platform); blades spin |
+| `SM_..._Screens` | 16 KB | Big screens; animated material `M_Arena_Screens` with mask textures |
+| `SM_..._Foliage` | 366 KB | Plants on the rim |
+| `SM_..._Background` | **9.5 KB** | A few flat cards with one painted texture (`T_Arena_Background_02`, `M_Arena_Background`) plus an atmosphere layer |
+| `SM_..._GoalBarrier` + VFX | 50 KB | The barriers and their glow |
+| Commons | — | Goal gates mesh + glow, `M_Arena_EnergyWall` (goal pocket glass), still water, water foam |
+
+**Materials:** `M_Arena_StampMap` (shared pattern sheet `T_S2_Default_Arena_Patterns` + baked ambient occlusion
+`T_S2_Default_Arena_Platform_AO`), vertex-colour "stamp" variants, and unlit lightmapped variants.
+So the look is mostly painted and baked, not lit in real time.
+
+**Takeaway for us:** spend detail on the rim and the 4 corners (what the camera frames), keep the field clean, put
+markings on a separate overlay, and make the far background a painted card. Offer quality levels.
