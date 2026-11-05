@@ -2,6 +2,7 @@ import { z } from 'zod';
 import rosterJson from '../pokemon/roster.json' with { type: 'json' };
 export * from './rules';
 export * from './kits';
+export * from './items';
 
 export const SizeClass = z.enum(['normal', 'large', 'very-large']);
 export type SizeClass = z.infer<typeof SizeClass>;

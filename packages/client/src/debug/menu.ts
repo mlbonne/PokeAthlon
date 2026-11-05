@@ -180,6 +180,7 @@ export class DebugMenu {
         const mvp = mvpScore(t);
         return `<tr data-focus="${t.id}" class="${t.id === this.focus ? 'sel' : ''}">
           <td class="team${t.team}">${esc(nameOf(t.pokemon))}${t.id === this.hooks.me ? ' ★' : ''}</td><td>${p.role === 'goalie' ? 'G' : 'F'}</td>
+          <td title="${p.item ? esc(p.item.desc) : ''}" class="${p.item && !p.itemActive ? 'muted' : ''}">${p.item ? esc(p.item.name) : '–'}${p.itemSpeedPct ? ` +${f0(p.itemSpeedPct)}%` : ''}${p.poisons.length ? ' ☠' : ''}</td>
           <td>${t.goals}</td><td>${t.assists}</td><td>${t.kos}</td><td>${t.saves}</td><td>${t.shots}</td><td>${t.redirects}</td>
           <td>${f0(t.damageDealt)}</td><td>${f1(this.dps5(t.id))}</td><td>${f1(t.damageDealt / playS)}</td><td>${f0(t.damageTaken)}</td>
           <td>${t.ballTouches}</td><td>${pct(t.possessionTicks / Math.max(1, tel.playTicks))}</td><td>${f0(t.ballProgress)}</td>
@@ -205,7 +206,7 @@ export class DebugMenu {
       <h4>Core stats</h4>
       <div class="core">Avg ${speed(tel.ball.samples ? tel.ball.speedSum / tel.ball.samples : 0)} · Max ${speed(tel.ball.maxSpeed)} · Final ${lastGoal !== undefined ? speed(lastGoal) : '–'} <small>u/s</small></div>
       <h4>Scoreboard <small>(click a row to focus)</small></h4>
-      <table class="num"><tr><th>Pokémon</th><th title="Role">R</th><th title="Goals">G</th><th title="Assists">A</th><th>KO</th><th title="Saves">Sv</th><th title="Shots on goal">Sh</th><th title="Redirects">Rd</th>
+      <table class="num"><tr><th>Pokémon</th><th title="Role">R</th><th title="Held item (grey: off, goalie item on the enemy half)">Item</th><th title="Goals">G</th><th title="Assists">A</th><th>KO</th><th title="Saves">Sv</th><th title="Shots on goal">Sh</th><th title="Redirects">Rd</th>
         <th>Dmg</th><th title="Damage per second, last 5 s">DPS5</th><th title="Damage per second of live play">DPS</th><th title="Damage taken">Taken</th>
         <th title="Ball touches">Tch</th><th title="Possession: time as last toucher">Poss</th><th title="Ball progress toward the enemy goal (units)">Prog</th>
         <th title="Orbs">Orb</th><th title="Deaths">D</th><th title="Set MVP score for this role">MVP</th></tr>${rows}</table>

@@ -1,6 +1,7 @@
 import { roster } from './index';
 import { gameplay } from './rules';
 import { getKit, type MoveDef } from './kits';
+import { items } from './items';
 
 /**
  * What-if tuning (M4.6, `npm run balance -- --set …`): change kit and stat numbers in memory, for
@@ -14,6 +15,7 @@ import { getKit, type MoveDef } from './kits';
  *   all.stagger*=0.8                       a stat or move field for every Pokémon (moves: all that have it)
  *   lucario.*.damage*=1.2 / all.*.damage*=1.2   every move of one / every Pokémon
  *   rules.respawn.time=8                   any number in rules/gameplay.json, by path
+ *   item.muscle-band.knockbackDealtPct=15  any number in a held item's effects, by path
  *
  * `=` sets, `*=` multiplies, `+=` adds. Returns a normalized description of what changed.
  */
@@ -34,6 +36,12 @@ function applyOne(spec: string): string {
   const value = Number(raw);
   const apply = (cur: number) => (op === '=' ? value : op === '*=' ? cur * value : cur + value);
   if (mon === 'rules') return setPath(gameplay as unknown as Record<string, unknown>, path.split('.'), apply, spec, 'rules');
+  if (mon === 'item') {
+    const [id, ...rest] = path.split('.');
+    const it = items.find((i) => i.id === id);
+    if (!it) throw new Error(`--set: unknown item "${id}"`);
+    return setPath(it.effects as unknown as Record<string, unknown>, rest, apply, spec, `item.${id}`);
+  }
   if (mon === 'all') {
     const done: string[] = [];
     for (const r of roster) {

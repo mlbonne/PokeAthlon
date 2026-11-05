@@ -19,6 +19,7 @@ export * from './hash';
 export * from './headless';
 export * from './impact';
 export * from './input';
+export { itemWorks, type ItemState, type Poison } from './items';
 export { effectiveSpeed, movesFor, SLOTS, type Buff, type Creation, type MoveState, type Projectile } from './moves';
 export { beginKickoff, frozenPhase, scoreGoal } from './match';
 export { addXp, specialUnlocked } from './progression';

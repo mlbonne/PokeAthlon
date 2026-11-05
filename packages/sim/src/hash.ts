@@ -40,6 +40,11 @@ export function hashWorld(w: World): string {
     mixU32(p.recast ? p.recast.ticks + 1 : 0);
     mixF64(p.power);
     mixF64(p.radius);
+    mixF64(p.itemSpeedPct);
+    mixU32(p.itemState.momentum);
+    mixU32(p.itemState.strikeShotCd);
+    mixU32(p.poisons.length);
+    mixU32(p.itemActive ? 1 : 0);
   }
   const b = w.ball;
   mixF64(b.pos.x);

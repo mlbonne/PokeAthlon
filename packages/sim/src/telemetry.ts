@@ -30,6 +30,8 @@ export interface MoveTelemetry {
 export interface PlayerTelemetry {
   id: number;
   pokemon: string;
+  /** Held item id ('' = none). */
+  item: string;
   team: Team;
   role: Role;
   damageDealt: number;
@@ -97,10 +99,11 @@ export function emptyMoveTelemetry(): MoveTelemetry {
   return { casts: 0, playerHits: 0, ballHits: 0, damage: 0, knockback: 0, kos: 0, ballSpeed: 0, goals: 0, readyTicks: 0 };
 }
 
-export function playerTelemetry(p: Pick<Player, 'id' | 'pokemonId' | 'team' | 'role' | 'level'>): PlayerTelemetry {
+export function playerTelemetry(p: Pick<Player, 'id' | 'pokemonId' | 'team' | 'role' | 'level'> & { item?: { id: string } | null }): PlayerTelemetry {
   return {
     id: p.id,
     pokemon: p.pokemonId,
+    item: p.item?.id ?? '',
     team: p.team,
     role: p.role,
     damageDealt: 0,
