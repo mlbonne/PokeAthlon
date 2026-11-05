@@ -1,4 +1,6 @@
-import { gameplay, getPokemon, SIZE_TABLE, type ItemDef, type KitPassive } from '@pokeathlon/data';
+import { gameplay, getPokemon, SIZE_TABLE, type BoostDef, type ItemDef, type KitPassive } from '@pokeathlon/data';
+import { newBoostState, stepBoosts, type BoostState } from './boosts';
+import { beginDraft, stepDraft, type DraftState } from './draft';
 import { itemForSpawn, newItemState, stepItems, type ItemState, type Poison } from './items';
 import { stepBall } from './ball';
 import { stepCombatTimers } from './combat';
@@ -136,6 +138,11 @@ export interface Player {
   itemState: ItemState;
   /** Poisons ticking on this player (Poison Barb). */
   poisons: Poison[];
+  // Boosts (M5.6)
+  boosts: BoostDef[];
+  boostState: BoostState;
+  /** Max Stagger added by boosts. */
+  bonusStagger: number;
 }
 
 export interface Ball {
@@ -183,7 +190,7 @@ export interface Orb {
   group: string;
 }
 
-export type Phase = 'kickoff' | 'play' | 'goal' | 'setOver' | 'matchOver';
+export type Phase = 'draft' | 'kickoff' | 'play' | 'goal' | 'setOver' | 'matchOver';
 
 export interface MatchState {
   phase: Phase;
@@ -230,6 +237,10 @@ export interface World {
   ai: { rng: number[]; bots: (BotMemory | null)[]; teams: [TeamPlan | null, TeamPlan | null] };
   /** Balance telemetry, updated at the end of every step. */
   telemetry: Telemetry;
+  /** Boost drafts on (M5.6): before the first kickoff and after every set. */
+  boostsOn: boolean;
+  /** The draft in progress (phase `draft`), else null. */
+  draft: DraftState | null;
 }
 
 export interface PlayerSpawn {
@@ -254,6 +265,8 @@ export interface WorldOptions {
   ballPos?: Vec2;
   /** Seed for bot randomness (default 0). Same seed + same inputs = same match. */
   seed?: number;
+  /** Boost drafts (match mode only, default off). */
+  boosts?: boolean;
 }
 
 export function createWorld(spawns: PlayerSpawn[], opts: WorldOptions = {}): World {
@@ -311,9 +324,14 @@ export function createWorld(spawns: PlayerSpawn[], opts: WorldOptions = {}): Wor
     seed: opts.seed ?? 0,
     ai: { rng: spawns.map((_, i) => mixSeed(((opts.seed ?? 0) * 16 + i) >>> 0)), bots: spawns.map(() => null), teams: [null, null] },
     telemetry: null as unknown as Telemetry,
+    boostsOn: mode === 'match' && !!opts.boosts,
+    draft: null,
   };
   world.telemetry = createTelemetry(world);
-  if (mode === 'match') beginKickoff(world, false);
+  if (mode === 'match') {
+    if (world.boostsOn) beginDraft(world, 'start');
+    else beginKickoff(world, false);
+  }
   return world;
 }
 
@@ -324,8 +342,8 @@ export function spawnPosition(stage: Stage, team: Team, role: Role, slot: number
   return { ...s.forwards[slot % s.forwards.length]! };
 }
 
-export function maxStaggerAt(p: Pick<Player, 'baseStagger' | 'staggerGrowth'>, level: number): number {
-  return p.baseStagger + (p.staggerGrowth * (level - 1)) / 9;
+export function maxStaggerAt(p: Pick<Player, 'baseStagger' | 'staggerGrowth'> & { bonusStagger?: number }, level: number): number {
+  return p.baseStagger + (p.staggerGrowth * (level - 1)) / 9 + (p.bonusStagger ?? 0);
 }
 
 function makePlayer(id: number, s: PlayerSpawn, stage: Stage): Player {
@@ -395,6 +413,9 @@ function makePlayer(id: number, s: PlayerSpawn, stage: Stage): Player {
     itemSpeedPct: 0,
     itemState: newItemState(pos.x),
     poisons: [],
+    boosts: [],
+    boostState: newBoostState(),
+    bonusStagger: 0,
   };
   p.itemActive = !!p.item && (p.item.slot === 'forward' || onOwnHalf(stage, p.team, p.pos));
   applyPokemon(p, s.pokemonId);
@@ -451,9 +472,10 @@ export const isTargetable = (p: Player): boolean => p.koTicks === 0 && p.elusive
 export function step(world: World, inputs: readonly (PlayerInput | undefined)[]): World {
   world.events = [];
   const prevPos = world.players.map((p) => ({ x: p.pos.x, y: p.pos.y }));
+  if (world.match.phase === 'draft') stepDraft(world, inputs);
   stepMatchStart(world);
   for (const p of world.players) stepCombatTimers(world, p);
-  for (const p of world.players) if (stepItems(world, p)) refreshBody(p);
+  for (const p of world.players) if (stepItems(world, p) || stepBoosts(world, p)) refreshBody(p);
   for (const p of world.players) stepMovement(world, p, inputs[p.id]);
   for (const p of world.players) stepStrike(world, p, inputs[p.id]);
   for (const p of world.players) stepMoves(world, p, inputs[p.id]);

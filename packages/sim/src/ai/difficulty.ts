@@ -22,12 +22,14 @@ export interface DifficultyParams {
    * scrums. `crowd` turns it off: the pre-rework positioning, kept as an experiment control.
    */
   spacing: boolean;
+  /** Boost draft: Easy picks at random, Hard also denies the next enemy picker. */
+  draft: 'random' | 'value' | 'deny';
 }
 
 export const DIFFICULTY: Record<Difficulty, DifficultyParams> = {
-  easy: { reactionTicks: 18, aimErrorDeg: 12, decisionTicks: 24, lookAheadTicks: 40, moveSlots: 1, dodges: false, spacing: true },
-  normal: { reactionTicks: 11, aimErrorDeg: 6, decisionTicks: 15, lookAheadTicks: 75, moveSlots: 2, dodges: true, spacing: true },
-  hard: { reactionTicks: 6, aimErrorDeg: 2, decisionTicks: 9, lookAheadTicks: 120, moveSlots: 3, dodges: true, spacing: true },
-  balance: { reactionTicks: 6, aimErrorDeg: 2, decisionTicks: 9, lookAheadTicks: 120, moveSlots: 3, dodges: true, spacing: true },
-  crowd: { reactionTicks: 6, aimErrorDeg: 2, decisionTicks: 9, lookAheadTicks: 120, moveSlots: 3, dodges: true, spacing: false },
+  easy: { reactionTicks: 18, aimErrorDeg: 12, decisionTicks: 24, lookAheadTicks: 40, moveSlots: 1, dodges: false, spacing: true, draft: 'random' },
+  normal: { reactionTicks: 11, aimErrorDeg: 6, decisionTicks: 15, lookAheadTicks: 75, moveSlots: 2, dodges: true, spacing: true, draft: 'value' },
+  hard: { reactionTicks: 6, aimErrorDeg: 2, decisionTicks: 9, lookAheadTicks: 120, moveSlots: 3, dodges: true, spacing: true, draft: 'deny' },
+  balance: { reactionTicks: 6, aimErrorDeg: 2, decisionTicks: 9, lookAheadTicks: 120, moveSlots: 3, dodges: true, spacing: true, draft: 'value' },
+  crowd: { reactionTicks: 6, aimErrorDeg: 2, decisionTicks: 9, lookAheadTicks: 120, moveSlots: 3, dodges: true, spacing: false, draft: 'value' },
 };

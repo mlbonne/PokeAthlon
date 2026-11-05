@@ -76,6 +76,11 @@ export type SimEvent =
   | { type: 'unbanish'; playerId: number; pos: Vec2 }
   | { type: 'guardBreak'; playerId: number }
   | { type: 'passive'; playerId: number }
+  // Boosts (M5.6)
+  | { type: 'draftStart'; kind: 'start' | 'set'; offers: string[]; order: number[] }
+  | { type: 'boostPick'; playerId: number; boostId: string; auto: boolean }
+  | { type: 'draftEnd' }
+  | { type: 'sturdy'; playerId: number; pos: Vec2 }
   | {
       type: 'telegraph';
       playerId: number;

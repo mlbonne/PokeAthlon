@@ -17,6 +17,8 @@ export interface HeadlessOptions extends Pick<WorldOptions, 'terrain'> {
   until?: 'goal' | 'set' | 'match';
   /** Brain per team (default `v2`, the M4 brain at balance difficulty). See `BRAINS`. */
   brains?: [string, string];
+  /** Boost drafts (default off). */
+  boosts?: boolean;
 }
 
 export interface HeadlessResult {
@@ -33,7 +35,7 @@ export interface HeadlessResult {
 
 export function runHeadless(lineup: PlayerSpawn[], opts: HeadlessOptions = {}): HeadlessResult {
   const seed = opts.seed ?? 0;
-  const w: World = createWorld(lineup, { mode: 'match', seed, ...(opts.terrain ? { terrain: opts.terrain } : {}) });
+  const w: World = createWorld(lineup, { mode: 'match', seed, boosts: !!opts.boosts, ...(opts.terrain ? { terrain: opts.terrain } : {}) });
   const limit = TICK_RATE * 60 * (opts.maxMinutes ?? 30);
   const until = opts.until ?? 'match';
   const done = (): boolean => {

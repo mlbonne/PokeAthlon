@@ -29,10 +29,12 @@ interface Spec {
   kind: '3v3';
   seed: number;
   lineup: PlayerSpawn[];
+  boosts: boolean;
 }
 interface PlayerOut {
   pokemon: string;
   item: string;
+  boosts: string[];
   team: 0 | 1;
   role: 'forward' | 'goalie';
   goals: number;
@@ -57,7 +59,7 @@ interface GameOut {
 }
 
 function play(spec: Spec): GameOut {
-  const r = runHeadless(spec.lineup, { seed: spec.seed, brains: ['v2', 'v2'], maxMinutes: 20 });
+  const r = runHeadless(spec.lineup, { seed: spec.seed, brains: ['v2', 'v2'], maxMinutes: 20, boosts: spec.boosts });
   return {
     kind: spec.kind,
     seed: spec.seed,
@@ -67,6 +69,7 @@ function play(spec: Spec): GameOut {
     players: r.telemetry.players.map((t) => ({
       pokemon: t.pokemon,
       item: t.item,
+      boosts: t.boosts,
       team: t.team,
       role: t.role,
       goals: t.goals,
@@ -144,6 +147,7 @@ async function main(): Promise<void> {
   const threads = Number(arg('threads', String(Math.max(1, availableParallelism() - 1))));
   const kits = analyzeRoster().map((k) => k.id);
   const noItems = arg('items', 'on') === 'off';
+  const noBoosts = arg('boosts', 'on') === 'off';
 
   // ---- Specs ----
   const specs: Spec[] = [];
@@ -159,10 +163,10 @@ async function main(): Promise<void> {
         const pool = itemsFor(s.role === 'goalie' ? 'goalie' : 'forward');
         return { ...s, item: pool[randInt(slot, 0, 0, pool.length - 1)]!.id };
       });
-      specs.push({ kind: '3v3', seed, lineup });
+      specs.push({ kind: '3v3', seed, lineup, boosts: !noBoosts });
     }
   }
-  console.log(`Balance run: ${specs.length} 3v3 games (random comps${noItems ? ', no items' : ', random items'}) on ${threads} threads, v2 bots at balance difficulty`);
+  console.log(`Balance run: ${specs.length} 3v3 games (random comps${noItems ? ', no items' : ', random items'}${noBoosts ? ', no boosts' : ', boost drafts'}) on ${threads} threads, v2 bots at balance difficulty`);
   if (tuned.length) console.log(`What-if tuning:\n  ${tuned.join('\n  ')}`);
 
   const t0 = Date.now();
@@ -234,6 +238,20 @@ async function main(): Promise<void> {
     }
   }
 
+  // ---- Boosts: win rate of players holding X when the other team doesn't; picks per game ----
+  const boostRecs: Record<string, Rec & { picks: number }> = {};
+  for (const g of g3) {
+    for (const p of g.players) for (const b of p.boosts) (boostRecs[b] ??= { ...rec(), picks: 0 }).picks++;
+    if (g.winner < 0) continue;
+    for (const p of g.players) {
+      for (const b of p.boosts) {
+        if (g.players.some((o) => o.team !== p.team && o.boosts.includes(b))) continue;
+        boostRecs[b]!.games++;
+        if (g.winner === p.team) boostRecs[b]!.wins++;
+      }
+    }
+  }
+
   // ---- Per-move numbers (per game played) ----
   const moveStats: Record<string, Record<string, Record<string, number>>> = {};
   const gamesBy: Record<string, number> = {};
@@ -278,6 +296,12 @@ async function main(): Promise<void> {
       }
     }
   }
+  if (Object.keys(boostRecs).length) {
+    console.log('\nBoosts (win rate when only one team holds it · picks per game):');
+    for (const [id, r] of Object.entries(boostRecs).sort((a, b) => b[1].wins / Math.max(1, b[1].games) - a[1].wins / Math.max(1, a[1].games))) {
+      console.log(`  ${id.padEnd(14)} ${pct(r.wins / Math.max(1, r.games))} n=${String(r.games).padEnd(5)} picks/game ${(r.picks / g3.length).toFixed(2)}`);
+    }
+  }
   console.log('\nMatchups (3v3: win rate of teams with the row Pokémon vs teams with the column Pokémon):');
   console.log('  ' + ''.padEnd(10) + kits.map((k) => k.slice(0, 8).padStart(10)).join(''));
   for (const a of kits) console.log('  ' + a.padEnd(10) + kits.map((b) => (a === b ? '–' : pct(matchups[a]![b]!.wins / Math.max(1, matchups[a]![b]!.games))).padStart(10)).join(''));
@@ -309,6 +333,7 @@ async function main(): Promise<void> {
     })),
     matchups,
     items: itemRecs,
+    boosts: boostRecs,
     moves: Object.fromEntries(Object.entries(moveStats).map(([k, ms]) => [k, Object.fromEntries(Object.entries(ms).map(([id, m]) => [id, Object.fromEntries(Object.entries(m).map(([f, v]) => [f, +(v / gamesBy[k]!).toFixed(2)]))]))])),
   };
   const base = join(outDir, `balance-${stamp}${tag}`);

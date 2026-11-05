@@ -1,5 +1,7 @@
 import { gameplay } from '@pokeathlon/data';
 import { ticks } from './constants';
+import { boostsNewSet } from './boosts';
+import { beginDraft } from './draft';
 import { resetMoveState } from './moves';
 import { addXp } from './progression';
 import type { Team } from './stage';
@@ -156,10 +158,15 @@ export function stepMatchEnd(world: World): void {
     m.goals = [0, 0];
     m.setIndex++;
     for (const p of world.players) p.energy = gameplay.energy.start;
-    beginKickoff(world, true);
+    // Boost draft between sets (M5.6); it starts the kickoff when it's done.
+    if (world.boostsOn) beginDraft(world, 'set');
+    else {
+      for (const p of world.players) boostsNewSet(p);
+      beginKickoff(world, true);
+    }
   }
 }
 
 /** Phases where players can't act (frozen). */
 export const frozenPhase = (world: World): boolean =>
-  world.match.phase === 'kickoff' || world.match.phase === 'setOver' || world.match.phase === 'matchOver';
+  world.match.phase === 'kickoff' || world.match.phase === 'setOver' || world.match.phase === 'matchOver' || world.match.phase === 'draft';
