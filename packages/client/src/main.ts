@@ -496,7 +496,9 @@ function render(dt: number, now: number, alpha: number): void {
     const a = view.prevPos[i]!;
     const x = lerp(a.x, p.pos.x);
     const y = lerp(a.y, p.pos.y);
-    s.object.visible = p.koTicks === 0;
+    s.object.visible = p.koTicks === 0 && p.banishTicks === 0;
+    // Transform buffs grow the body: grow the sprite with it.
+    s.object.scale.setScalar(p.baseRadius > 0 ? p.radius / p.baseRadius : 1);
     s.object.position.set(toThreeX(x), 0, toThreeZ(y));
     const speed = Math.hypot(p.vel.x, p.vel.y);
     if (p.knockTicks > 0 || p.stunTicks > 0) s.play('Hurt');

@@ -24,6 +24,10 @@ export interface BotMemory {
   /** Tick a contest wait started (−1 = not waiting), and how long this bot will wait. */
   waitSince: number;
   patience: number;
+  /** Charge move being held (-1 = none): until which tick, and what it is aimed at. */
+  chargeSlot: number;
+  chargeUntil: number;
+  chargeKind: 'ball' | 'hit' | 'other';
 }
 
 /** A team's job assignment, refreshed every decision interval. */

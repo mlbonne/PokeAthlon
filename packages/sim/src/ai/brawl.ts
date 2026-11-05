@@ -1,6 +1,6 @@
 import { gameplay, scaled } from '@pokeathlon/data';
 import { pointInPolygon } from '../geometry';
-import { buffKnockbackResist } from '../moves';
+import { buffKnockbackResist, buffKnockbackTaken } from '../moves';
 import { inGoalArc } from '../stage';
 import { normalize, type Vec2 } from '../vec';
 import { isTargetable, type Player, type World } from '../world';
@@ -34,11 +34,12 @@ export const outside = (world: World, pos: Vec2): boolean => !pointInPolygon(pos
 /** Knockback distance a hit of `base` player knockback deals to `o` right now (Staggered, Goal Arc, buffs). */
 export function knockOn(world: World, o: Player, base: number, light: boolean): number {
   const K = gameplay.knock;
-  if (o.staggered) return base * K.staggeredKnockbackMultiplier * K.distancePerKnockback;
+  const taken = buffKnockbackTaken(o);
+  if (o.staggered) return base * K.staggeredKnockbackMultiplier * K.distancePerKnockback * taken;
   if (light) return 0;
   let resist = buffKnockbackResist(o);
   if (inGoalArc(world.stage, o.team, o.pos)) resist += K.goalArcResist;
-  return Math.max(0, base - resist) * K.distancePerKnockback;
+  return Math.max(0, base - resist) * K.distancePerKnockback * taken;
 }
 
 /** Player knockback of one hit of a move (before target modifiers), and whether it is LIGHT. */
@@ -82,7 +83,8 @@ export function bestKnockMove(p: Player, slots = 3): MoveModel | null {
   for (const m of moveModels(p.pokemonId)) {
     if (m.slot >= slots) continue;
     const st = p.moves[m.slot];
-    if (!st || st.cooldown > 0 || !m.hitsPlayers) continue;
+    // Buffs (transforms) and grabs don't knock anyone by themselves.
+    if (!st || st.cooldown > 0 || !m.hitsPlayers || m.delivery === 'buff' || m.delivery === 'grab') continue;
     if (st.def.slot === 'special' && p.level < gameplay.xp.specialUnlockLevel) continue;
     if (!best || m.stats.staggeredKnockback > best.stats.staggeredKnockback) best = m;
   }

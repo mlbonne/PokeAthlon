@@ -4,7 +4,7 @@ import { DT } from './constants';
 import { collideBox, collideCircle, collideSegment, pointInPolygon } from './geometry';
 import { AXIS_MAX, type PlayerInput } from './input';
 import { frozenPhase } from './match';
-import { effectiveSpeed, stepDash } from './moves';
+import { actionSlowPct, effectiveSpeed, stepDash } from './moves';
 import { approach, clampLen, type Vec2 } from './vec';
 import type { Player, World } from './world';
 
@@ -13,6 +13,10 @@ const KNOCK_RESTITUTION = 0.3;
 
 export function stepMovement(world: World, p: Player, inp: PlayerInput | undefined): void {
   if (p.koTicks > 0) return;
+  if (p.banishTicks > 0) {
+    p.vel = { x: 0, y: 0 };
+    return;
+  }
 
   if (p.knockTicks > 0) {
     stepKnock(world, p);
@@ -30,7 +34,7 @@ export function stepMovement(world: World, p: Player, inp: PlayerInput | undefin
   const raw: Vec2 = !frozen && inp ? { x: inp.moveX / AXIS_MAX, y: inp.moveY / AXIS_MAX } : { x: 0, y: 0 };
   const dir = clampLen(raw, 1);
   const top = effectiveSpeed(p);
-  const speed = top * (p.slowTicks > 0 ? 1 - gameplay.knock.lightSlow : 1);
+  const speed = top * (p.slowTicks > 0 ? 1 - gameplay.knock.lightSlow : 1) * (1 - actionSlowPct(world, p) / 100);
   const target = { x: dir.x * speed, y: dir.y * speed };
   const moving = dir.x !== 0 || dir.y !== 0;
   const rate = top / (moving ? gameplay.movement.accelTime : gameplay.movement.decelTime);

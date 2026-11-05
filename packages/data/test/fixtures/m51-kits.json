@@ -1,0 +1,217 @@
+{
+  "$comment": "Test kits that use every M5.1 move-system feature. Not real kits: tests install them with registerKit().",
+  "alakazam": {
+    "moves": [
+      {
+        "id": "t-grab",
+        "name": "Test Grab",
+        "slot": "primary",
+        "cooldown": 10,
+        "desc": "Grab the ball, recast to throw.",
+        "bot": "ballShot",
+        "actions": [{ "type": "grab", "fx": { "color": "#c77dff" }, "radius": 200, "hold": 0.6, "slowPct": 30, "throw": { "base": 1400, "powerRatio": 0 } }],
+        "recast": { "window": 0.6, "actions": [{ "type": "throw", "fx": { "color": "#c77dff" }, "ball": { "base": 1600, "powerRatio": 0 } }] }
+      },
+      {
+        "id": "t-swap",
+        "name": "Test Swap",
+        "slot": "secondary",
+        "cooldown": 12,
+        "desc": "Swap places with an ally.",
+        "bot": "support",
+        "actions": [{ "type": "blink", "fx": { "color": "#c77dff" }, "to": "ally", "distance": 800, "swap": true }]
+      },
+      {
+        "id": "t-banish",
+        "name": "Test Banish",
+        "slot": "special",
+        "cooldown": 30,
+        "range": 700,
+        "desc": "Delayed area that banishes.",
+        "bot": "engage",
+        "actions": [
+          {
+            "type": "area",
+            "fx": { "color": "#7b2cbf" },
+            "shape": "circle",
+            "at": "target",
+            "radius": 160,
+            "delay": 1.0,
+            "telegraph": true,
+            "hitsBall": false,
+            "hit": { "damage": { "base": 50, "powerRatio": 0 }, "banish": 1.5 }
+          }
+        ]
+      }
+    ]
+  },
+  "greninja": {
+    "passive": {
+      "name": "Test Shuriken",
+      "desc": "After 2 move hits, the next Strike throws a shuriken.",
+      "stacks": 2,
+      "gainOn": "moveHit",
+      "actions": [
+        {
+          "type": "projectile",
+          "fx": { "color": "#4cc9f0" },
+          "speed": 2000,
+          "range": 700,
+          "radius": 30,
+          "hit": { "ball": { "base": 900, "powerRatio": 0 }, "damage": { "base": 40, "powerRatio": 0 }, "light": true }
+        }
+      ]
+    },
+    "moves": [
+      {
+        "id": "t-slash",
+        "name": "Test Slash",
+        "slot": "primary",
+        "cooldown": 2,
+        "desc": "Cone with a sweet spot at the tip.",
+        "bot": "engage",
+        "actions": [
+          {
+            "type": "area",
+            "fx": { "color": "#4361ee" },
+            "shape": "cone",
+            "radius": 300,
+            "angleDeg": 120,
+            "hitsBall": false,
+            "hit": { "player": { "base": 100, "powerRatio": 0 }, "damage": { "base": 60, "powerRatio": 0 } },
+            "sweetSpot": { "from": 0.7, "to": 1, "hit": { "player": { "base": 400, "powerRatio": 0 }, "damage": { "base": 120, "powerRatio": 0 } } }
+          }
+        ]
+      },
+      {
+        "id": "t-sneak",
+        "name": "Test Sneak",
+        "slot": "secondary",
+        "cooldown": 15,
+        "desc": "Blink forward hitting along the path; recast to blink back.",
+        "bot": "engage",
+        "actions": [{ "type": "blink", "fx": { "color": "#3a0ca3" }, "to": "aim", "distance": 500, "hit": { "damage": { "base": 80, "powerRatio": 0 }, "player": { "base": 150, "powerRatio": 0 } } }],
+        "recast": { "window": 3, "actions": [{ "type": "blink", "fx": { "color": "#3a0ca3" }, "to": "mark", "distance": 2000 }] }
+      },
+      {
+        "id": "t-cannon",
+        "name": "Test Cannon",
+        "slot": "special",
+        "cooldown": 25,
+        "desc": "Hold to charge a beam.",
+        "bot": "ballShot",
+        "charge": { "time": 1, "maxHold": 2, "min": 0.4, "slowPct": 40 },
+        "actions": [
+          {
+            "type": "projectile",
+            "fx": { "color": "#4cc9f0" },
+            "speed": 3000,
+            "range": 1000,
+            "radius": 50,
+            "pierce": true,
+            "hit": { "ball": { "base": 1500, "powerRatio": 0 }, "player": { "base": 300, "powerRatio": 0 }, "damage": { "base": 200, "powerRatio": 0 } }
+          }
+        ]
+      }
+    ]
+  },
+  "blastoise": {
+    "moves": [
+      {
+        "id": "t-pulse",
+        "name": "Test Pulse",
+        "slot": "primary",
+        "cooldown": 10,
+        "desc": "A wall that lasts longer on your own half.",
+        "bot": "defend",
+        "actions": [
+          { "type": "wall", "fx": { "color": "#4895ef" }, "count": 1, "spreadDeg": 0, "distance": 200, "length": 300, "thickness": 40, "duration": 2, "side": { "own": 2, "enemy": 0.5 } }
+        ]
+      },
+      {
+        "id": "t-spin",
+        "name": "Test Spin",
+        "slot": "secondary",
+        "cooldown": 15,
+        "desc": "Guarded dash.",
+        "bot": "chase",
+        "actions": [
+          {
+            "type": "dash",
+            "fx": { "color": "#4895ef" },
+            "distance": 600,
+            "time": 1,
+            "knockbackResist": 300,
+            "damageReduction": 0.5,
+            "breakOnDamage": 0.1,
+            "hit": { "ball": { "base": 1000, "powerRatio": 0 }, "player": { "base": 200, "powerRatio": 0 } }
+          }
+        ]
+      },
+      {
+        "id": "t-pump",
+        "name": "Test Pump",
+        "slot": "special",
+        "cooldown": 30,
+        "desc": "Channelled beam.",
+        "bot": "engage",
+        "actions": [
+          {
+            "type": "channel",
+            "fx": { "color": "#4cc9f0" },
+            "shape": "line",
+            "length": 600,
+            "width": 140,
+            "duration": 1.5,
+            "interval": 0.25,
+            "slowPct": 60,
+            "hit": { "ball": { "base": 700, "powerRatio": 0 }, "player": { "base": 80, "powerRatio": 0 }, "damage": { "base": 30, "powerRatio": 0 } }
+          }
+        ]
+      }
+    ]
+  },
+  "machamp": {
+    "moves": [
+      {
+        "id": "t-chop",
+        "name": "Test Chop",
+        "slot": "primary",
+        "cooldown": 10,
+        "desc": "Simple area.",
+        "bot": "engage",
+        "actions": [{ "type": "area", "fx": { "color": "#e63946" }, "shape": "circle", "radius": 200, "hit": { "player": { "base": 200, "powerRatio": 0 } } }]
+      },
+      {
+        "id": "t-rush",
+        "name": "Test Rush",
+        "slot": "secondary",
+        "cooldown": 15,
+        "castTime": 0.4,
+        "desc": "Wind-up dash.",
+        "bot": "chase",
+        "actions": [{ "type": "dash", "fx": { "color": "#e63946" }, "distance": 500, "time": 0.5, "hit": { "player": { "base": 300, "powerRatio": 0 } } }]
+      },
+      {
+        "id": "t-noguard",
+        "name": "Test No Guard",
+        "slot": "special",
+        "cooldown": 30,
+        "desc": "Transform: bigger, stronger, Strikes hit players, takes more knockback.",
+        "bot": "engage",
+        "actions": [
+          {
+            "type": "buff",
+            "fx": { "color": "#e63946" },
+            "target": "self",
+            "duration": 5,
+            "sizePct": 30,
+            "powerAdd": 20,
+            "knockbackTakenPct": 25,
+            "strikeHit": { "player": { "base": 400, "powerRatio": 0 }, "damage": { "base": 100, "powerRatio": 0 } }
+          }
+        ]
+      }
+    ]
+  }
+}

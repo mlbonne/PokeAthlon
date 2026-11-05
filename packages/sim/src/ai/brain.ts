@@ -100,19 +100,47 @@ export function smartBotInput(world: World, id: number, difficulty: Difficulty =
     strikeBit = Button.Strike;
     mem.holding = true;
   }
+  const holdingBall = world.ball.heldBy === p.id;
+  if (holdingBall) {
+    strikeBit = 0;
+    mem.holding = false;
+  }
   let buttons = strikeBit;
   let castAim: Vec2 | null = null;
   let castDist = 0;
+  const SLOT_BIT = [Button.Move1, Button.Move2, Button.Signature] as const;
 
   // ---- Moves ----
   const inReach = dist(world.ball.pos, p.pos) <= strikeReach(world, p) + 10;
-  if (D.moveSlots > 0 && !inReach && canCast(world, p)) {
+  if (p.charging && mem.chargeSlot === p.charging.slot) {
+    // Charge-and-release: keep holding until full charge, re-aiming at what it was meant for.
+    if (world.tick < mem.chargeUntil) {
+      buttons |= SLOT_BIT[p.charging.slot]!;
+      action = `${action}+charge`;
+    }
+    castAim = chargeAim(world, p, mem, perc) ?? mem.aim;
+  } else if (holdingBall && p.recast) {
+    // Grab: throw (recast) once there is a good shot, or before the hold runs out.
+    const throwKb = moveModels(p.pokemonId)[p.recast.slot]?.stats.ballPower ?? 0;
+    const shot = bestShot(world, p, world.ball.pos, { x: 0, y: 0 }, throwKb);
+    if (shot.score > 40 || world.ball.heldTicks <= 6) {
+      buttons |= SLOT_BIT[p.recast.slot]!;
+      castAim = shot.dir;
+      action = `${action}+throw-${shot.kind}`;
+    } else castAim = shot.dir;
+  } else if (D.moveSlots > 0 && !inReach && canCast(world, p)) {
     const cast = chooseCast(world, p, job, perc, D);
     if (cast) {
-      buttons |= [Button.Move1, Button.Move2, Button.Signature][cast.slot]!;
+      buttons |= SLOT_BIT[cast.slot]!;
       castAim = rotateDeg(cast.aim, mem.aimNoise);
       castDist = cast.dist;
       action = `${action}+${cast.label}`;
+      const m = moveModels(p.pokemonId)[cast.slot];
+      if (m && m.charge > 0) {
+        mem.chargeSlot = cast.slot;
+        mem.chargeUntil = world.tick + Math.round(m.charge * TICK_RATE);
+        mem.chargeKind = cast.label.includes(':ball') ? 'ball' : cast.label.includes(':hit') ? 'hit' : 'other';
+      }
     }
   }
 
@@ -157,6 +185,9 @@ function memory(world: World, id: number): BotMemory {
       holding: true,
       waitSince: -1,
       patience: 12,
+      chargeSlot: -1,
+      chargeUntil: 0,
+      chargeKind: 'other',
     };
     bots[id] = m;
   }
@@ -378,8 +409,23 @@ function orbNearby(world: World, p: Player, range: number, myBallT: number): Vec
 
 // ---------------------------------------------------------------- moves
 
+/** Aim for a charge being held: the ball, or the nearest enemy, wherever they are now. */
+function chargeAim(world: World, p: Player, mem: BotMemory, perc: Perception): Vec2 | null {
+  if (mem.chargeKind === 'ball' && !world.ball.scored) {
+    const it = perc.intercept[p.id]!;
+    const q = perc.ballAt(Math.min(20, it.t));
+    return normalize({ x: q.x - p.pos.x, y: q.y - p.pos.y });
+  }
+  if (mem.chargeKind === 'hit') {
+    let best: Player | null = null;
+    for (const o of enemies(world, p)) if (isTargetable(o) && (!best || dist(o.pos, p.pos) < dist(best.pos, p.pos))) best = o;
+    if (best) return normalize({ x: best.pos.x - p.pos.x, y: best.pos.y - p.pos.y });
+  }
+  return null;
+}
+
 function canCast(world: World, p: Player): boolean {
-  if (p.cast || p.knockTicks > 0 || p.stunTicks > 0) return false;
+  if (p.cast || p.charging || p.channel || p.banishTicks > 0 || p.knockTicks > 0 || p.stunTicks > 0) return false;
   if (p.dash) return moveModels(p.pokemonId).some((m) => m.castWhile && m.id === p.dash!.moveId);
   return true;
 }
@@ -415,7 +461,7 @@ function chooseCast(world: World, p: Player, job: Job, perc: Perception, D: Diff
     const reach = m.stats.reach;
 
     // Hitting the ball with the move: worth it if the push line is a good shot and a Strike isn't close.
-    if (m.hitsBall && !ball.scored && it.t > 14 && (m.delivery === 'projectile' || m.delivery === 'dash')) {
+    if (m.hitsBall && !ball.scored && it.t > 14 && (m.delivery === 'projectile' || m.delivery === 'dash' || (m.delivery === 'blink' && m.blinkTo === 'aim'))) {
       if (ballDist < reach - 30) {
         const travel = (m.speed > 0 ? ballDist / m.speed : 0) + m.delay;
         const q = perc.ballAt(Math.round(travel * TICK_RATE));
@@ -428,7 +474,7 @@ function chooseCast(world: World, p: Player, job: Job, perc: Perception, D: Diff
     }
 
     // Hitting enemies.
-    if (m.hitsPlayers && (m.delivery === 'projectile' || m.delivery === 'dash' || m.delivery === 'selfArea')) {
+    if (m.hitsPlayers && (m.delivery === 'projectile' || m.delivery === 'dash' || m.delivery === 'selfArea' || (m.delivery === 'blink' && m.blinkTo === 'aim'))) {
       let value = 0;
       let aimAt: Vec2 | null = null;
       for (const o of foes) {
@@ -480,6 +526,36 @@ function chooseCast(world: World, p: Player, job: Job, perc: Perception, D: Diff
           consider({ slot: m.slot, aim: normalize({ x: q.x - p.pos.x, y: q.y - p.pos.y }), dist: Math.max(1, dist(q, p.pos)), value: hitValue(world, m, p, o, q), label: `${m.id}:area` });
         }
       }
+    }
+
+    // Blinks: aimed ones close a lost race like a dash; ally swaps rescue a teammate in danger.
+    if (m.delivery === 'blink' && m.blinkTo === 'aim' && job === 'striker' && it.t > 45 && ballDist > m.range * 0.6 && it.t > enemyT - 10) {
+      const dir = normalize({ x: it.pos.x - p.pos.x, y: it.pos.y - p.pos.y });
+      consider({ slot: m.slot, aim: dir, dist: Math.min(m.range, dist(it.pos, p.pos)), value: 30, label: `${m.id}:chase` });
+    }
+    if (m.delivery === 'blink' && m.blinkTo === 'ally') {
+      for (const a of world.players) {
+        if (a.team !== p.team || a.id === p.id || a.koTicks > 0 || dist(a.pos, p.pos) > m.range) continue;
+        const threatened = enemies(world, a).some((o) => isTargetable(o) && dist(o.pos, a.pos) < 450);
+        if (danger(world, a) > 0.9 && threatened && danger(world, p) < 0.6) {
+          consider({ slot: m.slot, aim: normalize({ x: a.pos.x - p.pos.x, y: a.pos.y - p.pos.y }), dist: Math.max(1, dist(a.pos, p.pos)), value: 45, label: `${m.id}:rescue` });
+        }
+      }
+    }
+
+    // Grab the ball: stop a shot on our goal, or take a contested ball.
+    if (m.delivery === 'grab' && m.hold > 0 && !ball.scored && ball.heldBy < 0 && ballDist <= m.radius + ball.radius - 10) {
+      const save = perc.pred.goalAgainst === p.team;
+      const contested = enemyT < 15;
+      if (save || contested) {
+        consider({ slot: m.slot, aim: normalize({ x: ball.pos.x - p.pos.x, y: ball.pos.y - p.pos.y }), dist: 0, value: save ? 85 : 45, label: `${m.id}:grab` });
+      }
+    }
+
+    // Transforms (Strike hits players): when a fight is close.
+    if (m.delivery === 'buff' && m.strikeBuff && job !== 'goalie') {
+      const close = foes.filter((o) => dist(o.pos, p.pos) < 420);
+      if (close.length > 0) consider({ slot: m.slot, aim: p.facing, dist: 0, value: close.some((o) => o.staggered) ? 60 : 36, label: `${m.id}:transform` });
     }
 
     // Speed buffs: win a race, or get out of trouble.
@@ -539,6 +615,8 @@ function hitValue(world: World, m: MoveModel, p: Player, o: Player, at: Vec2): n
   }
   if (o.staggered) v += 10;
   if (st.stun > 0) v += 8;
+  // Banish: takes them out of the play (more when they are near the ball).
+  if (st.banish > 0) v += 18 * st.banish + (dist(o.pos, world.ball.pos) < 500 ? 20 : 0);
   return v;
 }
 

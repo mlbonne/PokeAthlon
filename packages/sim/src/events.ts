@@ -64,4 +64,30 @@ export type SimEvent =
   | { type: 'dash'; playerId: number; moveId: string }
   | { type: 'buff'; playerId: number; moveId: string }
   | { type: 'wall'; playerId: number; moveId: string }
-  | { type: 'ballStun'; playerId: number; pos: Vec2; source: string };
+  | { type: 'ballStun'; playerId: number; pos: Vec2; source: string }
+  // Move system extensions (M5.1)
+  | { type: 'charge'; playerId: number; moveId: string }
+  | { type: 'recast'; playerId: number; moveId: string }
+  | { type: 'channel'; playerId: number; moveId: string; time: number }
+  | { type: 'blink'; playerId: number; moveId: string; from: Vec2; to: Vec2; swapWith: number }
+  | { type: 'grab'; playerId: number; moveId: string; caught: boolean }
+  | { type: 'release'; playerId: number; thrown: boolean }
+  | { type: 'banish'; playerId: number; by: number }
+  | { type: 'unbanish'; playerId: number; pos: Vec2 }
+  | { type: 'guardBreak'; playerId: number }
+  | { type: 'passive'; playerId: number }
+  | {
+      type: 'telegraph';
+      playerId: number;
+      moveId: string;
+      shape: 'circle' | 'cone' | 'line';
+      pos: Vec2;
+      dir: Vec2;
+      radius: number;
+      angleDeg: number;
+      length: number;
+      width: number;
+      /** Seconds until it fires. */
+      time: number;
+      color: string;
+    };

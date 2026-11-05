@@ -22,6 +22,8 @@ export function practiceSpawnBall(world: World, pos = { x: 0, y: 0 }): void {
   b.stunTicks = 0;
   b.controlBy = -1;
   b.controlTicks = 0;
+  b.heldBy = -1;
+  b.heldTicks = 0;
   b.lastHitBy = -1;
   b.scored = false;
   if (world.match.phase === 'goal' || world.match.phase === 'kickoff') world.match.phase = 'play';

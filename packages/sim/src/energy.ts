@@ -58,8 +58,10 @@ function burst(world: World, p: Player): void {
   const dx = b.pos.x - p.pos.x;
   const dy = b.pos.y - p.pos.y;
   const reach = BU.radius + b.radius;
-  const grabbed = !b.scored && dx * dx + dy * dy <= reach * reach;
+  const grabbed = !b.scored && (b.heldBy < 0 || b.heldBy === p.id) && dx * dx + dy * dy <= reach * reach;
   if (grabbed) {
+    b.heldBy = -1;
+    b.heldTicks = 0;
     b.vel = { x: 0, y: 0 };
     b.launchVel = { x: 0, y: 0 };
     b.hitstop = 0;

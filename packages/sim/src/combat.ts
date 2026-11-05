@@ -1,7 +1,8 @@
 import { gameplay } from '@pokeathlon/data';
 import { TICK_RATE, ticks } from './constants';
 import { addXp } from './progression';
-import { buffDamageReduction, buffKnockbackResist } from './moves';
+import { releaseBall } from './ball';
+import { buffDamageReduction, buffKnockbackResist, buffKnockbackTaken, refreshBody } from './moves';
 import { inGoalArc } from './stage';
 import type { Vec2 } from './vec';
 import { isTargetable, type Player, type World } from './world';
@@ -23,6 +24,8 @@ export interface HitSpec {
   light?: boolean;
   /** Stun seconds (in addition to the knockback slide). */
   stun?: number;
+  /** Banish seconds (replaces the knockback slide). */
+  banish?: number;
   /** What caused the hit: a move id, `strike` or `burst` (telemetry). */
   source?: string;
 }
@@ -43,6 +46,7 @@ export function applyHit(world: World, attackerId: number, target: Player, hit: 
     if (inGoalArc(world.stage, target.team, target.pos)) resist += K.goalArcResist;
     knockback = Math.max(0, knockback - resist);
   }
+  knockback *= buffKnockbackTaken(target);
 
   // Stagger.
   target.stagger = Math.max(0, target.stagger - damage);
@@ -51,9 +55,21 @@ export function applyHit(world: World, attackerId: number, target: Player, hit: 
     target.staggered = true;
     world.events.push({ type: 'staggered', playerId: target.id, by: attackerId });
   }
+  // Guarded dash: breaks after taking enough damage.
+  const guard = target.dash?.guard;
+  if (guard && guard.breakAt > 0) {
+    guard.taken += damage;
+    if (guard.taken >= guard.breakAt * target.maxStagger) {
+      target.dash = null;
+      world.events.push({ type: 'guardBreak', playerId: target.id });
+    }
+  }
+  // Any real hit makes a grabbing player drop the ball.
+  if (world.ball.heldBy === target.id && (damage > 0 || knockback > 0 || hit.stun || hit.banish)) releaseBall(world, null, 0, 'drop');
 
   if (hit.light) target.slowTicks = Math.max(target.slowTicks, ticks(K.lightSlowTime));
-  if (knockback > 0) startKnock(target, hit.dir, knockback);
+  if (hit.banish) banish(world, target, attackerId, hit.banish);
+  else if (knockback > 0) startKnock(target, hit.dir, knockback);
   if (hit.stun) target.stunTicks = Math.max(target.stunTicks, ticks(hit.stun));
 
   target.lastHitBy = attackerId;
@@ -75,6 +91,19 @@ export function applyHit(world: World, attackerId: number, target: Player, hit: 
   return true;
 }
 
+/** Take a player out of play for `seconds`: frozen, untargetable, back in the same place. */
+export function banish(world: World, p: Player, by: number, seconds: number): void {
+  p.banishTicks = Math.max(p.banishTicks, ticks(seconds));
+  p.knockTicks = 0;
+  p.knockVel = { x: 0, y: 0 };
+  p.vel = { x: 0, y: 0 };
+  p.dash = null;
+  p.cast = null;
+  p.charging = null;
+  p.channel = null;
+  world.events.push({ type: 'banish', playerId: p.id, by });
+}
+
 /** Start a decelerating knockback slide that covers ~knockback × distancePerKnockback units. */
 export function startKnock(p: Player, dir: Vec2, knockback: number): void {
   const dist = knockback * K.distancePerKnockback;
@@ -87,6 +116,8 @@ export function startKnock(p: Player, dir: Vec2, knockback: number): void {
   p.vel = { x: 0, y: 0 };
   p.dash = null; // knockback interrupts dashes
   p.cast = null;
+  p.charging = null;
+  p.channel = null;
 }
 
 export function gainEnergy(p: Player, amount: number): void {
@@ -99,7 +130,12 @@ export function knockOut(world: World, p: Player): void {
   p.knockTicks = 0;
   p.dash = null;
   p.cast = null;
+  p.charging = null;
+  p.channel = null;
+  p.recast = null;
+  p.banishTicks = 0;
   p.buffs = [];
+  refreshBody(p);
   p.knockVel = { x: 0, y: 0 };
   p.vel = { x: 0, y: 0 };
   p.stunTicks = 0;
@@ -145,7 +181,15 @@ export function stepCombatTimers(world: World, p: Player): void {
   if (p.immuneTicks > 0) p.immuneTicks--;
   if (p.evadeCooldown > 0) p.evadeCooldown--;
   if (p.burstBoostTicks > 0) p.burstBoostTicks--;
-  for (let i = p.buffs.length - 1; i >= 0; i--) if (--p.buffs[i]!.ticks <= 0) p.buffs.splice(i, 1);
+  if (p.banishTicks > 0 && --p.banishTicks === 0) world.events.push({ type: 'unbanish', playerId: p.id, pos: { ...p.pos } });
+  let expired = false;
+  for (let i = p.buffs.length - 1; i >= 0; i--) {
+    if (--p.buffs[i]!.ticks <= 0) {
+      p.buffs.splice(i, 1);
+      expired = true;
+    }
+  }
+  if (expired) refreshBody(p);
 
   if (p.regenDelay > 0) {
     p.regenDelay--;

@@ -1,4 +1,4 @@
-import { getKit, getPokemon, type MoveDef } from '@pokeathlon/data';
+import { getKit, getPokemon, type KitDef, type MoveDef } from '@pokeathlon/data';
 import { analyzeMove, type MoveStats } from '@pokeathlon/data/analyze';
 
 /**
@@ -10,7 +10,7 @@ export interface MoveModel {
   id: string;
   stats: MoveStats;
   /** Main delivery: what the bot has to aim. */
-  delivery: 'projectile' | 'dash' | 'selfArea' | 'targetArea' | 'buff' | 'wall';
+  delivery: 'projectile' | 'dash' | 'selfArea' | 'targetArea' | 'buff' | 'wall' | 'blink' | 'grab';
   /** Cone or line (aimed at a target) vs circle around the caster. */
   aimed: boolean;
   /** Projectile / dash speed (units/s) for leading the target; 0 = instant. */
@@ -35,19 +35,37 @@ export interface MoveModel {
   push: 'travel' | 'radial' | 'pull';
   /** Cone full angle (cone areas), 360 for circles, 0 otherwise. */
   angleDeg: number;
+  // ---- M5.1 mechanics ----
+  /** Seconds to hold for a full charge (0 = not a charge move). */
+  charge: number;
+  /** Has a recast. */
+  recast: boolean;
+  /** Blink destination kind (blinks only). */
+  blinkTo: 'aim' | 'ally' | 'mark' | null;
+  /** Ally blinks swap places. */
+  swap: boolean;
+  /** Seconds a grab holds the ball. */
+  hold: number;
+  /** Transform buff: Strike hits players while it is up. */
+  strikeBuff: boolean;
+  /** A channel (the caster keeps casting for `duration`). */
+  channel: boolean;
 }
 
-const cache = new Map<string, MoveModel[]>();
+/** Keyed by the kit object, so a kit installed at runtime (tests, drafts) gets fresh models. */
+const cache = new WeakMap<KitDef, MoveModel[]>();
+const NONE: MoveModel[] = [];
 
 /** Move models for a Pokémon, in slot order (empty if it has no kit). */
 export function moveModels(pokemonId: string): MoveModel[] {
-  const hit = cache.get(pokemonId);
-  if (hit) return hit;
   const kit = getKit(pokemonId);
+  if (!kit) return NONE;
+  const hit = cache.get(kit);
+  if (hit) return hit;
   const def = getPokemon(pokemonId);
   const slots = ['primary', 'secondary', 'special'] as const;
-  const models = kit ? slots.map((slot, i) => model(kit.moves.find((m) => m.slot === slot)!, i, def)) : [];
-  cache.set(pokemonId, models);
+  const models = slots.map((slot, i) => model(kit.moves.find((m) => m.slot === slot)!, i, def));
+  cache.set(kit, models);
   return models;
 }
 
@@ -62,7 +80,7 @@ function model(def: MoveDef, slot: number, p: ReturnType<typeof getPokemon>): Mo
     delivery: 'buff',
     aimed: true,
     speed: 0,
-    delay: def.castTime + main.delay,
+    delay: def.castTime + (def.charge?.time ?? 0) + main.delay,
     range: def.range,
     radius: 0,
     hitsBall: stats.ballPower > 0 || stats.ballStun > 0,
@@ -72,7 +90,15 @@ function model(def: MoveDef, slot: number, p: ReturnType<typeof getPokemon>): Mo
     wallDistance: 0,
     castWhile: false,
     push: ('hit' in main && main.hit?.direction) || 'travel',
-    angleDeg: main.type === 'area' ? (main.shape === 'cone' ? main.angleDeg : main.shape === 'circle' ? 360 : 0) : 0,
+    angleDeg:
+      main.type === 'area' || main.type === 'channel' ? (main.shape === 'cone' ? main.angleDeg : main.shape === 'circle' ? 360 : 0) : 0,
+    charge: def.charge?.time ?? 0,
+    recast: !!def.recast,
+    blinkTo: null,
+    swap: false,
+    hold: 0,
+    strikeBuff: false,
+    channel: false,
   };
   switch (main.type) {
     case 'projectile':
@@ -101,6 +127,32 @@ function model(def: MoveDef, slot: number, p: ReturnType<typeof getPokemon>): Mo
       m.aimed = false;
       m.speedPct = main.speedPct;
       m.radius = main.radius;
+      m.strikeBuff = !!main.strikeHit;
+      m.hitsPlayers = m.hitsPlayers || m.strikeBuff;
+      break;
+    case 'channel':
+      // Aimed like a self area; a line counts as a narrow cone (small-angle width / length).
+      m.delivery = 'selfArea';
+      m.aimed = true;
+      m.channel = true;
+      m.radius = main.shape === 'line' ? main.length : main.radius;
+      m.angleDeg = main.shape === 'line' ? Math.max(6, (main.width / Math.max(1, main.length)) * 57.3) : main.angleDeg;
+      break;
+    case 'blink':
+      m.delivery = 'blink';
+      m.range = main.distance;
+      m.blinkTo = main.to;
+      m.swap = main.swap;
+      m.radius = stats.reach - main.distance;
+      break;
+    case 'grab':
+      m.delivery = 'grab';
+      m.radius = main.radius;
+      m.hold = main.hold;
+      m.hitsBall = true;
+      break;
+    case 'throw':
+      m.delivery = 'grab';
       break;
   }
   // A dash followed by an area (e.g. a slam) lands where the dash ends.

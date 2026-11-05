@@ -30,7 +30,7 @@ export function stepOrbs(world: World): void {
   for (let i = world.orbs.length - 1; i >= 0; i--) {
     const orb = world.orbs[i]!;
     for (const p of world.players) {
-      if (p.koTicks > 0) continue;
+      if (p.koTicks > 0 || p.banishTicks > 0) continue;
       const dx = p.pos.x - orb.pos.x;
       const dy = p.pos.y - orb.pos.y;
       const r = O.radius + p.radius;
