@@ -520,6 +520,34 @@ After the match (and a short version after each set):
 Docs, a "what shipped" section here, PLAN.md, a fresh `balance/tiers.json` with 8 Pokémon, items and boosts,
 and the tag `v0.6.0-m5`.
 
+**✅ Done (2026-11-05).** PLAN.md M5 ✅, tag `v0.6.0-m5`.
+
+**Final tier snapshot** (600 random-comp 3v3s, random items, bot boost drafts, balance difficulty; identical to the 5.6 run, which confirms the stats cache didn't change any result):
+
+| Pokémon | Overall | Forward | Goalie |
+|---|---|---|---|
+| Snorlax | T0 | T0 67 % | T0.5? 59 % |
+| Blastoise | T0 | A? 54 % | T0 64 % |
+| Lucario | T0 | T0 62 % | B? 50 % |
+| Machamp | T0.5 | T0.5? 58 % | F 28 % |
+| Togekiss | A | C? 47 % | A? 54 % |
+| Greninja | B | B? 49 % | C? 43 % |
+| Alakazam | B | F 29 % | B? 50 % |
+| Pikachu | D | F 37 % | D? 40 % |
+
+**Balance-pass list** (deferred until you ask):
+- Snorlax, Blastoise and Lucario are T0;
+- Pikachu and Alakazam are weak as forwards;
+- Choice Scarf and Rocky Helmet are strong, Eject Pack is weak (partly a bot gap);
+- Run Away and Tough Claws are weak boosts;
+- contested touches are still about 35 %.
+
+**Not done in M5:**
+- watch replay;
+- CPU counter-picks from the matchup matrix;
+- bots using Eject Pack's blink back;
+- X's Strike-reset rule.
+
 ## Order and risks
 
 Order: **5.1 → 5.2 → 5.3 → 5.4 → 5.5 → 5.6 → 5.7 → 5.8 → 5.9 → 5.10.**
