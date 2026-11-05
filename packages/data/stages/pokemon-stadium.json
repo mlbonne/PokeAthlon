@@ -1,0 +1,76 @@
+{
+  "$comment": "Stage 1 (M6): Smash-style Pokémon Stadium. Same terrain as Viridian Pitch (neutral, no hazard, like OS Ahten City). `theme` picks the client art set. Positions are for team 0 (left, x<0); team 1 is mirrored through the origin.",
+  "id": "pokemon-stadium",
+  "name": "Pokémon Stadium",
+  "biome": "stadium",
+  "frame": "standard",
+  "theme": "stadium",
+  "spawns": {
+    "forwards": [
+      {
+        "x": -1000,
+        "y": 250
+      },
+      {
+        "x": -1000,
+        "y": -250
+      }
+    ],
+    "goalie": {
+      "x": -1100,
+      "y": 0
+    },
+    "respawn": [
+      {
+        "x": -950,
+        "y": 700
+      }
+    ],
+    "ball": [
+      {
+        "x": 0,
+        "y": 600
+      },
+      {
+        "x": 0,
+        "y": -600
+      }
+    ]
+  },
+  "orbs": {
+    "mid": [
+      {
+        "x": 0,
+        "y": 600
+      },
+      {
+        "x": 0,
+        "y": -600
+      }
+    ],
+    "arc": [
+      {
+        "x": -1250,
+        "y": 250
+      },
+      {
+        "x": -1250,
+        "y": -250
+      }
+    ]
+  },
+  "barriers": [
+    {
+      "x": -1300,
+      "y": 370,
+      "hx": 70,
+      "hy": 335
+    },
+    {
+      "x": -1300,
+      "y": -370,
+      "hx": 70,
+      "hy": 335
+    }
+  ]
+}

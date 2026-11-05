@@ -106,3 +106,46 @@ reusing the rim, stands and screen with a different field and gimmick.
 2. **Downloads:** OK to fetch the 3 CC BY seat/stand models above, or build the stands in code only?
 3. **Time of day:** night like Smash's Stadium 2, or day like Stadium 1?
 4. **Camera:** keep today's tight framing (gameplay first), or show a little more stadium around the field?
+
+## ✅ What shipped (2026-11-05, first pass)
+
+**Your call (changes the plan above):** no art made by us. Every visible piece is a downloaded asset, from Pokébonk
+where it had one, or from free model sites. Name "Pokémon Stadium", night, today's camera.
+
+- **Stage:** `pokemon-stadium` (same terrain as Viridian Pitch, no hazard) is now the default stage. The terrain
+  schema has a `theme` field that only the client reads (`plain` = old flat arena).
+- **Platform** (`render/arena.ts`, `theme: stadium`):
+  - Pokébonk's pixel grass on the field, with mowing stripes;
+  - Pokébonk's Poké Ball item icon as the centre emblem;
+  - a rim of Pokébonk tower bricks, desaturated to grey in the shader;
+  - a deep Pokébonk basalt body under both the player and ball outlines.
+- **Surroundings** (`render/stadium.ts`):
+  - two "Stadium Seats" bowls (Zsky, CC BY) rotated into a ring **below** the platform, like Smash's raised stage, so the near stands never hide the field;
+  - truss legs under the platform;
+  - 4 floodlight towers: a truss plus 6 CC0 spotlights each, with glow;
+  - Pokébonk Poké Balls on the 4 cut corners, with Pokébonk-style outlines;
+  - the big screen (billboard, CC BY) with a live canvas: Poké Ball icon, score, clock, set pips, and **GOAL!** flashing in the scoring team's colour;
+  - a night skyline: a far silhouette (CC BY) plus 22 Kenney towers (CC0) with lit windows;
+  - 4 sweeping searchlight beams.
+- **Crowd:** our PMD Idle sprites:
+  - one instanced mesh per species, about 2,300 spectators, placed by raycasting onto the blue seats;
+  - they animate, and jump on goals (KOs and barrier breaks get a short cheer).
+- **Rendering (Pokébonk's techniques):**
+  - toon materials with the 3-step ramp;
+  - crisp nearest-filtered textures;
+  - an inverted-hull outline on models stored near real size;
+  - night lighting with longer fog for this stage.
+- **Switches and credits:**
+  - `?gfx=low` skips the surroundings;
+  - `?zoom=2.6` pulls the camera back to look at the stadium (debug);
+  - credits are in `assets/stadium/CREDITS.md`, appended to `CREDITS.md` by `npm run import-sprites`.
+- **Tests:** 177 pass (new `data/test/stages.test.ts`).
+
+**Not done yet:**
+- **S7:** the fly-over intro, confetti and camera flashes.
+- **Later steps:** LED ribbons, OS's team rotation of the visuals, and a frame-time check on a low-end PC.
+- **Screen placement:** at the normal match zoom, the big screen and towers are out of frame, as in OS where the background is a strip.
+  Moving the screen into view would collide with the HUD scoreboard.
+
+**⚠ Pokébonk files:** they're committed to this private repo with credit, but PokéBonk states no license.
+Ask its author (contacto@pokebonk.com) before making the repo public.

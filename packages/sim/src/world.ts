@@ -1,4 +1,4 @@
-import { gameplay, getPokemon, SIZE_TABLE, type BoostDef, type ItemDef, type KitPassive } from '@pokeathlon/data';
+import { DEFAULT_TERRAIN, gameplay, getPokemon, SIZE_TABLE, type BoostDef, type ItemDef, type KitPassive } from '@pokeathlon/data';
 import { newBoostState, stepBoosts, type BoostState } from './boosts';
 import { beginDraft, stepDraft, type DraftState } from './draft';
 import { itemForSpawn, newItemState, stepItems, type ItemState, type Poison } from './items';
@@ -270,7 +270,7 @@ export interface WorldOptions {
 }
 
 export function createWorld(spawns: PlayerSpawn[], opts: WorldOptions = {}): World {
-  const stage = buildStage(opts.terrain ?? 'viridian-pitch');
+  const stage = buildStage(opts.terrain ?? DEFAULT_TERRAIN);
   const mode = opts.mode ?? 'sandbox';
   const world: World = {
     tick: 0,

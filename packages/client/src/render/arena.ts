@@ -10,6 +10,54 @@ const flat = (m: THREE.Object3D, y: number) => {
   return m;
 };
 
+/** Pixel-art texture (Pokébonk-style crisp pixels), tiled. */
+function tex(url: string, repeat: number): THREE.Texture {
+  const t = new THREE.TextureLoader().load(url);
+  t.magFilter = THREE.NearestFilter;
+  t.minFilter = THREE.NearestMipmapNearestFilter;
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(repeat, repeat);
+  return t;
+}
+
+/** Same pixel texture, desaturated in the shader (Pokébonk's tower bricks are purple; the stadium rim is grey). */
+function greyed(m: THREE.MeshStandardMaterial, amount: number): THREE.MeshStandardMaterial {
+  m.onBeforeCompile = (sh) => {
+    sh.fragmentShader = sh.fragmentShader.replace(
+      '#include <map_fragment>',
+      `#include <map_fragment>
+       float lum = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+       diffuseColor.rgb = mix(diffuseColor.rgb, vec3(lum), ${amount.toFixed(2)});`,
+    );
+  };
+  return m;
+}
+
+/** Offset a convex-ish polygon outward by `d` (miter joins). */
+function offsetOutline(pts: Vec2[], d: number): Vec2[] {
+  const n = pts.length;
+  let area = 0;
+  for (let i = 0; i < n; i++) {
+    const a = pts[i]!;
+    const b = pts[(i + 1) % n]!;
+    area += a.x * b.y - b.x * a.y;
+  }
+  const sgn = area > 0 ? 1 : -1;
+  return pts.map((p, i) => {
+    const a = pts[(i + n - 1) % n]!;
+    const b = pts[(i + 1) % n]!;
+    const n1 = norm(p.y - a.y, -(p.x - a.x), sgn);
+    const n2 = norm(b.y - p.y, -(b.x - p.x), sgn);
+    const k = 1 + n1.x * n2.x + n1.y * n2.y;
+    return { x: p.x + ((n1.x + n2.x) / k) * d, y: p.y + ((n1.y + n2.y) / k) * d };
+  });
+}
+function norm(x: number, y: number, sgn: number): Vec2 {
+  const l = Math.hypot(x, y) || 1;
+  return { x: (x / l) * sgn, y: (y / l) * sgn };
+}
+
 function shapeOf(pts: Vec2[]): THREE.Shape {
   return new THREE.Shape(pts.map(v2));
 }
@@ -22,11 +70,13 @@ function lineLoop(pts: Vec2[], color: number, y: number, opacity = 1): THREE.Lin
 /** Static arena: floor, KO edge, ball rails, goal pockets, posts, Goal Arcs, field markings. */
 export function buildArena(stage: Stage): THREE.Group {
   const g = new THREE.Group();
+  const stadium = stage.theme === 'stadium';
 
-  // Floor where players can stand (outline = KO edge).
+  // Floor where players can stand (outline = KO edge). Stadium: Pokébonk's pixel grass tile.
+  const grass = stadium ? tex('stadium/pokebonk/grass.png', 0.55) : null;
   const floor = new THREE.Mesh(
     new THREE.ShapeGeometry(shapeOf(stage.playerOutline)),
-    new THREE.MeshStandardMaterial({ color: 0x4f9d52, roughness: 1 }),
+    new THREE.MeshStandardMaterial(grass ? { map: grass, color: 0xd8ecd0, roughness: 1 } : { color: 0x4f9d52, roughness: 1 }),
   );
   g.add(flat(floor, 0));
 
@@ -36,7 +86,7 @@ export function buildArena(stage: Stage): THREE.Group {
     const s = goal.side;
     const net = new THREE.Mesh(
       new THREE.PlaneGeometry((F.backX - F.mouthX) * WORLD_TO_THREE, F.pocketHalfWidth * 2 * WORLD_TO_THREE),
-      new THREE.MeshStandardMaterial({ color: s < 0 ? 0x26407a : 0x7a2633, roughness: 1 }),
+      new THREE.MeshStandardMaterial({ color: s < 0 ? 0x26407a : 0x7a2633, roughness: 1, ...(stadium ? { emissive: s < 0 ? 0x10224a : 0x4a1018 } : {}) }),
     );
     flat(net, 0.003).position.set(toThreeX((s * (F.mouthX + F.backX)) / 2), 0.003, 0);
     g.add(net);
@@ -50,12 +100,22 @@ export function buildArena(stage: Stage): THREE.Group {
   }
 
   // Mowing stripes, clipped roughly to the field.
-  const stripeMat = new THREE.MeshStandardMaterial({ color: 0x58a85a, roughness: 1 });
+  const stripeMat = grass
+    ? new THREE.MeshStandardMaterial({ map: grass, color: 0xb4cfa8, roughness: 1, transparent: true, opacity: 0.55, depthWrite: false })
+    : new THREE.MeshStandardMaterial({ color: 0x58a85a, roughness: 1 });
   const hl = toThreeX(F.cornerStartX);
   const hw = toThreeX(F.sideY);
   for (let i = 0; i < 8; i += 2) {
     const sw = (2 * hl) / 8;
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(sw, 2 * hw), stripeMat);
+    const pg = new THREE.PlaneGeometry(sw, 2 * hw);
+    if (grass) {
+      // World-aligned UVs so the stripe's grass lines up with the floor's.
+      const uv = pg.attributes.uv!;
+      const pos = pg.attributes.position!;
+      const x0 = -hl + sw * (i + 0.5);
+      for (let k = 0; k < uv.count; k++) uv.setXY(k, pos.getX(k) + x0, pos.getY(k));
+    }
+    const m = new THREE.Mesh(pg, stripeMat);
     flat(m, 0.002).position.set(-hl + sw * (i + 0.5), 0.002, 0);
     g.add(m);
   }
@@ -67,6 +127,19 @@ export function buildArena(stage: Stage): THREE.Group {
   const circle: Vec2[] = [];
   for (let i = 0; i < 48; i++) circle.push({ x: Math.cos((i / 48) * Math.PI * 2) * 300, y: Math.sin((i / 48) * Math.PI * 2) * 300 });
   g.add(lineLoop(circle, white, 0.01, 0.7));
+
+  // Stadium: the Poké Ball emblem in the centre circle (Pokébonk's Poké Ball item icon, crisp pixels).
+  if (stadium) {
+    const t = new THREE.TextureLoader().load('stadium/pokebonk/poke-ball.png');
+    t.magFilter = THREE.NearestFilter;
+    t.minFilter = THREE.NearestFilter;
+    t.colorSpace = THREE.SRGBColorSpace;
+    const emblem = new THREE.Mesh(
+      new THREE.PlaneGeometry(5.4, 5.4),
+      new THREE.MeshStandardMaterial({ map: t, transparent: true, alphaTest: 0.5, opacity: 0.9, roughness: 1, depthWrite: false }),
+    );
+    g.add(flat(emblem, 0.006));
+  }
 
   // Goal Arcs (team tint), only the part in front of the goal line.
   for (const goal of stage.goals) {
@@ -112,14 +185,39 @@ export function buildArena(stage: Stage): THREE.Group {
   }
 
   // Slab + void so the KO edge reads as a drop.
-  const slab = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(shapeOf(stage.playerOutline), { depth: 1.5, bevelEnabled: false }),
-    new THREE.MeshStandardMaterial({ color: 0x6b4f3a, roughness: 1 }),
-  );
-  slab.rotation.x = Math.PI / 2;
-  slab.position.y = -0.05;
-  g.add(slab);
-  const voidMesh = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshBasicMaterial({ color: 0x1b1638 }));
-  g.add(flat(voidMesh, -2));
+  if (!stadium) {
+    const slab = new THREE.Mesh(
+      new THREE.ExtrudeGeometry(shapeOf(stage.playerOutline), { depth: 1.5, bevelEnabled: false }),
+      new THREE.MeshStandardMaterial({ color: 0x6b4f3a, roughness: 1 }),
+    );
+    slab.rotation.x = Math.PI / 2;
+    slab.position.y = -0.05;
+    g.add(slab);
+    const voidMesh = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshBasicMaterial({ color: 0x1b1638 }));
+    g.add(flat(voidMesh, -2));
+    return g;
+  }
+
+  // Stadium platform (Smash's floating stage): a grey brick rim a step below the KO edge, then a deep basalt body.
+  // Covers the player outline and the goal pockets (ball outline).
+  const rimMat = greyed(new THREE.MeshStandardMaterial({ map: tex('stadium/pokebonk/rim.png', 0.9), color: 0xc9ccd6, roughness: 1 }), 0.85);
+  const bodyMat = new THREE.MeshStandardMaterial({ map: tex('stadium/pokebonk/basalt.png', 0.45), color: 0x9aa3b5, roughness: 1 });
+  for (const [outline, y] of [
+    [stage.playerOutline, -0.06],
+    [stage.ballOutline, -0.07],
+  ] as const) {
+    const rim = offsetOutline(outline, 55);
+    const top = new THREE.Mesh(new THREE.ExtrudeGeometry(shapeOf(rim), { depth: 0.5, bevelEnabled: false }), [rimMat, rimMat]);
+    top.rotation.x = Math.PI / 2;
+    top.position.y = y;
+    g.add(top);
+    const body = new THREE.Mesh(
+      new THREE.ExtrudeGeometry(shapeOf(offsetOutline(outline, 25)), { depth: 4.5, bevelEnabled: false }),
+      [bodyMat, bodyMat],
+    );
+    body.rotation.x = Math.PI / 2;
+    body.position.y = y - 0.5;
+    g.add(body);
+  }
   return g;
 }

@@ -174,6 +174,12 @@ for (const mon of roster) {
   console.log(`✓ ${mon.name.padEnd(10)} ${Object.keys(manifest.anims).length} anims, ${manifest.portraits.length} portraits`);
 }
 
+/** Stage art credits (M6) live next to the files; appended so CREDITS.md stays the single list. */
+function stageCredits(): string {
+  const f = join(ROOT, 'assets', 'stadium', 'CREDITS.md');
+  return existsSync(f) ? `\n${readFileSync(f, 'utf8')}` : '';
+}
+
 writeFileSync(
   join(ROOT, 'CREDITS.md'),
   `# Credits
@@ -190,7 +196,7 @@ License: [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) (non-co
 "CHUNSOFT" entries are original *Pokémon Mystery Dungeon* assets by Spike Chunsoft.
 The bracketed tags are the license labels recorded per contribution in SpriteCollab.
 
-${creditSections.join('\n')}`,
+${creditSections.join('\n')}${stageCredits()}`,
 );
 
 if (problems > 0) {

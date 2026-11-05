@@ -1,0 +1,20 @@
+## Stage art: Pokémon Stadium
+
+Arranged, tinted and toon-shaded in code (`packages/client/src/render/stadium.ts`, `arena.ts`); the files are unchanged.
+
+| File (`assets/stadium/…`) | Model | Author | License |
+|---|---|---|---|
+| `poly/seats_zsky.glb` | [Stadium Seats](https://poly.pizza/m/KAHX68dbXO) | Zsky | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| `poly/stadium_zsky.glb` | [Stadium](https://poly.pizza/m/FNOmnIZJLs) | Zsky | CC BY 3.0 (not used yet) |
+| `poly/stands_brenner.glb` | [Low Poly Sports Stands](https://poly.pizza/m/26j2bQ3zuUL) | Cole Brenner | CC BY 3.0 (not used yet) |
+| `poly/football_stadium_google.glb` | [Football stadium](https://poly.pizza/m/6TZCkGh76m5) | Poly by Google | CC BY 3.0 (not used yet) |
+| `poly/light_truss_large_simcoe.glb` | [Large Support for Lighting](https://poly.pizza/m/7EmgSLnxWDE) | Peter Simcoe | CC BY 3.0 |
+| `poly/light_truss_simcoe.glb` | [Support Structure for Lighting](https://poly.pizza/m/8KkkRdZq0wL) | Peter Simcoe | CC BY 3.0 (not used yet) |
+| `poly/billboard_google.glb` | [Billboard](https://poly.pizza/m/3ALIEkWNbgR) | Poly by Google | CC BY 3.0 |
+| `poly/blocks_skyline_annadreambrush.glb` | [Blocks Skyline](https://poly.pizza/m/6TaAIsfCgFc) | Anna dream brush | CC BY 3.0 |
+| `poly/light_post_zsky.glb` | [Light Post](https://poly.pizza/m/7JUgLfLeEU) | Zsky | CC BY 3.0 (not used yet) |
+| `poly/spotlight_ipoly3d.glb`, `poly/spot_light_ipoly3d.glb` | [Spotlight](https://poly.pizza/m/YohOCmn0hO), [Spot Light](https://poly.pizza/m/eaQqgLn0oJ) | iPoly3D | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) |
+| `poly/skyscraper_kenney_a…f.glb` | Skyscrapers ([1](https://poly.pizza/m/XST1j6kYsL) [2](https://poly.pizza/m/obYD8hWLTZ) [3](https://poly.pizza/m/PsPe0MzK0E) [4](https://poly.pizza/m/JTsKOSB23Y) [5](https://poly.pizza/m/BwEXdOoUSO) [6](https://poly.pizza/m/jIRx0AhYOR)) | Kenney | CC0 |
+| `pokebonk/*` | Poké Ball model, Poké Ball item icon, grass, brick and basalt tiles | [PokéBonk](https://pokebonk.com) by Charcher | PokéBonk is a free non-commercial fan game; used with credit, no license stated. ⚠ Ask before making this repo public |
+
+The crowd is our PMD Sprite Collab sprites (credited above).

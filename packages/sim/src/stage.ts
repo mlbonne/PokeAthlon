@@ -30,6 +30,8 @@ export interface TeamSpawns {
 export interface Stage {
   id: string;
   name: string;
+  /** Client art set (`plain`, `stadium`); visual only. */
+  theme: string;
   /** Outline the ball bounces inside (includes both goal pockets). */
   ballOutline: Vec2[];
   ballWalls: Segment[];
@@ -122,6 +124,7 @@ export function buildStage(terrainId: string): Stage {
   const stage: Stage = {
     id: t.id,
     name: t.name,
+    theme: t.theme,
     ballOutline,
     ballWalls: polygonSegments(ballOutline),
     playerOutline,
