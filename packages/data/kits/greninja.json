@@ -1,0 +1,127 @@
+{
+  "$comment": "Flashy Swordsman (OS Zentaro model, wiki 2026-11). Night Slash = Slice and Dice (light arc, then a slash whose centre hits hard), Shadow Sneak = Iai Rush (0.5 s unstoppable wind-up, blink 600 hitting the path), passive = Slashing Strike (charge by hitting, then the Strike fires a piercing projectile). Special: Hydro Cannon (GAME_BREAKDOWN §13), a charge-and-release beam. Player knockback = OS × 1.875 (brawling rework); power % → powerRatio.",
+  "pokemon": "greninja",
+  "passive": {
+    "name": "Water Shuriken",
+    "desc": "Hitting enemies with moves charges a shuriken. At 6 charges your next Strike lunges forward and throws a piercing LIGHT shuriken.",
+    "stacks": 6,
+    "gainOn": "moveHit",
+    "actions": [
+      { "type": "dash", "fx": { "color": "#4cc9f0" }, "distance": 180, "time": 0.12 },
+      {
+        "type": "projectile",
+        "fx": { "color": "#4cc9f0" },
+        "delay": 0.1,
+        "speed": 2400,
+        "range": 650,
+        "radius": 40,
+        "pierce": true,
+        "hit": {
+          "ball": { "base": 1260, "powerRatio": 1.4 },
+          "player": { "base": 262, "powerRatio": 1.312 },
+          "damage": { "base": 140, "powerRatio": 0.7 },
+          "light": true
+        }
+      }
+    ]
+  },
+  "moves": [
+    {
+      "id": "night-slash",
+      "name": "Night Slash",
+      "slot": "primary",
+      "cooldown": 9,
+      "anim": "Swing",
+      "desc": "A quick LIGHT slash, then a wide slash. Its centre hits hard; its sides are LIGHT.",
+      "bot": "engage",
+      "actions": [
+        {
+          "type": "area",
+          "fx": { "color": "#7b6cd9" },
+          "shape": "cone",
+          "radius": 220,
+          "angleDeg": 100,
+          "hit": {
+            "ball": { "base": 100, "powerRatio": 0.1 },
+            "player": { "base": 11, "powerRatio": 0.038 },
+            "damage": { "base": 6, "powerRatio": 0.02 },
+            "light": true
+          }
+        },
+        {
+          "type": "area",
+          "fx": { "color": "#5a3e9e" },
+          "delay": 0.45,
+          "shape": "cone",
+          "radius": 300,
+          "angleDeg": 140,
+          "hit": {
+            "ball": { "base": 867, "powerRatio": 1.067 },
+            "player": { "base": 135, "powerRatio": 0.675 },
+            "damage": { "base": 72, "powerRatio": 0.36 },
+            "light": true
+          },
+          "sweetSpot": {
+            "from": 0,
+            "to": 1,
+            "angleDeg": 40,
+            "hit": {
+              "ball": { "base": 1300, "powerRatio": 1.6 },
+              "player": { "base": 300, "powerRatio": 1.5 },
+              "damage": { "base": 160, "powerRatio": 0.8 }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "shadow-sneak",
+      "name": "Shadow Sneak",
+      "slot": "secondary",
+      "cooldown": 16,
+      "anim": "QuickStrike",
+      "desc": "After 0.5 s (can't be stopped), blink 600 forward, hitting every enemy and the ball on the way.",
+      "bot": "engage",
+      "actions": [
+        {
+          "type": "blink",
+          "fx": { "color": "#3a0ca3" },
+          "delay": 0.5,
+          "telegraph": true,
+          "to": "aim",
+          "distance": 600,
+          "hit": {
+            "ball": { "base": 1340, "powerRatio": 1.8 },
+            "player": { "base": 337, "powerRatio": 1.688 },
+            "damage": { "base": 180, "powerRatio": 0.9 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "hydro-cannon",
+      "name": "Hydro Cannon",
+      "slot": "special",
+      "cooldown": 30,
+      "anim": "Shoot",
+      "desc": "Hold to charge (1 s), release to fire a piercing water beam. Weak if released early.",
+      "bot": "ballShot",
+      "charge": { "time": 1, "maxHold": 2, "min": 0.4, "slowPct": 40 },
+      "actions": [
+        {
+          "type": "projectile",
+          "fx": { "color": "#4cc9f0" },
+          "speed": 3200,
+          "range": 1100,
+          "radius": 60,
+          "pierce": true,
+          "hit": {
+            "ball": { "base": 1400, "powerRatio": 1.8 },
+            "player": { "base": 450, "powerRatio": 2.25 },
+            "damage": { "base": 240, "powerRatio": 1.2 }
+          }
+        }
+      ]
+    }
+  ]
+}

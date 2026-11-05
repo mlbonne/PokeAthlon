@@ -132,6 +132,56 @@ Kits from GAME_BREAKDOWN §13:
 Numbers follow the §9 budget rules (M1 ~10–12 s, M2 ~18–20 s, Special ~25–40 s; ball knockback ≤ ~1.2× Strike) and start
 near a power budget of 100 in the analyzer. Sprites: map each move to an existing SpriteCollab animation.
 
+**✅ What shipped (5.2)**
+
+Numbers come from the OS wiki (fetched 2026-11) for Zentaro and X, converted with the same rules as the M3 kits:
+- player knockback = OS × 1.875 (the brawling rework's ×1.25 × 1.5);
+- core knockback and damage are unchanged;
+- "% Power" becomes `powerRatio`.
+
+**Greninja** (`kits/greninja.json`, Zentaro model, Striker):
+
+| Move | OS source | Our version |
+|---|---|---|
+| Passive: **Water Shuriken** | Slashing Strike (charge by hitting; 16 hits counting every light hit) | 6 move hits (our multi-hit moves count fewer hits). The next Strike lunges 180 and throws a piercing LIGHT shuriken: ball 1260+1.4, player 262+1.31, damage 140+0.7 |
+| Primary: **Night Slash** (9 s) | Slice and Dice (7.5 → 9 s patch) | A LIGHT arc, then 0.45 s later a 140° slash. The **central 40° is a sweet spot** (ball 1300+1.6, player 300+1.5, damage 160+0.8); the sides are LIGHT, at 45 % of the centre |
+| Secondary: **Shadow Sneak** (16 s) | Iai Rush | Telegraphed 0.5 s delay (can't be interrupted, as in OS), then a **blink** of 600 hitting the path: ball 1340+1.8, player 337+1.69, damage 180+0.9 |
+| Special: **Hydro Cannon** (30 s) | — (GAME_BREAKDOWN §13; Zentaro's Oni's Blade wasn't used) | **Charge** 1 s (max hold 2 s, minimum 40 %, slowed 40 %), then a piercing beam 1100 long. At full charge: ball 1400+1.8, player 450+2.25, damage 240+1.2 |
+
+**Machamp** (`kits/machamp.json`, X model, Brawler):
+
+| Move | OS source | Our version |
+|---|---|---|
+| Primary: **Cross Chop** (11 s) | Bell Ringer | 0.6 s wind-up, then a 300-radius swing. The **outer 40 % is a sweet spot** (ball 1360+1.9, player 375+1.875, damage 200+1.0, radial); the inside is LIGHT at 33 % |
+| Secondary: **Submission Rush** (14 s) | Bull Rush (85 % scaling patch) | 0.55 s wind-up, then a 600 rush. Other moves can be cast mid-rush. Ball 1360+1.9, player 300+1.59, damage 160+0.85 |
+| Special: **No Guard** (40 s) | X Maximus! (45 s, +40 % size patch) | **Transform** for 3.5 s: +40 % size, Strikes hit players (player 281+1.41, damage 60+0.35), **+25 % knockback taken** (our drawback from §13; OS has none listed) |
+
+**Theory budget** (`npm run kits`): Greninja **96 (B)**, Machamp **89 (C)**. Both are inside the 88–112 gate.
+
+Not ported from OS:
+- X's Strike cooldown resets when Maximus starts and ends;
+- Zentaro's lunge on the passive is fixed at 180 (OS gives no number).
+
+**Bot fix found by the measurement:**
+- Transformed bots now brawl with Strike: they close in on the nearest enemy and swing toward that enemy's nearest edge (`·maul`).
+- Before the fix, No Guard was cast but almost never landed, because bot Strikes only look for the ball:
+  - No Guard hits per player-match: 6.3 → 17;
+  - KOs per player-match: 0.07 → 3.1.
+
+**Measured** (600 random-comp 3v3s, balance difficulty, after the fix; tier snapshot not updated until 5.4):
+
+| Pokémon | Overall | Forward | Goalie |
+|---|---|---|---|
+| Machamp | **T0.5** | T0.5? 56 % | F? 39 % |
+| Greninja | **D** | F? 40 % | D? 40 % |
+| (Snorlax) | T0 | 68 % | 66 % |
+| (Lucario) | A | 55 % | 57 % |
+
+- Both are inside the 5.4 gate (D…T0.5 overall).
+- Machamp is a forward and Greninja a striker, so weak goalie numbers are expected (OS X and Zentaro are forwards too).
+- **Watch item for the balance pass:** Greninja is the weakest kit. Shadow Sneak lands on players in about 40 % of casts (the 0.5 s delay), and the centre sweet spot of Night Slash needs precise aim.
+- Snorlax still pulls everyone else under 50 %.
+
 ### 5.3 Passer and wall: Alakazam and Blastoise
 
 - **Alakazam** (Manipulating Mastermind, Passer): Psychic (grab, recast to throw) / Teleport (swap with an ally) / Future Sight (delayed banish).

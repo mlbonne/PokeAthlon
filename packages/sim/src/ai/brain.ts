@@ -72,7 +72,7 @@ export function smartBotInput(world: World, id: number, difficulty: Difficulty =
     }
     aim = mem.aim;
   }
-  const strikeAim = rotateDeg(aim, mem.aimNoise);
+  let strikeAim = rotateDeg(aim, mem.aimNoise);
 
   // ---- Strike timing (OS scrums: whoever swings second wins) ----
   // An enemy can hit the ball right now with Strike ready: don't swing first unless it's a clean
@@ -99,6 +99,22 @@ export function smartBotInput(world: World, id: number, difficulty: Difficulty =
     // the ball is so far away that the whiff's cooldown is over before it arrives.
     strikeBit = Button.Strike;
     mem.holding = true;
+  }
+  // Transformed (Strike hits players): brawl with Strike. Close in on the nearest enemy and swing so
+  // the hit pushes them toward their nearest edge (a press needs a released button the tick before).
+  if (job !== 'goalie' && p.buffs.some((b) => b.strikeHit)) {
+    let foe: Player | null = null;
+    for (const o of enemies(world, p)) if (isTargetable(o) && (!foe || dist(o.pos, p.pos) < dist(foe.pos, p.pos))) foe = o;
+    const d = foe ? dist(foe.pos, p.pos) : Infinity;
+    if (foe && d <= p.strikeRadius + foe.hurtRadius + 220 && perc.intercept[id]!.t > 10) {
+      target = { x: foe.pos.x + foe.vel.x * 0.15, y: foe.pos.y + foe.vel.y * 0.15 };
+      action = `${action}·maul`;
+      if (d <= p.strikeRadius + foe.hurtRadius - 10 && p.strikeCooldown === 0) {
+        strikeAim = nearestEdge(world, foe.pos).dir;
+        strikeBit = (p.prevButtons & Button.Strike) !== 0 ? 0 : Button.Strike;
+        mem.holding = false;
+      }
+    }
   }
   const holdingBall = world.ball.heldBy === p.id;
   if (holdingBall) {
