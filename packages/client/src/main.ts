@@ -21,6 +21,7 @@ import {
 import { getKit } from '@pokeathlon/data';
 import { AbilityBar } from './abilityBar';
 import { DraftScreen } from './draftScreen';
+import { ResultsScreen } from './results';
 import { SetupScreen, type MatchConfig } from './setup';
 import { DebugMenu } from './debug/menu';
 import type { FrameRecorder } from './recorder';
@@ -186,6 +187,7 @@ function startMatch(): void {
     $info.textContent = `Blue ${team(0)}  vs  Red ${team(1)}`;
     $portrait.src = `portraits/${dexOf(myPokemon)}/Normal.png`;
   } else showCard(roster.find((r) => r.id === myPokemon)!);
+  results.reset(world, SPECTATE ? -1 : ME);
 }
 
 function makeSprites(world: World, group: THREE.Group): PmdSprite[] {
@@ -225,6 +227,18 @@ const setup = new SetupScreen(document.body, (c) => {
   setup.hide();
   startMatch();
 });
+/** Set cards, match results and the hold-Tab scoreboard (M5.9). */
+const results: ResultsScreen = new ResultsScreen(document.body, {
+  rematch: () => {
+    results.hide();
+    startMatch();
+  },
+  picks: () => {
+    results.hide();
+    setup.show();
+  },
+});
+
 
 let toastTimer = 0;
 function toast(text: string): void {
@@ -313,10 +327,10 @@ function onEvent(e: SimEvent): void {
       hud.showBanner('OVERTIME<small>Ball knockback +20 %</small>', 2, '');
       break;
     case 'setWon':
-      hud.showBanner(`${TEAM_NAMES[e.team]} wins the set!<small>Sets ${e.sets[0]} – ${e.sets[1]}</small>`, 3.5, `t${e.team}`);
+      if (world.match.phase !== 'matchOver') hud.showBanner(`${TEAM_NAMES[e.team]} wins the set!<small>Sets ${e.sets[0]} – ${e.sets[1]}</small>`, 3.5, `t${e.team}`);
       break;
     case 'matchWon':
-      hud.showBanner(`${TEAM_NAMES[e.team]} wins the match!<small>Press R to play again</small>`, 9999, `t${e.team}`);
+      // The results screen (M5.9) takes over.
       break;
     case 'hit':
       effects.ring(toThreeX(e.pos.x), toThreeZ(e.pos.y), 0xffffff, 1.4, 0.2);
@@ -403,7 +417,10 @@ function simStep(input: PlayerInput): void {
   );
   if (debugHooks.noCooldowns) practiceClearCooldowns(world);
   if (!world.draft || world.events.some((e) => e.type === 'boostPick' && e.playerId === ME)) pendingPick = -1;
-  for (const e of world.events) onEvent(e);
+  for (const e of world.events) {
+    onEvent(e);
+    results.onEvent(world, e);
+  }
 }
 
 // ---------- Dev hook (stripped from production builds) ----------
@@ -472,6 +489,7 @@ function frame(now: number): void {
       else setup.show();
     }
     if (a.startsWith('nav-') && setup.visible) setup.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
+    else if (a.startsWith('nav-') && results.visible && results.el.classList.contains('final')) results.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
     else if (a.startsWith('nav-') && draft.visible) draft.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
     if (a.startsWith('pad-on:')) toast(`Controller connected: ${a.slice(7).split('(')[0]!.trim()}`);
     if (a.startsWith('pad-off:')) toast('Controller disconnected');
@@ -489,7 +507,11 @@ function frame(now: number): void {
     steps++;
   }
   if (steps === 5) acc = 0;
-  if (setup.visible) draft.el.hidden = true;
+  results.update(view.world, dt, input.isHeld('Tab') && !setup.visible);
+  if (setup.visible) {
+    draft.el.hidden = true;
+    results.hide();
+  }
   else draft.update(view.world, SPECTATE ? -1 : ME);
   render(dt, now, acc / DT);
   requestAnimationFrame(frame);
