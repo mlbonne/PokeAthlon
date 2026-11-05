@@ -35,6 +35,7 @@ import { Effects } from './render/effects';
 import { facingRow, PmdSprite } from './render/pmdSprite';
 import { MoveViews } from './render/moves';
 import { Structures } from './render/structures';
+import { isStadium, stadiumLighting, StadiumView } from './render/stadium';
 import { toThreeX, toThreeZ, WORLD_TO_THREE } from './render/units';
 
 // ---------- Three.js setup ----------
@@ -46,12 +47,14 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1b1638);
 scene.fog = new THREE.Fog(0x1b1638, 60, 120);
-scene.add(new THREE.HemisphereLight(0xffffff, 0x334433, 1.6));
+const hemi = new THREE.HemisphereLight(0xffffff, 0x334433, 1.6);
+scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 1.4);
 sun.position.set(-10, 25, 12);
 scene.add(sun);
 
 const CAMERA_PITCH = THREE.MathUtils.degToRad(55);
+const CAM_ZOOM = Math.max(0.5, Math.min(4, Number(new URLSearchParams(location.search).get('zoom') ?? 1) || 1));
 const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 400);
 const hudRoot = document.querySelector<HTMLElement>('#hud')!;
 
@@ -131,6 +134,8 @@ interface MatchView {
 }
 
 let arena: THREE.Group | null = null;
+/** Stadium surroundings (M6 stage 1): stands, crowd, screen, lights, skyline. */
+let stadium: StadiumView | null = null;
 let view!: MatchView;
 
 function dexOf(id: string): string {
@@ -153,6 +158,11 @@ function startMatch(): void {
   if (!arena) {
     arena = buildArena(world.stage);
     scene.add(arena);
+    if (isStadium(world.stage) && params.get('gfx') !== 'low') {
+      stadium = new StadiumView(world.stage);
+      scene.add(stadium.object);
+      stadiumLighting(scene, hemi, sun);
+    }
   }
   const group = new THREE.Group();
   const structures = new Structures(world);
@@ -285,6 +295,7 @@ const teamColor = (t: number) => (t === 0 ? 0x3d7bff : 0xff4d5e);
 function onEvent(e: SimEvent): void {
   const { world, effects, hud, sprites } = view;
   view.moves.onEvent(e);
+  stadium?.onEvent(e);
   const at = (p: Vec2, h = 1.2) => project(p.x, p.y, h);
   switch (e.type) {
     case 'strike':
@@ -430,6 +441,10 @@ if (import.meta.env.DEV) {
       get world() {
         return view.world;
       },
+      get stadium() {
+        return stadium;
+      },
+      THREE,
       /** Run `n` sim ticks with a fixed input for the human player (bots keep playing). */
       run(n: number, inp: Partial<PlayerInput> = {}): void {
         const mine: PlayerInput = { ...NEUTRAL_INPUT, ...inp };
@@ -577,17 +592,20 @@ function render(dt: number, now: number, alpha: number): void {
   const fitW = ((toThreeX(world.stage.halfLength) * 2 + 2) * 1.05) / camera.aspect;
   const fitH = toThreeX(world.stage.halfWidth) * 2 + 5;
   const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
-  const dist = Math.max(fitW, fitH) / 2 / Math.tan(halfFov);
+  // ?zoom=2 pulls the camera back (look at the stage art; debug only).
+  const dist = (Math.max(fitW, fitH) / 2 / Math.tan(halfFov)) * CAM_ZOOM;
   // Fog only hides the far void; keep it beyond the arena at any zoom.
   const fog = scene.fog as THREE.Fog;
-  fog.near = dist * 1.1;
-  fog.far = dist * 2.2;
-  camera.far = dist * 3;
+  // The stadium has scenery out to ~120 units; push the haze back so the stands and skyline show.
+  fog.near = dist * (stadium ? 1.6 : 1.1);
+  fog.far = dist * (stadium ? 5 : 2.2);
+  camera.far = dist * (stadium ? 6 : 3);
   camera.updateProjectionMatrix();
   camera.position.set(fx, Math.sin(CAMERA_PITCH) * dist, fz + Math.cos(CAMERA_PITCH) * dist);
   camera.lookAt(fx, 0, fz);
   camera.position.add(view.effects.shakeOffset());
   for (const s of sprites) s.faceCamera(camera);
+  stadium?.update(dt, world, camera);
 
   view.hud.update(dt, world, project, menu.visible ? (id) => botLabel(world, id) : null);
   view.overlay.update(world, menu.focusId);

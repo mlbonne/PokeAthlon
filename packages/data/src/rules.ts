@@ -2,6 +2,7 @@ import { z } from 'zod';
 import gameplayJson from '../rules/gameplay.json' with { type: 'json' };
 import frameStandardJson from '../stages/frame-standard.json' with { type: 'json' };
 import viridianJson from '../stages/viridian-pitch.json' with { type: 'json' };
+import stadiumJson from '../stages/pokemon-stadium.json' with { type: 'json' };
 
 const pos = z.number().positive();
 const nonneg = z.number().nonnegative();
@@ -152,6 +153,8 @@ export const TerrainDef = z.object({
   name: z.string(),
   biome: z.string(),
   frame: z.string(),
+  /** Client art set (M6). `plain` = the old flat arena. Never read by the sim. */
+  theme: z.string().default('plain'),
   spawns: z.object({
     forwards: z.array(Point).length(2),
     goalie: Point,
@@ -165,7 +168,12 @@ export type TerrainDef = z.infer<typeof TerrainDef>;
 
 export const gameplay: GameplayRules = GameplayRules.parse(gameplayJson);
 export const frames: Record<string, FrameDef> = { standard: FrameDef.parse(frameStandardJson) };
-export const terrains: Record<string, TerrainDef> = { 'viridian-pitch': TerrainDef.parse(viridianJson) };
+export const terrains: Record<string, TerrainDef> = {
+  'pokemon-stadium': TerrainDef.parse(stadiumJson),
+  'viridian-pitch': TerrainDef.parse(viridianJson),
+};
+/** The stage a match uses when none is given. */
+export const DEFAULT_TERRAIN = 'pokemon-stadium';
 
 export function getTerrain(id: string): TerrainDef {
   const t = terrains[id];
