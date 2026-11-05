@@ -55,6 +55,74 @@ Everything the 4 new kits need, as generic schema features (each with sim tests,
 Done when: every feature has a unit test, the analyzer reports it (charge = min/max columns, channel = DPS over its duration,
 grab = ball control time), the debug overlay draws it, and a test kit using all of them passes schema validation.
 
+**✅ What shipped (5.1)**
+- **Kit schema** (`packages/data/src/kits.ts`):
+  - **New action types:** `channel`, `blink` (`aim` / `ally` with `swap` / `mark`), `grab`, `throw`.
+  - **On every action:** `telegraph`, plus `side: { own, enemy }` multipliers.
+  - **On areas:** `sweetSpot { from, to, angleDeg?, hit }`.
+  - **Dash guard:** `knockbackResist`, `damageReduction`, `breakOnDamage`.
+  - **Transform buffs:** `sizePct`, `powerAdd`, `knockbackTakenPct`, `strikeHit`.
+  - **On hits:** `banish`.
+  - **On moves:** `charge { time, maxHold, min, slowPct, power, range }` and `recast { window, actions }`.
+  - **On kits:** `passive { stacks, gainOn: moveHit | strikeBall, actions }`.
+  - **Helpers:**
+    - `scaleAction` / `scaleHit` / `chargeScale`;
+    - `parseKit`;
+    - `registerKit(id, json | null)`, which installs a kit at runtime for tests and kit drafts.
+- **Sim** (`moves.ts`, `combat.ts`, `ball.ts`, `strike.ts`, `movement.ts`):
+  - **Charging and channels:** charging (slowed, no Strike; the cooldown starts on release; interrupted = cooldown) and channels (pulses; a knock, stun or banish ends them).
+  - **Recast window:** blink-back uses the cast position as the mark.
+  - **Ball grab:**
+    - the ball follows the holder and still breaks barriers and scores;
+    - others can't Strike it;
+    - any real hit on the holder drops it;
+    - the hold times out into a throw or a drop.
+  - **Blinks:**
+    - clamped inside the arena;
+    - hits along the path;
+    - ally swap.
+  - **Banish:** a new player state; untargetable, frozen, no ball collisions, back in place.
+  - **Guarded dashes** break on damage.
+  - **Transform buffs:** body size and power are recomputed from base stats plus buffs (`refreshBody`), and the transform Strike hits players.
+  - **Strike-modifier passive.**
+  - **Side conditions:** use the caster's half when the action fires.
+  - **New events and hashing:** 11 new events (`telegraph`, `charge`, `recast`, `channel`, `blink`, `grab`, `release`, `banish`, `unbanish`, `guardBreak`, `passive`), and every new piece of state is hashed.
+- **Analyzer:**
+  - **New per-move fields:**
+    - `chargeTime` / `chargeMin` (numbers at full charge; timing includes the charge);
+    - `recastWindow` (recast actions count as part of the move);
+    - `banish`, `ballControl`;
+    - a `notes` summary (sweet spot, side, channel pulses, telegraph, swap…), shown in the Utility column of `npm run kits` and the F3 kit card.
+  - **Best-case conventions:** channels count every pulse; transforms count a Strike per Strike cooldown; sweet spots and side conditions are taken at their best.
+  - **Passive:** analyzed as a pseudo-move with an estimated trigger period (`passivePeriod`).
+  - **Control:** banish and grab count toward the control budget.
+- **Bots** (`MoveModel` + brain):
+  - **Charges:** hold to full charge, re-aiming at the ball or the nearest enemy at release.
+  - **Grabs:** grab to save a shot on goal or take a contested ball, then throw (recast) once there's a good shot.
+  - **Ally swap:** rescues a teammate who is in danger.
+  - **Aimed blinks:** chase the ball and hit along the path, like dashes.
+  - **Transforms:** used when a fight is close.
+  - **Channels:** aimed like a narrow self area.
+  - **Banish:** adds value to a hit.
+  - **Kill-line and finisher logic:** ignores buffs and grabs, so the M4 Normal-bot bug can't come back.
+- **Client:**
+  - telegraphs fade in on the ground;
+  - blinks flash both ends;
+  - an orange ring grows while charging (white at full);
+  - a blue aura while channelling;
+  - banished players are hidden;
+  - sprites grow with transforms.
+- **Tests:**
+  - `packages/data/test/fixtures/m51-kits.json`: 4 test kits that together use every feature.
+  - `data/test/m51.test.ts`: schema, scaling and analyzer.
+  - `sim/test/mechanics.test.ts`: each mechanic, plus a deterministic bot 3v3 where Hard bots cast the charge, blink, channel, transform and guarded-dash moves.
+  - **Result:** 145 tests pass.
+- **Bot probe** (12 two-minute 3v3s on the test kits, not committed):
+  - 77 of 79 grabs caught the ball, and 71 were thrown;
+  - 8 banishes landed out of 35 casts;
+  - swaps fired 14 times;
+  - Normal bots never cast specials.
+
 ### 5.2 Forwards: Greninja and Machamp
 
 Kits from GAME_BREAKDOWN §13:

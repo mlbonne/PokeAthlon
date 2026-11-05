@@ -1,4 +1,4 @@
-import { gameplay, getPokemon, SIZE_TABLE } from '@pokeathlon/data';
+import { gameplay, getPokemon, SIZE_TABLE, type KitPassive } from '@pokeathlon/data';
 import { stepBall } from './ball';
 import { stepCombatTimers } from './combat';
 import { ticks } from './constants';
@@ -8,17 +8,22 @@ import type { PlayerInput } from './input';
 import { beginKickoff, stepMatchEnd, stepMatchStart } from './match';
 import {
   movesFor,
+  passiveFor,
+  refreshBody,
   stepCreations,
   stepMoves,
   stepPending,
   stepProjectiles,
   type Buff,
   type CastState,
+  type ChannelState,
+  type ChargeState,
   type Creation,
   type DashState,
   type MoveState,
   type PendingAction,
   type Projectile,
+  type RecastState,
 } from './moves';
 import { stepMovement } from './movement';
 import { stepOrbs } from './orbs';
@@ -49,7 +54,13 @@ export interface Player {
   hurtRadius: number;
   /** Max move speed, world units per second. */
   speed: number;
+  /** Current power (base + transform buffs). */
   power: number;
+  /** Base sizes and power from the Pokémon; `radius`, `hurtRadius`, `strikeRadius`, `power` = base + buffs. */
+  basePower: number;
+  baseRadius: number;
+  baseHurtRadius: number;
+  baseStrikeRadius: number;
   staggerGrowth: number;
   baseStagger: number;
 
@@ -59,6 +70,8 @@ export interface Player {
   strikeActive: number;
   strikeDir: Vec2;
   strikeConnected: boolean;
+  /** Enemies this Strike already hit (transform Strikes). */
+  strikeHitIds: number[];
 
   // Combat state
   stagger: number;
@@ -78,6 +91,8 @@ export interface Player {
   immuneTicks: number;
   /** Ticks until respawn; > 0 means knocked out (off the field). */
   koTicks: number;
+  /** Ticks left banished: out of play, untargetable, frozen in place (M5.1). */
+  banishTicks: number;
   /** Who last hit this player, and when (for KO credit). */
   lastHitBy: number;
   lastHitTick: number;
@@ -104,6 +119,13 @@ export interface Player {
   cast: CastState | null;
   dash: DashState | null;
   buffs: Buff[];
+  // Move system extensions (M5.1)
+  charging: ChargeState | null;
+  recast: RecastState | null;
+  channel: ChannelState | null;
+  /** The kit's Strike-modifier passive and its stacks. */
+  passive: KitPassive | null;
+  passiveStacks: number;
 }
 
 export interface Ball {
@@ -123,6 +145,12 @@ export interface Ball {
   scored: boolean;
   /** Ticks the ball is stunned (frozen, ignores knockback). OS "stun the Core". */
   stunTicks: number;
+  /** Player holding the ball with a grab (-1 = none), ticks left, hold distance, holder slow %, auto-throw knockback (0 = drop). */
+  heldBy: number;
+  heldTicks: number;
+  heldDist: number;
+  heldSlow: number;
+  heldThrow: number;
 }
 
 export interface Barrier {
@@ -235,6 +263,11 @@ export function createWorld(spawns: PlayerSpawn[], opts: WorldOptions = {}): Wor
       controlTicks: 0,
       scored: false,
       stunTicks: 0,
+      heldBy: -1,
+      heldTicks: 0,
+      heldDist: 0,
+      heldSlow: 0,
+      heldThrow: 0,
     },
     barriers: stage.barriers.map((b) => ({ team: b.team, box: { ...b.box }, alive: true })),
     gates: [
@@ -300,6 +333,10 @@ function makePlayer(id: number, s: PlayerSpawn, stage: Stage): Player {
     hurtRadius: 0,
     speed: 0,
     power: 0,
+    basePower: 0,
+    baseRadius: 0,
+    baseHurtRadius: 0,
+    baseStrikeRadius: 0,
     staggerGrowth: 0,
     baseStagger: 0,
     strikeRadius: 0,
@@ -307,6 +344,7 @@ function makePlayer(id: number, s: PlayerSpawn, stage: Stage): Player {
     strikeActive: 0,
     strikeDir: { x: s.team === 0 ? 1 : -1, y: 0 },
     strikeConnected: false,
+    strikeHitIds: [],
     stagger: 0,
     maxStagger: 0,
     staggered: false,
@@ -319,6 +357,7 @@ function makePlayer(id: number, s: PlayerSpawn, stage: Stage): Player {
     elusiveTicks: 0,
     immuneTicks: 0,
     koTicks: 0,
+    banishTicks: 0,
     lastHitBy: -1,
     lastHitTick: -1,
     energy: gameplay.energy.start,
@@ -334,6 +373,11 @@ function makePlayer(id: number, s: PlayerSpawn, stage: Stage): Player {
     cast: null,
     dash: null,
     buffs: [],
+    charging: null,
+    recast: null,
+    channel: null,
+    passive: null,
+    passiveStacks: 0,
   };
   applyPokemon(p, s.pokemonId);
   p.stagger = p.maxStagger;
@@ -344,15 +388,21 @@ function applyPokemon(p: Player, pokemonId: string): void {
   const def = getPokemon(pokemonId);
   const size = SIZE_TABLE[def.stats.size];
   p.pokemonId = def.id;
-  p.radius = size.radius;
-  p.hurtRadius = size.hurtRadius;
+  p.baseRadius = size.radius;
+  p.baseHurtRadius = size.hurtRadius;
   p.speed = def.stats.speed;
-  p.power = def.stats.power;
-  p.strikeRadius = size.strikeWidth / 2;
+  p.basePower = def.stats.power;
+  p.baseStrikeRadius = size.strikeWidth / 2;
+  refreshBody(p);
   p.baseStagger = def.stats.stagger;
   p.staggerGrowth = def.stats.staggerGrowth;
   p.moves = movesFor(def.id);
+  p.passive = passiveFor(def.id);
+  p.passiveStacks = 0;
   p.cast = null;
+  p.charging = null;
+  p.recast = null;
+  p.channel = null;
   const frac = p.maxStagger > 0 ? p.stagger / p.maxStagger : 1;
   p.maxStagger = maxStaggerAt(p, p.level);
   p.stagger = p.maxStagger * frac;
@@ -370,7 +420,7 @@ export function setPokemon(world: World, playerId: number, pokemonId: string): v
 /** Is this player on the field and able to act? */
 export const isActive = (p: Player): boolean => p.koTicks === 0;
 /** Can this player be hit right now? */
-export const isTargetable = (p: Player): boolean => p.koTicks === 0 && p.elusiveTicks === 0 && p.immuneTicks === 0;
+export const isTargetable = (p: Player): boolean => p.koTicks === 0 && p.elusiveTicks === 0 && p.immuneTicks === 0 && p.banishTicks === 0;
 
 /**
  * Advance the world by one tick. `inputs[i]` belongs to `world.players[i]`;
@@ -436,5 +486,7 @@ export function removePlayers(world: World, keep: (p: Player) => boolean): void 
   world.ball.lastHitBy = -1;
   world.ball.controlBy = -1;
   world.ball.controlTicks = 0;
+  world.ball.heldBy = -1;
+  world.ball.heldTicks = 0;
   for (const p of world.players) p.lastHitBy = -1;
 }

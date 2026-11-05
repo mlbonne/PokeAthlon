@@ -4,6 +4,7 @@ import { gainEnergy } from './combat';
 import { ticks } from './constants';
 import { AXIS_MAX, Button, type PlayerInput } from './input';
 import { frozenPhase } from './match';
+import { firePassive, gainPassive, stepStrikeHits } from './moves';
 import { addXp } from './progression';
 import type { Player, World } from './world';
 
@@ -23,7 +24,9 @@ const ACTIVE = ticks(gameplay.strike.activeTime);
 export function stepStrike(world: World, p: Player, inp: PlayerInput | undefined): void {
   if (p.strikeCooldown > 0) p.strikeCooldown--;
   if (p.strikeActive > 0) p.strikeActive--;
-  if (p.koTicks > 0 || p.knockTicks > 0 || p.stunTicks > 0 || frozenPhase(world)) return;
+  if (p.koTicks > 0 || p.knockTicks > 0 || p.stunTicks > 0 || p.banishTicks > 0 || frozenPhase(world)) return;
+  // Charging or channelling a move: no Strikes.
+  if (p.charging || p.channel) return;
 
   const held = !!inp && (inp.buttons & Button.Strike) !== 0;
   const pressed = held && (p.prevButtons & Button.Strike) === 0;
@@ -37,12 +40,16 @@ export function stepStrike(world: World, p: Player, inp: PlayerInput | undefined
     p.strikeCooldown = COOLDOWN;
     p.strikeActive = ACTIVE;
     p.strikeConnected = false;
+    p.strikeHitIds = [];
+    // Strike-modifier passive at full stacks: this Strike also fires it.
+    if (p.passive && p.passiveStacks >= p.passive.stacks) firePassive(world, p, p.strikeDir);
     // Casting cancels Evade's untargetability (OS: "using any ability ends it early").
     if (gameplay.evade.cancelsOnStrike) p.elusiveTicks = 0;
     world.events.push({ type: 'strike', playerId: p.id, dir: { ...p.strikeDir } });
   }
 
   if (p.strikeActive > 0 && !p.strikeConnected) tryHitBall(world, p);
+  stepStrikeHits(world, p);
 }
 
 /** Can this player's Strike hit volume touch the ball right now? */
@@ -50,6 +57,7 @@ function ballInReach(world: World, p: Player): boolean {
   const b = world.ball;
   if (b.scored) return false;
   if (b.controlBy >= 0 && b.controlBy !== p.id) return false; // another player's Energy Burst owns it
+  if (b.heldBy >= 0 && b.heldBy !== p.id) return false; // grabbed by someone else
   const dx = b.pos.x - p.pos.x;
   const dy = b.pos.y - p.pos.y;
   const reach = p.strikeRadius + b.radius * gameplay.strike.reachBallFraction;
@@ -64,4 +72,5 @@ function tryHitBall(world: World, p: Player): void {
   // Strike is a LIGHT hit for energy purposes (OS: +1).
   gainEnergy(p, gameplay.energy.lightHit);
   addXp(world, p, gameplay.xp.strikeBall);
+  gainPassive(p, 'strikeBall');
 }

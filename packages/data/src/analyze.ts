@@ -1,5 +1,5 @@
 import { roster, getPokemon, SIZE_TABLE, type PokemonDef } from './index';
-import { getKit, type MoveAction, type MoveDef, type MoveHit } from './kits';
+import { getKit, scaleAction, type KitPassive, type MoveAction, type MoveDef, type MoveHit } from './kits';
 import { gameplay, getFrame, scaled } from './rules';
 import { theoryTier, type Tier } from './tiers';
 
@@ -34,12 +34,13 @@ export interface HitNumbers {
   light: boolean;
   stun: number;
   ballStun: number;
+  banish: number;
 }
 
 export interface MoveStats {
   id: string;
   name: string;
-  slot: MoveDef['slot'] | 'strike' | 'burst';
+  slot: MoveDef['slot'] | 'strike' | 'burst' | 'passive';
   /** Action types in order, e.g. "projectile", "area+area". */
   kind: string;
   cooldown: number;
@@ -75,6 +76,17 @@ export interface MoveStats {
   /** Stagger healed (fraction of max) and damage reduction / knockback resist granted. */
   heal: number;
   shield: string;
+  /** Banish seconds (removed from play). */
+  banish: number;
+  /** Seconds the ball can be held (grab). */
+  ballControl: number;
+  /** Charge-and-release: seconds to full charge (numbers above are at full charge) and the minimum multiplier. */
+  chargeTime: number;
+  chargeMin: number;
+  /** Recast window (s), 0 = none. */
+  recastWindow: number;
+  /** Short notes on the M5.1 mechanics this move uses (charge, recast, sweet spot, side, grab...). */
+  notes: string;
 }
 
 export interface FighterStats {
@@ -89,6 +101,8 @@ export interface FighterStats {
   strike: MoveStats;
   burst: MoveStats;
   moves: MoveStats[];
+  /** Strike-modifier passive (its cooldown is an estimated trigger period), or null. */
+  passive: MoveStats | null;
   /** Σ move DPS (Strike doesn't hurt players). */
   kitDps: number;
   /** All three moves landing on one target. */
@@ -127,7 +141,7 @@ export const BUDGET_WEIGHTS: Record<BudgetPart, number> = {
 export const BUDGET_PART_CAP = 200;
 
 function hitNumbers(hit: MoveHit | undefined, power: number): HitNumbers {
-  if (!hit) return { damage: 0, knockback: 0, staggeredKnockback: 0, ball: 0, light: false, stun: 0, ballStun: 0 };
+  if (!hit) return { damage: 0, knockback: 0, staggeredKnockback: 0, ball: 0, light: false, stun: 0, ballStun: 0, banish: 0 };
   const kb = hit.player ? scaled(hit.player, power) : 0;
   return {
     damage: hit.damage ? scaled(hit.damage, power) : 0,
@@ -137,6 +151,21 @@ function hitNumbers(hit: MoveHit | undefined, power: number): HitNumbers {
     light: !!hit.light,
     stun: hit.stun ?? 0,
     ballStun: hit.ballStun ?? 0,
+    banish: hit.banish ?? 0,
+  };
+}
+
+/** Field-by-field best of two hits (sweet spots: best case). */
+function bestHit(a: HitNumbers, b: HitNumbers): HitNumbers {
+  return {
+    damage: Math.max(a.damage, b.damage),
+    knockback: Math.max(a.knockback, b.knockback),
+    staggeredKnockback: Math.max(a.staggeredKnockback, b.staggeredKnockback),
+    ball: Math.max(a.ball, b.ball),
+    light: a.light && b.light,
+    stun: Math.max(a.stun, b.stun),
+    ballStun: Math.max(a.ballStun, b.ballStun),
+    banish: Math.max(a.banish, b.banish),
   };
 }
 
@@ -165,11 +194,16 @@ interface ActionStats {
   mobility: number;
   heal: number;
   shield: string[];
+  ballControl: number;
+  notes: string[];
 }
 
-function actionStats(a: MoveAction, def: MoveDef, p: PokemonDef): ActionStats {
+function actionStats(raw: MoveAction, def: MoveDef, p: PokemonDef, offset = 0): ActionStats {
   const body = SIZE_TABLE[p.stats.size].radius;
-  const start = def.castTime + a.delay;
+  // Side conditions: numbers at the better side (best case), noted.
+  const sideK = raw.side ? Math.max(raw.side.own, raw.side.enemy) : 1;
+  const a = sideK !== 1 ? scaleAction(raw, sideK, 1, sideK) : raw;
+  const start = def.castTime + (def.charge?.time ?? 0) + offset + a.delay;
   const base: ActionStats = {
     start,
     end: start,
@@ -184,7 +218,11 @@ function actionStats(a: MoveAction, def: MoveDef, p: PokemonDef): ActionStats {
     mobility: 0,
     heal: 0,
     shield: [],
+    ballControl: 0,
+    notes: [],
   };
+  if (raw.side) base.notes.push(`own half ×${raw.side.own}, enemy half ×${raw.side.enemy}`);
+  if (a.telegraph && a.delay > 0) base.notes.push(`telegraphed ${a.delay} s`);
   switch (a.type) {
     case 'projectile': {
       const range = projectileRange(a);
@@ -207,9 +245,13 @@ function actionStats(a: MoveAction, def: MoveDef, p: PokemonDef): ActionStats {
       base.hitArea =
         a.shape === 'circle' ? Math.PI * a.radius * a.radius : a.shape === 'cone' ? (Math.PI * a.radius * a.radius * a.angleDeg) / 360 : a.length * a.width;
       base.sweptArea = base.hitArea;
-      base.hits = a.hit ? a.repeat : 0;
-      base.hitsBall = !!a.hit && a.hitsBall && (!!a.hit.ball || !!a.hit.ballStun);
+      base.hits = a.hit || a.sweetSpot ? a.repeat : 0;
+      base.hitsBall = a.hitsBall && ((!!a.hit && (!!a.hit.ball || !!a.hit.ballStun)) || (!!a.sweetSpot && (!!a.sweetSpot.hit.ball || !!a.sweetSpot.hit.ballStun)));
       base.heal = a.allyHealPct;
+      if (a.sweetSpot) {
+        base.hit = bestHit(base.hit, hitNumbers(a.sweetSpot.hit, p.stats.power));
+        base.notes.push(`sweet spot ${Math.round(a.sweetSpot.from * 100)}–${Math.round(a.sweetSpot.to * 100)} %${a.sweetSpot.angleDeg ? ` ${a.sweetSpot.angleDeg}°` : ''}`);
+      }
       break;
     }
     case 'dash': {
@@ -222,6 +264,9 @@ function actionStats(a: MoveAction, def: MoveDef, p: PokemonDef): ActionStats {
       base.hits = a.hit ? 1 : 0;
       base.hitsBall = !!a.hit && (!!a.hit.ball || !!a.hit.ballStun);
       base.mobility = a.distance;
+      if (a.knockbackResist > 0) base.shield.push(`+${a.knockbackResist} kb resist (dash)`);
+      if (a.damageReduction > 0) base.shield.push(`-${Math.round(a.damageReduction * 100)}% dmg (dash)`);
+      if (a.breakOnDamage > 0) base.notes.push(`breaks at ${Math.round(a.breakOnDamage * 100)} % Stagger taken`);
       break;
     }
     case 'buff': {
@@ -232,6 +277,20 @@ function actionStats(a: MoveAction, def: MoveDef, p: PokemonDef): ActionStats {
       base.heal = a.healPct;
       if (a.damageReduction > 0) base.shield.push(`-${Math.round(a.damageReduction * 100)}% dmg ${a.duration}s`);
       if (a.knockbackResist > 0) base.shield.push(`+${a.knockbackResist} kb resist ${a.duration}s`);
+      if (a.sizePct) base.notes.push(`size ${a.sizePct > 0 ? '+' : ''}${a.sizePct} %`);
+      if (a.powerAdd) base.notes.push(`power ${a.powerAdd > 0 ? '+' : ''}${a.powerAdd}`);
+      if (a.knockbackTakenPct) base.notes.push(`kb taken ${a.knockbackTakenPct > 0 ? '+' : ''}${a.knockbackTakenPct} %`);
+      if (a.strikeHit) {
+        // Best case: every Strike during the buff lands on one target.
+        const k = 1 + a.sizePct / 100;
+        base.hit = hitNumbers(a.strikeHit, p.stats.power + a.powerAdd);
+        base.hits = Math.max(1, Math.floor(a.duration / gameplay.strike.cooldown));
+        base.reach = (SIZE_TABLE[p.stats.size].strikeWidth / 2) * k;
+        base.timeToReach = start;
+        base.hitArea = Math.PI * base.reach * base.reach;
+        base.sweptArea = base.hitArea;
+        base.notes.push('Strike hits players');
+      }
       break;
     }
     case 'wall': {
@@ -245,12 +304,59 @@ function actionStats(a: MoveAction, def: MoveDef, p: PokemonDef): ActionStats {
       base.shield.push(`${a.count} wall${a.count > 1 ? 's' : ''} ${a.duration}s`);
       break;
     }
+    case 'channel': {
+      const pulses = Math.max(1, Math.ceil(a.duration / a.interval - 1e-9));
+      base.reach = a.shape === 'line' ? a.length : a.radius;
+      base.end = start + a.duration;
+      base.hitArea = a.shape === 'cone' ? (Math.PI * a.radius * a.radius * a.angleDeg) / 360 : a.length * a.width;
+      base.sweptArea = base.hitArea;
+      base.hits = pulses;
+      base.hitsBall = a.hitsBall && (!!a.hit.ball || !!a.hit.ballStun);
+      base.notes.push(`channel ${a.duration} s, ${pulses} pulses, slowed ${a.slowPct} %`);
+      break;
+    }
+    case 'blink': {
+      base.reach = a.distance + body;
+      base.timeToReach = start;
+      base.end = start;
+      base.hitArea = Math.PI * body * body;
+      base.sweptArea = 2 * body * a.distance + base.hitArea;
+      base.hits = a.hit ? 1 : 0;
+      base.hitsBall = !!a.hit && (!!a.hit.ball || !!a.hit.ballStun);
+      base.mobility = a.to === 'aim' ? a.distance : 0;
+      base.notes.push(a.to === 'ally' ? (a.swap ? 'swap with ally' : 'blink to ally') : a.to === 'mark' ? 'blink back' : 'blink');
+      break;
+    }
+    case 'grab': {
+      base.reach = a.radius + gameplay.ball.radius;
+      base.end = start + a.hold;
+      base.hitArea = Math.PI * a.radius * a.radius;
+      base.sweptArea = base.hitArea;
+      base.ballControl = a.hold;
+      if (a.throw) {
+        base.hit = { ...base.hit, ball: Math.min(scaled(a.throw, p.stats.power), gameplay.ball.knockbackCap) };
+        base.hitsBall = true;
+      }
+      base.notes.push(`grab ball ${a.hold} s (slowed ${a.slowPct} %)`);
+      break;
+    }
+    case 'throw': {
+      base.hit = { ...base.hit, ball: Math.min(scaled(a.ball, p.stats.power), gameplay.ball.knockbackCap) };
+      base.hitsBall = true;
+      break;
+    }
   }
   return base;
 }
 
 export function analyzeMove(def: MoveDef, p: PokemonDef): MoveStats {
-  const parts = def.actions.map((a) => actionStats(a, def, p));
+  const first = def.actions.map((a) => actionStats(a, def, p));
+  // Recast actions count as part of the move, after the first cast has played out.
+  const after = Math.max(...first.map((a) => a.end)) - def.castTime - (def.charge?.time ?? 0);
+  const parts = [...first, ...(def.recast?.actions ?? []).map((a) => actionStats(a, def, p, after))];
+  const notes = parts.flatMap((a) => a.notes);
+  if (def.charge) notes.unshift(`charge ${def.charge.time} s (min ${Math.round(def.charge.min * 100)} %)`);
+  if (def.recast) notes.push(`recast ${def.recast.window} s`);
   const hitting = parts.filter((s) => s.hits > 0);
   const damagePerCast = parts.reduce((s, a) => s + a.hits * a.hit.damage, 0);
   const knockback = Math.max(0, ...parts.map((a) => a.hit.knockback));
@@ -259,7 +365,7 @@ export function analyzeMove(def: MoveDef, p: PokemonDef): MoveStats {
     id: def.id,
     name: def.name,
     slot: def.slot,
-    kind: def.actions.map((a) => a.type).join('+'),
+    kind: def.actions.map((a) => a.type).join('+') + (def.recast ? ` / ${def.recast.actions.map((a) => a.type).join('+')}` : ''),
     cooldown: def.cooldown,
     castTime: def.castTime,
     duration: Math.max(...parts.map((a) => a.end)),
@@ -280,7 +386,39 @@ export function analyzeMove(def: MoveDef, p: PokemonDef): MoveStats {
     mobility: parts.reduce((s, a) => s + a.mobility, 0),
     heal: parts.reduce((s, a) => s + a.heal, 0),
     shield: parts.flatMap((a) => a.shield).join(', '),
+    banish: Math.max(0, ...parts.map((a) => (a.hits > 0 ? a.hit.banish : 0))),
+    ballControl: Math.max(0, ...parts.map((a) => a.ballControl)),
+    chargeTime: def.charge?.time ?? 0,
+    chargeMin: def.charge?.min ?? 0,
+    recastWindow: def.recast?.window ?? 0,
+    notes: [...new Set(notes)].join(', '),
   };
+}
+
+/**
+ * Estimated seconds between passive triggers: stacks × a typical gap between stack events
+ * (a Strike on the ball every ~2.5 s, a move hit every ~6 s). A heuristic for the budget only.
+ */
+export function passivePeriod(passive: KitPassive): number {
+  return passive.stacks * (passive.gainOn === 'strikeBall' ? 2.5 : 6);
+}
+
+/** The kit's Strike-modifier passive as a pseudo-move. */
+export function analyzePassive(passive: KitPassive, p: PokemonDef): MoveStats {
+  const def: MoveDef = {
+    id: 'passive',
+    name: passive.name,
+    slot: 'primary',
+    cooldown: passivePeriod(passive),
+    castTime: 0,
+    range: 0,
+    anim: 'Attack',
+    desc: passive.desc,
+    bot: 'ballShot',
+    actions: passive.actions,
+  };
+  const m = analyzeMove(def, p);
+  return { ...m, slot: 'passive', notes: [`${passive.stacks} stacks on ${passive.gainOn === 'moveHit' ? 'move hits' : 'Strikes on the ball'}`, m.notes].filter(Boolean).join(', ') };
 }
 
 /** The shared Strike: ball only, reach = Strike radius + the ball's radius. */
@@ -347,6 +485,12 @@ function emptyMove(id: string, name: string, slot: MoveStats['slot'], kind: stri
     mobility: 0,
     heal: 0,
     shield: '',
+    banish: 0,
+    ballControl: 0,
+    chargeTime: 0,
+    chargeMin: 0,
+    recastWindow: 0,
+    notes: '',
   };
 }
 
@@ -357,7 +501,9 @@ function analyzeFighterRaw(p: PokemonDef): Omit<FighterStats, 'combosToStagger' 
   const kit = getKit(p.id);
   const moves = kit ? (['primary', 'secondary', 'special'] as const).map((slot) => analyzeMove(kit.moves.find((m) => m.slot === slot)!, p)) : [];
   const strike = analyzeStrike(p);
-  const all = [strike, ...moves];
+  const passive = kit?.passive ? analyzePassive(kit.passive, p) : null;
+  const all = [strike, ...moves, ...(passive ? [passive] : [])];
+  const fighting = [...moves, ...(passive ? [passive] : [])];
   return {
     id: p.id,
     name: p.name,
@@ -370,13 +516,15 @@ function analyzeFighterRaw(p: PokemonDef): Omit<FighterStats, 'combosToStagger' 
     strike,
     burst: analyzeBurst(p),
     moves,
-    kitDps: moves.reduce((s, m) => s + m.dps, 0),
+    passive,
+    kitDps: fighting.reduce((s, m) => s + m.dps, 0),
     comboDamage: moves.reduce((s, m) => s + m.damagePerCast, 0),
     ballPressure: all.reduce((s, m) => s + (m.ballPower > 0 ? m.ballPower / m.cooldown : 0), 0),
     maxBallPower: Math.max(...all.map((m) => m.ballPower)),
     mobility: p.stats.speed + moves.reduce((s, m) => s + m.mobility / m.cooldown, 0),
-    control: moves.reduce((s, m) => s + (m.stun + m.ballStun * 0.5) / m.cooldown, 0),
-    maxKoReach: Math.max(0, ...moves.map((m) => m.koReach)),
+    // Banish removes a player from play (≈ a stun); a grab is ball control like a ball stun.
+    control: fighting.reduce((s, m) => s + (m.stun + m.banish + (m.ballStun + m.ballControl) * 0.5) / m.cooldown, 0),
+    maxKoReach: Math.max(0, ...fighting.map((m) => m.koReach)),
   };
 }
 

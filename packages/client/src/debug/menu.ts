@@ -339,7 +339,7 @@ export class DebugMenu {
         ${row('Player knockback', m.knockback ? f0(m.knockback) : '')}${row('vs Staggered', m.staggeredKnockback ? `${f0(m.staggeredKnockback)} (KO reach ${pct(m.koReach)})` : '')}
         ${row('Core knockback', m.ballPower ? f0(m.ballPower) : '')}
         ${row('Stun', m.stun || m.ballStun ? [m.stun ? `${m.stun} s` : '', m.ballStun ? `ball ${m.ballStun} s` : ''].filter(Boolean).join(', ') : '')}
-        ${row('Utility', [m.mobility ? `+${f0(m.mobility)} move` : '', m.heal ? `heal ${pct(m.heal)}` : '', m.shield].filter(Boolean).join(', '))}
+        ${row('Utility', [m.mobility ? `+${f0(m.mobility)} move` : '', m.heal ? `heal ${pct(m.heal)}` : '', m.banish ? `banish ${m.banish} s` : '', m.shield, m.notes].filter(Boolean).join(', '))}
         ${lm ? row('Live', `${lm.casts} casts, ${f0(lm.damage)} dmg, ${lm.ballHits} ball hits`) : ''}
       </table></div>`;
     };

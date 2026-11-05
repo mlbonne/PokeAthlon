@@ -143,6 +143,11 @@ export function buildStage(terrainId: string): Stage {
   return stage;
 }
 
+/** Is `p` on team `team`'s own half (the half with its goal)? */
+export function onOwnHalf(stage: Stage, team: Team, p: Vec2): boolean {
+  return p.x * stage.goals[team].side > 0;
+}
+
 /** Is `p` inside team `team`'s Goal Arc? */
 export function inGoalArc(stage: Stage, team: Team, p: Vec2): boolean {
   const a = stage.goals[team].arc;

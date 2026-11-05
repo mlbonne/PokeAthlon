@@ -50,7 +50,7 @@ const moveRow = (m: MoveStats): string[] => [
   pct(m.koReach),
   n0(m.ballPower),
   m.stun || m.ballStun ? [m.stun ? `${m.stun} s` : '', m.ballStun ? `ball ${m.ballStun} s` : ''].filter(Boolean).join(', ') : '–',
-  [m.mobility ? `+${n0(m.mobility)} move` : '', m.heal ? `heal ${pct(m.heal)}` : '', m.shield].filter(Boolean).join(', ') || '–',
+  [m.mobility ? `+${n0(m.mobility)} move` : '', m.heal ? `heal ${pct(m.heal)}` : '', m.banish ? `banish ${m.banish} s` : '', m.shield, m.notes].filter(Boolean).join(', ') || '–',
 ];
 const MOVE_HEAD = [
   'Move',
@@ -102,7 +102,7 @@ const budgetTable = table(
 );
 
 const perFighter = fighters
-  .map((f: FighterStats) => `### ${f.name} (${f.archetype})\n\n${table(MOVE_HEAD, [f.strike, ...f.moves, f.burst].map(moveRow))}`)
+  .map((f: FighterStats) => `### ${f.name} (${f.archetype})\n\n${table(MOVE_HEAD, [f.strike, ...f.moves, ...(f.passive ? [f.passive] : []), f.burst].map(moveRow))}`)
   .join('\n\n');
 
 const md = `# Kit analysis (${new Date().toISOString().slice(0, 10)})

@@ -33,6 +33,13 @@ export function hashWorld(w: World): string {
     mixU32(p.koTicks);
     mixU32(p.xp);
     mixU32(p.level);
+    mixU32(p.banishTicks);
+    mixU32(p.passiveStacks);
+    mixU32(p.charging ? p.charging.ticks + 1 : 0);
+    mixU32(p.channel ? p.channel.ticks + 1 : 0);
+    mixU32(p.recast ? p.recast.ticks + 1 : 0);
+    mixF64(p.power);
+    mixF64(p.radius);
   }
   const b = w.ball;
   mixF64(b.pos.x);
@@ -43,6 +50,8 @@ export function hashWorld(w: World): string {
   mixU32(b.lastHitBy + 1);
   mixU32(b.redTicks);
   mixU32(b.controlTicks);
+  mixU32(b.heldBy + 1);
+  mixU32(b.heldTicks);
   for (const bar of w.barriers) mixU32(bar.alive ? 1 : 0);
   for (const g of w.gates) mixU32(g.open ? 1 : 0);
   for (const o of w.orbs) mixU32(o.id);

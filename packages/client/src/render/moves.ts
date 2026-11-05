@@ -8,6 +8,22 @@ interface Flash {
   mesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   age: number;
   life: number;
+  /** Telegraphs fade in (warning) instead of out. */
+  rising?: boolean;
+}
+
+/** Ground shape of an area / telegraph. */
+function shapeGeometry(e: { shape: 'circle' | 'cone' | 'line'; dir: { x: number; y: number }; radius: number; angleDeg: number; length: number; width: number }): THREE.BufferGeometry {
+  const angle = Math.atan2(e.dir.y, e.dir.x);
+  if (e.shape === 'circle') return new THREE.CircleGeometry(Math.max(1, e.radius) * W, 48);
+  if (e.shape === 'cone') {
+    const half = ((e.angleDeg / 2) * Math.PI) / 180;
+    return new THREE.CircleGeometry(e.radius * W, 32, angle - half, half * 2);
+  }
+  const geo = new THREE.PlaneGeometry(Math.max(1, e.length) * W, Math.max(1, e.width) * W);
+  geo.translate((e.length * W) / 2, 0, 0);
+  geo.rotateZ(angle);
+  return geo;
 }
 
 /** Visuals for M3 moves: projectiles, area flashes, creation walls and buff auras. */
@@ -32,26 +48,26 @@ export class MoveViews {
     }
   }
 
-  /** Area moves flash their exact shape on the ground. */
+  /** Area moves flash their exact shape on the ground; telegraphs warn before delayed actions; blinks flash both ends. */
   onEvent(e: SimEvent): void {
-    if (e.type !== 'area') return;
-    const color = new THREE.Color(e.color);
-    let geo: THREE.BufferGeometry;
-    const angle = Math.atan2(e.dir.y, e.dir.x);
-    if (e.shape === 'circle') geo = new THREE.CircleGeometry(e.radius * W, 48);
-    else if (e.shape === 'cone') {
-      const half = ((e.angleDeg / 2) * Math.PI) / 180;
-      geo = new THREE.CircleGeometry(e.radius * W, 32, angle - half, half * 2);
-    } else {
-      geo = new THREE.PlaneGeometry(e.length * W, e.width * W);
-      geo.translate((e.length * W) / 2, 0, 0);
-      geo.rotateZ(angle);
+    if (e.type === 'area') this.flash(shapeGeometry(e), e.color, e.pos, 0.35, false);
+    else if (e.type === 'telegraph') this.flash(shapeGeometry(e), e.color, e.pos, Math.max(0.1, e.time), true);
+    else if (e.type === 'blink') {
+      const ring = { shape: 'circle' as const, dir: { x: 1, y: 0 }, radius: 70, angleDeg: 0, length: 0, width: 0 };
+      this.flash(shapeGeometry(ring), '#d9c2ff', e.from, 0.3, false);
+      this.flash(shapeGeometry(ring), '#d9c2ff', e.to, 0.3, false);
     }
-    const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide }));
+  }
+
+  private flash(geo: THREE.BufferGeometry, color: string, pos: { x: number; y: number }, life: number, rising: boolean): void {
+    const mesh = new THREE.Mesh(
+      geo,
+      new THREE.MeshBasicMaterial({ color: new THREE.Color(color), transparent: true, opacity: rising ? 0.1 : 0.55, depthWrite: false, side: THREE.DoubleSide }),
+    );
     mesh.rotation.x = -Math.PI / 2;
-    mesh.position.set(toThreeX(e.pos.x), 0.03, toThreeZ(e.pos.y));
+    mesh.position.set(toThreeX(pos.x), rising ? 0.025 : 0.03, toThreeZ(pos.y));
     this.object.add(mesh);
-    this.flashes.push({ mesh, age: 0, life: 0.35 });
+    this.flashes.push({ mesh, age: 0, life, rising });
   }
 
   update(dt: number, world: World): void {
@@ -113,13 +129,23 @@ export class MoveViews {
       }
     }
 
-    // Buff auras.
+    // Buff auras; a growing orange ring while charging a move.
     world.players.forEach((p, i) => {
       const aura = this.auras[i]!;
-      const active = p.buffs.length > 0 && p.koTicks === 0;
+      const charge = p.charging ? p.moves[p.charging.slot]?.def.charge : undefined;
+      const active = (p.buffs.length > 0 || !!charge || !!p.channel) && p.koTicks === 0 && p.banishTicks === 0;
       aura.material.opacity = active ? 0.55 + Math.sin(this.time * 8) * 0.15 : 0;
       aura.position.set(toThreeX(p.pos.x), 0.02, toThreeZ(p.pos.y));
-      if (active) aura.material.color.set(0xbfe8ff);
+      const body = p.radius / 46;
+      if (charge && p.charging) {
+        const f = Math.min(1, p.charging.ticks / (charge.time * 60));
+        aura.material.color.set(f >= 1 ? 0xffffff : 0xffa64d);
+        aura.scale.setScalar(body * (0.6 + 0.8 * f));
+      } else {
+        if (p.channel) aura.material.color.set(0x8fd3ff);
+        else if (active) aura.material.color.set(0xbfe8ff);
+        aura.scale.setScalar(body);
+      }
       aura.rotation.z = this.time * 2;
     });
 
@@ -127,7 +153,7 @@ export class MoveViews {
     this.flashes = this.flashes.filter((f) => {
       f.age += dt;
       const t = f.age / f.life;
-      f.mesh.material.opacity = 0.55 * (1 - t);
+      f.mesh.material.opacity = f.rising ? 0.1 + 0.35 * t : 0.55 * (1 - t);
       if (t >= 1) {
         this.object.remove(f.mesh);
         f.mesh.geometry.dispose();

@@ -66,6 +66,8 @@ export function hitBall(world: World, playerId: number, dir: Vec2, knockback: nu
   b.redTicks = kb > B.redThreshold ? RED_TICKS : 0;
   b.controlBy = -1;
   b.controlTicks = 0;
+  b.heldBy = -1;
+  b.heldTicks = 0;
   if (p) p.lastBallTouchTick = world.tick;
   world.events.push({ type: 'ballHit', playerId, pos: { ...b.pos }, speed, redirect, red: b.redTicks > 0, boosted, source });
   return speed;
@@ -79,6 +81,8 @@ export function stepBall(world: World): void {
     b.stunTicks--;
     return; // frozen in place
   }
+
+  if (b.heldBy >= 0 && stepHeld(world)) return;
 
   if (b.controlTicks > 0) {
     b.controlTicks--;
@@ -211,10 +215,48 @@ function breakBarrier(world: World, index: number): void {
   }
 }
 
+/**
+ * A grabbed ball follows its holder (M5.1). Returns true while it is still held. Barriers, gates and
+ * goals still react to it; it can't be carried out of the arena.
+ */
+function stepHeld(world: World): boolean {
+  const b = world.ball;
+  const h = world.players[b.heldBy];
+  if (!h || h.koTicks > 0 || h.banishTicks > 0 || h.knockTicks > 0 || h.stunTicks > 0) {
+    releaseBall(world, null, 0, 'drop');
+    return false;
+  }
+  const prev = b.pos;
+  const d = Math.max(b.heldDist, h.radius + b.radius + 8);
+  b.pos = { x: h.pos.x + h.facing.x * d, y: h.pos.y + h.facing.y * d };
+  b.vel = { x: h.vel.x, y: h.vel.y };
+  collideBall(world);
+  if (b.scored) return true;
+  if (!pointInPolygon(b.pos, world.stage.ballOutline)) b.pos = prev;
+  b.vel = { x: h.vel.x, y: h.vel.y };
+  if (--b.heldTicks <= 0) releaseBall(world, h.facing, b.heldThrow, 'grab');
+  return true;
+}
+
+/**
+ * Let go of a grabbed ball: thrown along `dir` with knockback `kb`, or dropped (keeps the
+ * holder's velocity) when `kb` is 0.
+ */
+export function releaseBall(world: World, dir: Vec2 | null, kb: number, source: string): void {
+  const b = world.ball;
+  const holder = b.heldBy;
+  if (holder < 0) return;
+  b.heldBy = -1;
+  b.heldTicks = 0;
+  const thrown = !!dir && kb > 0;
+  world.events.push({ type: 'release', playerId: holder, thrown });
+  if (dir && kb > 0) hitBall(world, holder, dir, kb, source);
+}
+
 function collideBodies(world: World): void {
   const b = world.ball;
   for (const p of world.players) {
-    if (p.koTicks > 0) continue;
+    if (p.koTicks > 0 || p.banishTicks > 0 || p.id === b.heldBy) continue;
     const before = { x: b.vel.x - p.vel.x, y: b.vel.y - p.vel.y };
     const rel = { ...before };
     const hit = collideCircle(b.pos, rel, b.radius, { x: p.pos.x, y: p.pos.y, r: p.radius }, B.playerRestitution);
@@ -259,6 +301,8 @@ export function predictBall(world: World, lookAhead: number, launch?: BallLaunch
     ghostBall.hitstop = 0;
     ghostBall.stunTicks = 0;
     ghostBall.controlTicks = 0;
+    ghostBall.heldBy = -1;
+    ghostBall.heldTicks = 0;
     ghostBall.scored = false;
     const s = Math.sqrt(launch.vel.x * launch.vel.x + launch.vel.y * launch.vel.y);
     ghostBall.redTicks = s > B.redThreshold ? RED_TICKS : 0;

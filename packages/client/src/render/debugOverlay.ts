@@ -56,7 +56,7 @@ export class DebugOverlay {
     if (!this.object.visible) return;
     this.used = 0;
     for (const p of world.players) {
-      if (p.koTicks > 0) continue;
+      if (p.koTicks > 0 || p.banishTicks > 0) continue;
       const team = p.team === 0 ? 0x3d7bff : 0xff4d5e;
       this.circle(p.pos.x, p.pos.y, p.hurtRadius, team, 0.9);
       this.circle(p.pos.x, p.pos.y, p.strikeRadius + world.ball.radius, 0xffffff, p.strikeActive > 0 ? 0.9 : 0.25);

@@ -28,6 +28,8 @@ export function beginKickoff(world: World, nextRound: boolean): void {
   b.redTicks = 0;
   b.controlBy = -1;
   b.controlTicks = 0;
+  b.heldBy = -1;
+  b.heldTicks = 0;
   b.scored = false;
   b.lastHitBy = -1;
 
