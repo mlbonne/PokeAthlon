@@ -2,6 +2,7 @@ import { gameplay } from '@pokeathlon/data';
 import { TICK_RATE, ticks } from './constants';
 import { addXp } from './progression';
 import { releaseBall } from './ball';
+import { boostOnHit, boostOnKo, boostPreventKo } from './boosts';
 import { itemKnockbackDealt, itemOnHit } from './items';
 import { buffDamageReduction, buffKnockbackResist, buffKnockbackTaken, refreshBody } from './moves';
 import { inGoalArc } from './stage';
@@ -67,6 +68,7 @@ export function applyHit(world: World, attackerId: number, target: Player, hit: 
     }
   }
   itemOnHit(attacker0, target, damage, !!hit.light);
+  boostOnHit(world, attacker0, target, !!hit.light);
   // Any real hit makes a grabbing player drop the ball.
   if (world.ball.heldBy === target.id && (damage > 0 || knockback > 0 || hit.stun || hit.banish)) releaseBall(world, null, 0, 'drop');
 
@@ -129,6 +131,7 @@ export function gainEnergy(p: Player, amount: number): void {
 
 /** Remove a player from the field (knocked past an edge). */
 export function knockOut(world: World, p: Player): void {
+  if (boostPreventKo(world, p)) return; // Sturdy
   p.koTicks = ticks(world.match.overtime ? gameplay.respawn.overtimeTime : gameplay.respawn.time);
   p.knockTicks = 0;
   p.dash = null;
@@ -153,6 +156,7 @@ export function knockOut(world: World, p: Player): void {
       addXp(world, attacker, gameplay.xp.takedown);
     }
   }
+  boostOnKo(p, by >= 0 ? world.players[by] : undefined);
   world.events.push({ type: 'ko', playerId: p.id, by, pos: { ...p.pos } });
 }
 

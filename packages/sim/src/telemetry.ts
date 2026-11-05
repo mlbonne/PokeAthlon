@@ -32,6 +32,8 @@ export interface PlayerTelemetry {
   pokemon: string;
   /** Held item id ('' = none). */
   item: string;
+  /** Boosts drafted, in pick order. */
+  boosts: string[];
   team: Team;
   role: Role;
   damageDealt: number;
@@ -104,6 +106,7 @@ export function playerTelemetry(p: Pick<Player, 'id' | 'pokemonId' | 'team' | 'r
     id: p.id,
     pokemon: p.pokemonId,
     item: p.item?.id ?? '',
+    boosts: [],
     team: p.team,
     role: p.role,
     damageDealt: 0,

@@ -17,7 +17,8 @@ import { pointInPolygon } from './geometry';
 import { AXIS_MAX, Button, type PlayerInput } from './input';
 import { frozenPhase } from './match';
 import { specialUnlocked } from './progression';
-import { fx, itemHaste } from './items';
+import { boostCreations, boostDashHaste, boostHitMul, boostPrimaryCooldown, boostProjectileRange, boostStatics } from './boosts';
+import { fx } from './items';
 import { onOwnHalf } from './stage';
 import { normalize, rotateDeg, type Vec2 } from './vec';
 import { isTargetable, type Player, type World } from './world';
@@ -255,6 +256,14 @@ export function stepMoves(world: World, p: Player, inp: PlayerInput | undefined)
   }
 }
 
+/** Dash / blink / haste bonus % from the item and boosts. */
+function dashHastePct(p: Player): number {
+  return (fx(p)?.dashRangePct ?? 0) + boostDashHaste(p);
+}
+function projectileRangePct(p: Player): number {
+  return (fx(p)?.projectileRangePct ?? 0) + boostProjectileRange(p);
+}
+
 /** Eject Pack's blink back to where the secondary was cast. */
 const BLINK_BACK: MoveAction = { type: 'blink', delay: 0, fx: { color: '#ffd166' }, telegraph: false, to: 'mark', distance: 100000, swap: false };
 
@@ -264,9 +273,15 @@ const chargeMods = (def: MoveDef, scale: number) =>
 function startCast(world: World, p: Player, slot: number, inp: PlayerInput | undefined, scale: number): void {
   const m = p.moves[slot]!;
   const e = fx(p);
-  const castRange = m.def.range * (m.def.charge?.range ? scale : 1) * (e?.projectileRangePct ? 1 + e.projectileRangePct / 100 : 1);
+  const castRange = m.def.range * (m.def.charge?.range ? scale : 1) * (1 + projectileRangePct(p) / 100);
   const aim = aimFrom(p, inp, castRange);
-  m.cooldown = ticks(m.def.cooldown * (slot === 1 && e?.secondaryCooldownPct ? 1 - e.secondaryCooldownPct / 100 : 1));
+  let cd = m.def.cooldown;
+  if (slot === 1 && e?.secondaryCooldownPct) cd *= 1 - e.secondaryCooldownPct / 100;
+  if (slot === 0) cd *= 1 - boostPrimaryCooldown(p) / 100;
+  // Cooldown Rate (OS): cd × 100 / (100 + CDR).
+  const cdr = boostStatics(p).cooldownRate + p.boostState.cooldownRate;
+  if (cdr !== 0) cd *= 100 / Math.max(10, 100 + cdr);
+  m.cooldown = ticks(cd);
   if (slot === 1 && e?.blinkBack && !m.def.recast) p.itemState.blinkBack = { ticks: ticks(e.blinkBack.window), mark: { ...p.pos } };
   p.facing = { ...aim.dir };
   if (gameplay.evade.cancelsOnStrike) p.elusiveTicks = 0;
@@ -367,10 +382,13 @@ function fire(world: World, p: Player, pa: PendingAction): void {
     const k = onOwnHalf(world.stage, p.team, p.pos) ? a.side.own : a.side.enemy;
     a = scaleAction(a, k, 1, k);
   }
-  // Items: longer dashes / blinks (Eject Pack), longer projectiles (Zoom Lens).
-  const e = fx(p);
-  if (e?.dashRangePct && (a.type === 'dash' || (a.type === 'blink' && a.to === 'aim'))) a = scaleAction(a, 1, 1 + e.dashRangePct / 100, 1);
-  if (e?.projectileRangePct && a.type === 'projectile') a = { ...a, range: a.range * (1 + e.projectileRangePct / 100) };
+  // Items and boosts: longer dashes / blinks, longer projectiles, bigger longer-lasting walls.
+  const dashPct = dashHastePct(p);
+  if (dashPct && (a.type === 'dash' || (a.type === 'blink' && a.to === 'aim'))) a = scaleAction(a, 1, 1 + dashPct / 100, 1);
+  const projPct = projectileRangePct(p);
+  if (projPct && a.type === 'projectile') a = { ...a, range: a.range * (1 + projPct / 100) };
+  const cr = boostCreations(p);
+  if (a.type === 'wall' && (cr.duration || cr.size)) a = { ...a, duration: a.duration * (1 + cr.duration / 100), length: a.length * (1 + cr.size / 100) };
   switch (a.type) {
     case 'projectile': {
       const n = pa.single ? 1 : a.count;
@@ -703,12 +721,15 @@ function knockDir(hit: MoveHit, travel: Vec2, center: Vec2, owner: Player, targe
   return travel;
 }
 
+const isSpecial = (p: Player, source: string) => p.moves[2]?.def.id === source;
+
 /** Apply a move's hit to an enemy player. */
-export function hitPlayer(world: World, owner: Player, target: Player, hit: MoveHit, travel: Vec2, center: Vec2, source: string): void {
+export function hitPlayer(world: World, owner: Player, target: Player, hit: MoveHit, travel: Vec2, center: Vec2, source: string, projectile = false): void {
+  const mul = boostHitMul(owner, false, isSpecial(owner, source), projectile, Math.sqrt(dist2(owner.pos, target.pos)));
   const landed = applyHit(world, owner.id, target, {
     dir: knockDir(hit, travel, center, owner, target.pos),
-    knockback: hit.player ? scaled(hit.player, owner.power) : 0,
-    damage: hit.damage ? scaled(hit.damage, owner.power) : 0,
+    knockback: hit.player ? scaled(hit.player, owner.power) * mul : 0,
+    damage: hit.damage ? scaled(hit.damage, owner.power) * mul : 0,
     ...(hit.light ? { light: true } : {}),
     ...(hit.stun ? { stun: hit.stun } : {}),
     ...(hit.banish ? { banish: hit.banish } : {}),
@@ -718,7 +739,7 @@ export function hitPlayer(world: World, owner: Player, target: Player, hit: Move
 }
 
 /** Apply a move's hit to the ball (knockback or stun). */
-export function hitBallWith(world: World, owner: Player, hit: MoveHit, travel: Vec2, center: Vec2, source: string): void {
+export function hitBallWith(world: World, owner: Player, hit: MoveHit, travel: Vec2, center: Vec2, source: string, projectile = false): void {
   const b = world.ball;
   if (b.scored || b.stunTicks > 0) return;
   if (b.controlBy >= 0 && b.controlBy !== owner.id) return;
@@ -734,7 +755,8 @@ export function hitBallWith(world: World, owner: Player, hit: MoveHit, travel: V
     return;
   }
   if (!hit.ball) return;
-  hitBall(world, owner.id, knockDir(hit, travel, center, owner, b.pos), scaled(hit.ball, owner.power), source);
+  const mul = boostHitMul(owner, true, isSpecial(owner, source), projectile, Math.sqrt(dist2(owner.pos, b.pos)));
+  hitBall(world, owner.id, knockDir(hit, travel, center, owner, b.pos), scaled(hit.ball, owner.power) * mul, source);
   gainEnergy(owner, hit.light ? gameplay.energy.lightHit : gameplay.energy.normalHit);
 }
 
@@ -755,7 +777,7 @@ export function stepProjectiles(world: World): void {
       }
       if (pr.hitsBall && !pr.ballHit && !ball.scored && dist2(pr.pos, ball.pos) <= (pr.radius + ball.radius) ** 2) {
         pr.ballHit = true;
-        hitBallWith(world, owner, pr.hit, pr.dir, pr.pos, pr.moveId);
+        hitBallWith(world, owner, pr.hit, pr.dir, pr.pos, pr.moveId, true);
         if (!pr.pierce) dead = true;
       }
       for (const o of world.players) {
@@ -763,7 +785,7 @@ export function stepProjectiles(world: World): void {
         if (o.team === pr.team || !isTargetable(o) || pr.hitIds.includes(o.id)) continue;
         if (dist2(pr.pos, o.pos) > (pr.radius + o.hurtRadius) ** 2) continue;
         pr.hitIds.push(o.id);
-        hitPlayer(world, owner, o, pr.hit, pr.dir, pr.pos, pr.moveId);
+        hitPlayer(world, owner, o, pr.hit, pr.dir, pr.pos, pr.moveId, true);
         if (!pr.pierce) dead = true;
       }
     }
@@ -830,8 +852,8 @@ export function stepCreations(world: World): void {
 
 /** Speed multiplier from buffs with OS diminishing returns (750–900 at 50 %, above 900 at 25 %). */
 export function effectiveSpeed(p: Player): number {
-  let pct = p.itemSpeedPct;
-  const haste = itemHaste(p);
+  let pct = p.itemSpeedPct + p.boostState.speedPct + (p.boosts.length ? boostStatics(p).speedPct : 0);
+  const haste = 1 + dashHastePct(p) / 100;
   for (const b of p.buffs) {
     const v = b.decays ? (b.speedPct * b.ticks) / b.total : b.speedPct;
     pct += b.moveId.startsWith('item:') ? v : v * haste;
@@ -871,8 +893,9 @@ export function buffKnockbackTaken(p: Player): number {
 /** Body size and power from the base stats plus transform buffs. */
 export function refreshBody(p: Player): void {
   const e = fx(p);
-  let size = e?.sizePct ?? 0;
-  let power = e?.powerAdd ?? 0;
+  const bs = p.boosts.length ? boostStatics(p) : null;
+  let size = (e?.sizePct ?? 0) + (bs?.sizePct ?? 0);
+  let power = (e?.powerAdd ?? 0) + (bs?.power ?? 0) + p.boostState.power;
   for (const b of p.buffs) {
     size += b.sizePct;
     power += b.powerAdd;
@@ -881,7 +904,8 @@ export function refreshBody(p: Player): void {
   p.radius = p.baseRadius * k;
   p.hurtRadius = p.baseHurtRadius * k;
   p.strikeRadius = p.baseStrikeRadius * k;
-  p.power = p.basePower + power;
+  // Run Away: 0 Power near the edge.
+  p.power = p.boostState.edgeZero ? 0 : p.basePower + power;
 }
 
 /** Clear transient move state (between rounds). Cooldowns persist. */

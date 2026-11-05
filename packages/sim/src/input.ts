@@ -25,6 +25,8 @@ export interface PlayerInput {
   buttons: number;
   /** Aim distance in world units (0 = use the move's max range). Integer, clamped to [0, 4000]. */
   aimDist?: number;
+  /** Boost draft pick (M5.6): index into the draft's offers; absent or -1 = no pick. */
+  pick?: number;
 }
 
 export const NEUTRAL_INPUT: Readonly<PlayerInput> = Object.freeze({

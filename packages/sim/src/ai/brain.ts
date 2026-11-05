@@ -8,6 +8,7 @@ import { normalize, rotateDeg, type Vec2 } from '../vec';
 import { isTargetable, type Player, type World } from '../world';
 import { DIFFICULTY, type Difficulty, type DifficultyParams } from './difficulty';
 import type { BotMemory, Job } from './memory';
+import { chooseBoost } from './draft';
 import { attacksPlayers, moveModels, type MoveModel } from './model';
 import { bestKnockMove, burstKnock, finisherSpot, killLine, knockOn, moveKnock, nearestEdge, pushDir, pushValue } from './brawl';
 import { bestShot, danger, evaluateShot, launchSpeed, perceive, strikeKnockback, strikeReach, type Perception } from './perceive';
@@ -26,6 +27,8 @@ export function smartBotInput(world: World, id: number, difficulty: Difficulty =
   if (!p || p.koTicks > 0) return NEUTRAL_INPUT;
   const D = DIFFICULTY[difficulty];
   const mem = memory(world, id);
+  // Boost draft: pick when it's our turn (after a short think, so humans can follow it).
+  if (world.match.phase === 'draft') return draftInput(world, p, DIFFICULTY[difficulty]);
   // Hold Strike through kickoffs so live play never starts with a whiffed press.
   if (frozenPhase(world)) return quantizeInput(0, 0, p.facing.x, p.facing.y, Button.Strike);
 
@@ -181,6 +184,16 @@ export function smartBotInput(world: World, id: number, difficulty: Difficulty =
   const mv = l > 18 ? { x: d.x / l, y: d.y / l } : { x: 0, y: 0 };
   const a = castAim ?? strikeAim;
   return quantizeInput(mv.x, mv.y, a.x, a.y, buttons, castDist);
+}
+
+function draftInput(world: World, p: Player, D: DifficultyParams): PlayerInput {
+  const d = world.draft;
+  if (!d || d.elapsed < 40) return NEUTRAL_INPUT;
+  const mine = d.kind === 'start' ? d.picked[p.id] === null : d.order[d.turn] === p.id;
+  if (!mine) return NEUTRAL_INPUT;
+  const later = d.kind === 'set' ? d.order.slice(d.turn + 1).map((x) => world.players[x]!) : [];
+  const pick = chooseBoost(world, p, d.offers, later, { deny: D.draft === 'deny', random: D.draft === 'random' });
+  return { ...NEUTRAL_INPUT, pick };
 }
 
 // ---------------------------------------------------------------- memory & jobs

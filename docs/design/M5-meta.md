@@ -369,6 +369,68 @@ synergy); examples are in GAME_BREAKDOWN §11.
 - Bot drafting: value per boost for its Pokémon and role, plus denial (taking what the enemy wants most) at Hard.
 - Tools: per-boost win rate and pick rate, `--set` support, and a `--boosts off` flag so kit balance can still be measured without them.
 
+**✅ What shipped (5.6)**
+
+- **19 boosts** (`packages/data/boosts/boosts.json`) with Pokémon names, numbers from the OS wiki Awakenings page (2026-11):
+
+| Boost | OS Awakening | Boost | OS Awakening |
+|---|---|---|---|
+| Agility | Aerials | Leftovers | Tempo Swing |
+| Bulk Up | Bulk Up | Speed Boost | Glass Cannon |
+| Quick Draw | Rapid Fire | Run Away | Knife's Edge |
+| Sniper | Deadeye | Mega Launcher | Missile Propulsion |
+| Growth | Might of the Colossus | Tough Claws | Heavy Impact |
+| Sturdy | Recovery Drone | Sheer Force | Specialized Training |
+| Guts | Berserker | Light Clay | Timeless Creator |
+| Moxie | Prize Fighter | Swords Dance / Rock Polish / Calm Mind | Spark of Strength / Agility / Focus |
+| Poison Touch | Stinger | | |
+
+- **Left out on purpose:**
+  - awakenings that need systems we don't have (Team Player's pass buff, Orb Ponderer, Demolitionist's barrier cooldowns, Hotshot refunds, Fire Up!, Egoist);
+  - near-duplicates.
+- **Effects** are generic fields (`effects`):
+  - stats: size, power, max Stagger, speed, **Cooldown Rate** (new: `cd × 100/(100+CDR)`, as in OS);
+  - power per Stagger / per size;
+  - dash/haste and projectile range;
+  - primary cooldown;
+  - hit bonuses (all moves / special / projectiles / 600+ range);
+  - dynamic stats (Guts, Moxie, Speed Boost, Run Away edge), Sturdy, burn, Leftovers;
+  - creation duration and size;
+  - Sparks.
+- **Draft** (`sim/src/draft.ts`):
+  - **Phase:** a new `draft` phase, frozen like kickoff.
+  - **Match start:** everyone takes one of the same 2 offers (15 s).
+  - **After each set:** a shared pool of 8, one pick at a time (10 s each). Order: top set XP on the set winners, then on the losers, alternating (OS).
+  - **Offers:** seeded from the match seed and set.
+  - **Picks are part of the input** (`PlayerInput.pick`), so replays stay exact. A pick that doesn't come in time is made automatically.
+  - Each boost once per player; draft events.
+- **CPU drafting** (`ai/draft.ts`):
+  - a value from the boost's tags and the kit:
+    - no Mega Launcher without projectiles;
+    - no Light Clay without walls;
+    - goalies like tank;
+    - forwards like speed and power;
+    - Sparks value more the more you hold;
+  - plus a little noise;
+  - Easy picks at random;
+  - Hard also **denies**: it takes what the next enemy picker wants much more;
+  - bots wait 40 ticks before picking so humans can follow.
+- **Tools:**
+  - `runHeadless({ boosts })`;
+  - `npm run balance` now drafts boosts by default (`--boosts off` to measure without) and reports per-boost win rate and picks per game.
+- **Client:** boosts stay off until the draft screens (5.7 / 5.8), so matches don't pause on an invisible draft.
+- **Tests:** `sim/test/boosts.test.ts` (13 tests): data, both draft kinds (order, once-only, auto-pick, kickoff after), a full deterministic bot match with drafts, and the effects.
+- **Performance:** static boost stats are cached (recomputed only when the boosts or max Stagger change). The first balance run took twice as long without the cache. With it, drafts cost about 4 % per tick, and matches run 7.2 min on average instead of 6.8.
+
+**Measured** (600 random-comp 3v3s with random items and bot boost drafts): win rate when only one team holds the boost.
+- **Top:** Speed Boost 59 %, Agility 59 %, Light Clay 57 % (picked rarely: walls only), Guts 55 %.
+- **Bottom:** Tough Claws 38 % and Run Away 37 %. Bots don't play the edge on purpose.
+- **Kit tiers with items and boosts:**
+  - Snorlax, Blastoise and Lucario are T0;
+  - Pikachu is D;
+  - Alakazam is still F as a forward.
+- Items keep their order (Rocky Helmet 66 %, Eject Pack 37 %). All of it goes to the balance pass.
+
 ## Part C — Screens
 
 ### 5.7 Pick screen (replaces the setup screen)
