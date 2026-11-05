@@ -263,6 +263,31 @@ Run `kits`, `balance` and `playstyle` with all 8.
 - The ladder still checks bot quality: v2 vs v1 ≥ 80 % on 3v3 mirrors that now rotate through 8 kits.
 - Playstyle check: the brawling rework's numbers (crowding, KOs/min, clean passes) shouldn't get worse with the new kits.
 
+**✅ Result (5.4): the gate passes.**
+- **Theory budgets:** all new kits are between 88 and 112 (Greninja 97, Alakazam 106, Blastoise 90, Machamp 90).
+- **Measured tiers:** all new kits are between D and T0.5 overall (table in 5.3).
+- **Tier snapshot** (`balance/tiers.json`, F3 Tiers tab): rewritten from 600 random-comp 3v3s with all 8.
+- **Ladder:** v2 beats v1 in 100 % of the 8 rotating mirrors.
+- **Playstyle** (`npm run playstyle`, 40 random-comp 3v3s with all 8) against the rework's "after" numbers:
+
+| Metric | After the rework (4 kits) | Now (8 kits) |
+|---|---|---|
+| KOs per live minute | 2.4 | 2.4 |
+| Staggers → KO | 31 % | **38 %** (target ≥ 35 % now met) |
+| Goals on a power play | 21 % | 22 % |
+| Crowded (3+ of 4 forwards) | 16 % | 16 % |
+| Forward spread | 472 | 481 |
+| Clean passes per live minute | 10.2 | 10.6 |
+| Contested touches | 36 % | 35 % (still the open item) |
+| Goals per live minute | 2.0 | 1.9 |
+
+- Nothing got worse.
+- The passer and wall kits didn't raise passing on their own: bots pass the same way whatever the kit.
+- Open balance items for when you ask for a balance pass:
+  - Snorlax T0 (69 % / 80 %);
+  - Greninja D and Alakazam forward F;
+  - Easy bots possibly too strong (from M4).
+
 ## Part B — Loadout
 
 ### 5.5 Held items

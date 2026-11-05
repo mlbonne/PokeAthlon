@@ -1,55 +1,103 @@
 {
   "$comment": "Sim tier snapshot, written by `npm run balance` (M4.6). Do not edit by hand.",
-  "generatedAt": "2026-11-04 22:46 UTC",
+  "generatedAt": "2026-11-05 03:34 UTC",
   "difficulty": "balance",
   "entries": [
     {
       "pokemon": "pikachu",
       "forward": {
-        "wins": 111,
-        "games": 230
+        "wins": 93,
+        "games": 209
       },
       "goalie": {
-        "wins": 60,
-        "games": 125
+        "wins": 35,
+        "games": 91
       },
-      "impact": -0.63
+      "impact": -2.15
+    },
+    {
+      "pokemon": "greninja",
+      "forward": {
+        "wins": 70,
+        "games": 172
+      },
+      "goalie": {
+        "wins": 36,
+        "games": 100
+      },
+      "impact": -3.65
+    },
+    {
+      "pokemon": "alakazam",
+      "forward": {
+        "wins": 61,
+        "games": 190
+      },
+      "goalie": {
+        "wins": 54,
+        "games": 102
+      },
+      "impact": -5.66
     },
     {
       "pokemon": "togekiss",
       "forward": {
-        "wins": 116,
-        "games": 252
+        "wins": 98,
+        "games": 193
       },
       "goalie": {
-        "wins": 68,
-        "games": 123
+        "wins": 54,
+        "games": 94
       },
-      "impact": -0.23
+      "impact": 3.81
     },
     {
       "pokemon": "snorlax",
       "forward": {
-        "wins": 153,
-        "games": 222
+        "wins": 136,
+        "games": 197
       },
       "goalie": {
-        "wins": 89,
-        "games": 128
+        "wins": 86,
+        "games": 108
       },
-      "impact": 3.47
+      "impact": 3.78
+    },
+    {
+      "pokemon": "blastoise",
+      "forward": {
+        "wins": 110,
+        "games": 206
+      },
+      "goalie": {
+        "wins": 58,
+        "games": 100
+      },
+      "impact": 5.06
     },
     {
       "pokemon": "lucario",
       "forward": {
-        "wins": 106,
-        "games": 241
+        "wins": 92,
+        "games": 188
       },
       "goalie": {
-        "wins": 41,
-        "games": 118
+        "wins": 43,
+        "games": 90
       },
-      "impact": -2.57
+      "impact": 0.48
+    },
+    {
+      "pokemon": "machamp",
+      "forward": {
+        "wins": 115,
+        "games": 203
+      },
+      "goalie": {
+        "wins": 34,
+        "games": 93
+      },
+      "impact": -1.4
     }
   ]
 }
