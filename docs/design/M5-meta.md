@@ -499,6 +499,22 @@ After the match (and a short version after each set):
 - **Buttons:** Rematch (same picks), Back to pick screen, and Watch replay (if the recorder can do it cheaply).
 - **Tab / Back:** hold to see the scoreboard during the match.
 
+**✅ What shipped (5.9)** (`client/src/results.ts`)
+- **Set card** (during the 4 s set-end pause):
+  - "Blue wins set N", the set score;
+  - **Forward MVP and Goalie MVP of that set** (OS rule), from per-set telemetry (the difference from a snapshot taken when the set starts) and `mvpScore`.
+- **Match results:**
+  - "Blue wins the match!" with Victory / Defeat;
+  - the **scoreboard** by team with the OS columns (Goals, Assists, KOs, Saves, Damage, Shots, Redirects, Orbs), plus role, item and number of boosts (names on hover);
+  - a ⭐ for set MVPs;
+  - the list of **set MVPs**;
+  - **accolades** with our own names: "N Goals", "Double … Octa Goal Streak" (consecutive goals by one player), "3+/4+/5+ KOs", "10+/20+/30+ Saves", "Top / Monstrous / Legendary Damage", "Playmaker", "Brick Wall", "N Shots on Goal";
+  - buttons: **Rematch** (same picks) and **Back to picks**.
+- **Hold Tab** shows the scoreboard during play. Gamepad Back stays the debug menu.
+- **Not done:** "Watch replay". The recorder isn't wired to a replay viewer.
+- **Tests:** `client/test/results.test.ts` (set MVPs per role, accolades).
+- **Checked in the browser:** the set card, then the final results (forced via the dev hook), and Rematch.
+
 ### 5.10 Wrap-up
 
 Docs, a "what shipped" section here, PLAN.md, a fresh `balance/tiers.json` with 8 Pokémon, items and boosts,

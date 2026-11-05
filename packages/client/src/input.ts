@@ -11,6 +11,10 @@ const PAD = { A: 0, BACK: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 } a
 /** Keyboard + mouse + first gamepad → quantized PlayerInput. */
 export class InputSource {
   private keys = new Set<string>();
+  /** Is a key held right now (e.g. Tab for the scoreboard)? */
+  isHeld(code: string): boolean {
+    return this.keys.has(code);
+  }
   private mouseDown = false;
   private mouseRight = false;
   /** Mouse position in normalised device coords (-1..1). */
@@ -38,7 +42,7 @@ export class InputSource {
       const nav = { ArrowUp: 'nav-up', ArrowDown: 'nav-down', ArrowLeft: 'nav-left', ArrowRight: 'nav-right' }[e.code];
       if (nav) this.pendingActions.push(nav);
       this.device = 'keyboard';
-      if (e.code === 'Space' || e.code === 'Backspace') e.preventDefault();
+      if (e.code === 'Space' || e.code === 'Backspace' || e.code === 'Tab') e.preventDefault();
     });
     target.addEventListener('keyup', (e) => this.keys.delete(e.code));
     target.addEventListener('blur', () => {
