@@ -20,6 +20,7 @@ import {
 } from '@pokeathlon/sim';
 import { getKit } from '@pokeathlon/data';
 import { AbilityBar } from './abilityBar';
+import { DraftScreen } from './draftScreen';
 import { SetupScreen, type MatchConfig } from './setup';
 import { DebugMenu } from './debug/menu';
 import type { FrameRecorder } from './recorder';
@@ -144,7 +145,8 @@ function startMatch(): void {
   // Held items (M5.5): everyone without a pick gets their archetype's default until the pick screen (5.7).
   const world = createWorld(
     withDefaultItems(config.lineup.map((s) => ({ ...s }))),
-    { mode: PRACTICE ? 'sandbox' : 'match', ...(PRACTICE ? { ballPos: { x: -400, y: 0 } } : {}) },
+    // Boost drafts (M5.6/5.8) in real matches; ?boosts=0 turns them off.
+    { mode: PRACTICE ? 'sandbox' : 'match', boosts: !PRACTICE && params.get('boosts') !== '0', ...(PRACTICE ? { ballPos: { x: -400, y: 0 } } : {}) },
   );
   document.body.classList.toggle('teams3', world.players.length > 2);
   if (!arena) {
@@ -383,9 +385,13 @@ function mouseWorld(input: InputSource): Vec2 | null {
 // ---------- Simulation step ----------
 const input = new InputSource(window, canvas);
 let lastInput: PlayerInput = NEUTRAL_INPUT;
+/** Boost the human picked on the draft screen (index into the offers), sent with the next input. */
+let pendingPick = -1;
+const draft = new DraftScreen(document.body, (i) => (pendingPick = i));
 
-function simStep(mine: PlayerInput): void {
+function simStep(input: PlayerInput): void {
   const { world } = view;
+  const mine = pendingPick >= 0 && world.draft ? { ...input, pick: pendingPick } : input;
   world.players.forEach((p, i) => (view.prevPos[i] = { ...p.pos }));
   view.prevBall = { ...world.ball.pos };
   const myTeam = world.players[ME]?.team ?? 0;
@@ -396,6 +402,7 @@ function simStep(mine: PlayerInput): void {
     ),
   );
   if (debugHooks.noCooldowns) practiceClearCooldowns(world);
+  if (!world.draft || world.events.some((e) => e.type === 'boostPick' && e.playerId === ME)) pendingPick = -1;
   for (const e of world.events) onEvent(e);
 }
 
@@ -465,6 +472,7 @@ function frame(now: number): void {
       else setup.show();
     }
     if (a.startsWith('nav-') && setup.visible) setup.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
+    else if (a.startsWith('nav-') && draft.visible) draft.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
     if (a.startsWith('pad-on:')) toast(`Controller connected: ${a.slice(7).split('(')[0]!.trim()}`);
     if (a.startsWith('pad-off:')) toast('Controller disconnected');
   }
@@ -481,6 +489,8 @@ function frame(now: number): void {
     steps++;
   }
   if (steps === 5) acc = 0;
+  if (setup.visible) draft.el.hidden = true;
+  else draft.update(view.world, SPECTATE ? -1 : ME);
   render(dt, now, acc / DT);
   requestAnimationFrame(frame);
 }

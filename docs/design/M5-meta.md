@@ -476,6 +476,20 @@ OS-style Striker Select for 6 players:
 The 8 boosts as cards, the pick order down the side, a short timer per pick, and the CPUs' picks shown as they happen.
 Shows the set score and each player's boosts so far.
 
+**✅ What shipped (5.8)**
+- **Overlay** (`client/src/draftScreen.ts`): shown while the match is in its `draft` phase.
+  - **Start of match:** "Pick a starting boost", the 2 shared offers, everyone picking at once.
+  - **Between sets:** "Boost draft · after set N · Blue x – y Red", the pool as cards (family icon, name, description; the OS Awakening in the tooltip), and the **pick order** down the side (team colours, current picker highlighted, this draft's pick and earlier boosts).
+  - **Timer:** a countdown bar.
+  - **Status:** "Your pick!" or "X is picking…".
+  - **Disabled cards:** boosts you already hold are greyed ("You have it").
+- **Your pick** goes into your next input (`PlayerInput.pick`), so it's replayed like any input. If time runs out, the CPU logic picks for you.
+- **Boost drafts are on in real matches.** Practice and `?boosts=0` turn them off.
+- **Controls:** button navigation is shared (`client/src/nav.ts`), so the D-pad + A work on the pick screen and on the draft.
+- **Checked in the browser:**
+  - start draft: picking registers, CPUs pick, then kickoff;
+  - a forced set end shows the set draft with the OS order (winner's top set XP first, alternating).
+
 ### 5.9 Results screen
 
 After the match (and a short version after each set):
