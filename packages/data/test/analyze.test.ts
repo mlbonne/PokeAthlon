@@ -91,7 +91,7 @@ describe('kit analyzer: roster', () => {
   const all = analyzeRoster();
 
   it('covers every Pokémon with a kit, with three moves each', () => {
-    expect(all.map((f) => f.id).sort()).toEqual(['lucario', 'pikachu', 'snorlax', 'togekiss']);
+    expect(all.map((f) => f.id).sort()).toEqual(['greninja', 'lucario', 'machamp', 'pikachu', 'snorlax', 'togekiss']);
     for (const f of all) expect(f.moves).toHaveLength(3);
   });
 
@@ -101,8 +101,8 @@ describe('kit analyzer: roster', () => {
     expect(mobility).toBeCloseTo(100);
   });
 
-  it('kit DPS is the sum of move DPS', () => {
-    for (const f of all) expect(f.kitDps).toBeCloseTo(f.moves.reduce((s, m) => s + m.dps, 0));
+  it('kit DPS is the sum of move DPS (and the passive)', () => {
+    for (const f of all) expect(f.kitDps).toBeCloseTo(f.moves.reduce((s, m) => s + m.dps, 0) + (f.passive?.dps ?? 0));
   });
 });
 

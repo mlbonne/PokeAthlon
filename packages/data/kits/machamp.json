@@ -1,0 +1,88 @@
+{
+  "$comment": "Hulking Beast (OS X model, wiki 2026-11). Cross Chop = Bell Ringer (0.6 s wind-up, swing around you: the outer ring knocks hard, the inside is LIGHT), Submission Rush = Bull Rush (0.55 s wind-up, rush; other moves castable mid-rush), No Guard = X Maximus! (3.5 s, +40 % size, Strikes hit players) plus our drawback: +25 % knockback taken. Player knockback = OS × 1.875 (brawling rework); power % → powerRatio.",
+  "pokemon": "machamp",
+  "moves": [
+    {
+      "id": "cross-chop",
+      "name": "Cross Chop",
+      "slot": "primary",
+      "cooldown": 11,
+      "castTime": 0.6,
+      "anim": "Swing",
+      "desc": "Wind up, then swing all around you. Enemies near max range are knocked far; closer ones take a LIGHT hit.",
+      "bot": "engage",
+      "actions": [
+        {
+          "type": "area",
+          "fx": { "color": "#e63946" },
+          "shape": "circle",
+          "radius": 300,
+          "hit": {
+            "ball": { "base": 907, "powerRatio": 1.267 },
+            "player": { "base": 124, "powerRatio": 0.619 },
+            "damage": { "base": 66, "powerRatio": 0.33 },
+            "light": true,
+            "direction": "radial"
+          },
+          "sweetSpot": {
+            "from": 0.6,
+            "to": 1,
+            "hit": {
+              "ball": { "base": 1360, "powerRatio": 1.9 },
+              "player": { "base": 375, "powerRatio": 1.875 },
+              "damage": { "base": 200, "powerRatio": 1.0 },
+              "direction": "radial"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "submission-rush",
+      "name": "Submission Rush",
+      "slot": "secondary",
+      "cooldown": 14,
+      "castTime": 0.55,
+      "anim": "Attack",
+      "desc": "Wind up, then rush forward, hitting enemies and the ball. Other moves can be cast mid-rush.",
+      "bot": "engage",
+      "actions": [
+        {
+          "type": "dash",
+          "fx": { "color": "#f4a261" },
+          "distance": 600,
+          "time": 0.35,
+          "castWhileDashing": true,
+          "hit": {
+            "ball": { "base": 1360, "powerRatio": 1.9 },
+            "player": { "base": 300, "powerRatio": 1.594 },
+            "damage": { "base": 160, "powerRatio": 0.85 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "no-guard",
+      "name": "No Guard",
+      "slot": "special",
+      "cooldown": 40,
+      "anim": "Charge",
+      "desc": "For 3.5 s: 40 % bigger and your Strikes also hit players. You take 25 % more knockback.",
+      "bot": "engage",
+      "actions": [
+        {
+          "type": "buff",
+          "fx": { "color": "#e63946" },
+          "target": "self",
+          "duration": 3.5,
+          "sizePct": 40,
+          "knockbackTakenPct": 25,
+          "strikeHit": {
+            "player": { "base": 281, "powerRatio": 1.406 },
+            "damage": { "base": 60, "powerRatio": 0.35 }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { getKit, getPokemon, kits } from '../src/index';
 
 describe('kits', () => {
-  it('the first four kits exist with one move per slot', () => {
-    expect(Object.keys(kits).sort()).toEqual(['lucario', 'pikachu', 'snorlax', 'togekiss']);
+  it('the kits exist with one move per slot', () => {
+    expect(Object.keys(kits).sort()).toEqual(['greninja', 'lucario', 'machamp', 'pikachu', 'snorlax', 'togekiss']);
     for (const k of Object.values(kits)) {
       expect(k.moves.map((m) => m.slot).sort()).toEqual(['primary', 'secondary', 'special']);
       expect(() => getPokemon(k.pokemon)).not.toThrow();
@@ -20,6 +20,6 @@ describe('kits', () => {
   });
 
   it('Pokémon without a kit yet return undefined', () => {
-    expect(getKit('machamp')).toBeUndefined();
+    expect(getKit('alakazam')).toBeUndefined();
   });
 });

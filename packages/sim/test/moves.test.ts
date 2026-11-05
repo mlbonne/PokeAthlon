@@ -61,7 +61,7 @@ describe('casting rules', () => {
   });
 
   it('Pokémon without a kit simply have no moves', () => {
-    const w = sandbox([{ pokemonId: 'machamp', team: 0, pos: { x: 0, y: 0 } }]);
+    const w = sandbox([{ pokemonId: 'alakazam', team: 0, pos: { x: 0, y: 0 } }]);
     expect(w.players[0]!.moves).toHaveLength(0);
     expect(types(cast(w, 0, Button.Move1))).not.toContain('cast');
   });
