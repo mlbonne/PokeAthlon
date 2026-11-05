@@ -302,6 +302,60 @@ and 4 Goalie items (Quick Claw, Eject Pack, Zoom Lens, Rocky Helmet).
   when it exists.
 - F3 meter: shows the active item and its live state (Quick Claw stacks, Poison Barb ticks).
 
+**✅ What shipped (5.5)**
+
+Numbers come from the OS wiki Gear page (2026-11).
+- **Data:**
+  - `packages/data/items/items.json` + `src/items.ts`;
+  - Zod schema;
+  - `getItem`, `itemsFor(slot)`, `defaultItem(archetype, slot)` (a starting pick per archetype for CPUs).
+- **Generic effects:** each is a field in `effects`, and no item has its own code path:
+
+| Item (OS Gear) | Effect |
+|---|---|
+| Choice Scarf (Slick Kicks) | `speedOnBallStrike` 30 % / 1.25 s |
+| Muscle Band (Pummelers) | `knockbackDealtPct` 10, `speedWhenAheadPct` 30 (more players on the field) |
+| Shell Bell (Vicious Vambrace) | `lifesteal` 0.75 |
+| Quick Powder (Magnetized Soles) | `speedOnMidfield` 18 % / 1.65 s (on foot or dashing; a blink doesn't count, as in OS) |
+| Poison Barb (Siphoning Wand) | `poison` 6 % of max Stagger (LIGHT: 2 %) over 2.4 s, heal 125 % of it |
+| Quick Claw (Momentum Boots) | `momentum` +2 % + 1.4 %/s up to +14 %, builds on own half, reset when hit |
+| Eject Pack (Eject Button) | `dashRangePct` 50, `hastePct` 40, `secondaryCooldownPct` 25, `blinkBack` 3.25 s (press the secondary again) |
+| Zoom Lens (Strike Shot) | `projectileRangePct` 35 (also target cast range), `strikeShot` every 11 s (a LIGHT projectile; OS gives no numbers, so ours are like one Thunder Shock bolt) |
+| Rocky Helmet (Powerhouse Pauldrons) | `sizePct` 30, `powerAdd` 20, `damageReduction` 0.15 |
+
+- **Sim** (`sim/src/items.ts`):
+  - **Spawns:** `PlayerSpawn.item` is **role-locked**; a goalie item on a forward throws.
+  - **Per tick** (`stepItems`):
+    - **Goalie items work only on the own half** (`itemActive`); body stats are recomputed when the item switches on or off;
+    - item speed, midfield crossing, poison ticks.
+  - **Hooks:** hits (knockback dealt, lifesteal, poison, momentum reset), Strike (ball hit, Strike shot), casts (secondary cooldown, blink back, cast range).
+  - **Hashing:** all new state is hashed.
+- **Tools:**
+  - `npm run balance` gives every player a random item of their slot (seeded) and reports the **item win rate when only one team holds the item** (console, JSON, HTML);
+  - `--items off` measures kits alone;
+  - `--set item.<id>.<path>` what-ifs, e.g. `item.muscle-band.knockbackDealtPct=15`.
+- **Client and bots:**
+  - `withDefaultItems(lineup)` gives every player without a pick their archetype's default; the pick screen (5.7) will let you choose;
+  - the F3 scoreboard has an Item column: grey when off, plus live speed % and ☠ while poisoned.
+- **Tests:** `sim/test/items.test.ts` (10 tests: data, role lock, every item's effect, the enemy-half rule).
+
+**Measured** (600 random-comp 3v3s, random items, balance difficulty): win rate when only one team holds the item.
+
+| Forward | Win | Goalie | Win |
+|---|---|---|---|
+| Choice Scarf | **64 %** | Rocky Helmet | **62 %** |
+| Quick Powder | 54 % | Quick Claw | 54 % |
+| Muscle Band | 50 % | Zoom Lens | 49 % |
+| Shell Bell | 42 % | Eject Pack | **36 %** |
+| Poison Barb | 41 % | | |
+
+Watch items for the balance pass (not tuned now):
+- **Speed:** speed items are strong in bot hands.
+- **Eject Pack is partly a bot gap:**
+  - bots never use the blink-back;
+  - bots plan dashes with the kit's range, not the +50 %.
+- **Kit tiers with items:** they move by a tier or so (Lucario T0.5, Machamp A); Snorlax is still T0.
+
 ### 5.6 Boosts and the between-set draft
 
 A starter set of about **16 boosts** covering OS's families (movement, stats, ball, cooldowns, energy, sustain, edge, anti-KO,

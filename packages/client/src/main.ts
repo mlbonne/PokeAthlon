@@ -5,6 +5,7 @@ import {
   getBrain,
   parseLineup,
   createWorld,
+  withDefaultItems,
   DT,
   NEUTRAL_INPUT,
   practiceClearCooldowns,
@@ -140,8 +141,9 @@ function startMatch(): void {
     view.bar.remove();
     hudRoot.querySelectorAll('.scoreboard, .banner, .plate, .pop, .team-hud').forEach((e) => e.remove());
   }
+  // Held items (M5.5): everyone without a pick gets their archetype's default until the pick screen (5.7).
   const world = createWorld(
-    config.lineup.map((s) => ({ ...s })),
+    withDefaultItems(config.lineup.map((s) => ({ ...s }))),
     { mode: PRACTICE ? 'sandbox' : 'match', ...(PRACTICE ? { ballPos: { x: -400, y: 0 } } : {}) },
   );
   document.body.classList.toggle('teams3', world.players.length > 2);

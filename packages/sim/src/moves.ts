@@ -17,6 +17,7 @@ import { pointInPolygon } from './geometry';
 import { AXIS_MAX, Button, type PlayerInput } from './input';
 import { frozenPhase } from './match';
 import { specialUnlocked } from './progression';
+import { fx, itemHaste } from './items';
 import { onOwnHalf } from './stage';
 import { normalize, rotateDeg, type Vec2 } from './vec';
 import { isTargetable, type Player, type World } from './world';
@@ -234,6 +235,13 @@ export function stepMoves(world: World, p: Player, inp: PlayerInput | undefined)
       fireRecast(world, p, slot, inp);
       break;
     }
+    const back = p.itemState.blinkBack;
+    if (slot === 1 && back) {
+      p.itemState.blinkBack = null;
+      world.events.push({ type: 'recast', playerId: p.id, moveId: `item:${p.item?.id ?? ''}` });
+      schedule(world, p, `item:${p.item?.id ?? ''}`, [BLINK_BACK], { dir: { ...p.facing }, target: { ...p.pos }, aimDist: 0 }, { power: 1, range: 1 }, back.mark);
+      break;
+    }
     if (m.cooldown > 0) continue;
     if (m.def.slot === 'special' && !specialUnlocked(p)) continue;
     if (m.def.charge) {
@@ -247,13 +255,19 @@ export function stepMoves(world: World, p: Player, inp: PlayerInput | undefined)
   }
 }
 
+/** Eject Pack's blink back to where the secondary was cast. */
+const BLINK_BACK: MoveAction = { type: 'blink', delay: 0, fx: { color: '#ffd166' }, telegraph: false, to: 'mark', distance: 100000, swap: false };
+
 const chargeMods = (def: MoveDef, scale: number) =>
   def.charge && scale !== 1 ? { power: def.charge.power ? scale : 1, range: def.charge.range ? scale : 1 } : { power: 1, range: 1 };
 
 function startCast(world: World, p: Player, slot: number, inp: PlayerInput | undefined, scale: number): void {
   const m = p.moves[slot]!;
-  const aim = aimFrom(p, inp, m.def.range * (m.def.charge?.range ? scale : 1));
-  m.cooldown = ticks(m.def.cooldown);
+  const e = fx(p);
+  const castRange = m.def.range * (m.def.charge?.range ? scale : 1) * (e?.projectileRangePct ? 1 + e.projectileRangePct / 100 : 1);
+  const aim = aimFrom(p, inp, castRange);
+  m.cooldown = ticks(m.def.cooldown * (slot === 1 && e?.secondaryCooldownPct ? 1 - e.secondaryCooldownPct / 100 : 1));
+  if (slot === 1 && e?.blinkBack && !m.def.recast) p.itemState.blinkBack = { ticks: ticks(e.blinkBack.window), mark: { ...p.pos } };
   p.facing = { ...aim.dir };
   if (gameplay.evade.cancelsOnStrike) p.elusiveTicks = 0;
   world.events.push({ type: 'cast', playerId: p.id, moveId: m.def.id, slot: m.def.slot });
@@ -271,6 +285,11 @@ function fireRecast(world: World, p: Player, slot: number, inp: PlayerInput): vo
   p.facing = { ...aim.dir };
   world.events.push({ type: 'recast', playerId: p.id, moveId: def.id });
   schedule(world, p, def.id, def.recast!.actions, aim, { power: 1, range: 1 }, r.mark);
+}
+
+/** Extra actions fired from a Strike (item Strike shots). */
+export function fireExtra(world: World, p: Player, sourceId: string, actions: readonly MoveAction[], dir: Vec2): void {
+  schedule(world, p, sourceId, actions, { dir, target: { ...p.pos }, aimDist: 0 }, { power: 1, range: 1 });
 }
 
 /** Strike-modifier passive: the charged Strike fires the passive's actions (called by Strike). */
@@ -348,6 +367,10 @@ function fire(world: World, p: Player, pa: PendingAction): void {
     const k = onOwnHalf(world.stage, p.team, p.pos) ? a.side.own : a.side.enemy;
     a = scaleAction(a, k, 1, k);
   }
+  // Items: longer dashes / blinks (Eject Pack), longer projectiles (Zoom Lens).
+  const e = fx(p);
+  if (e?.dashRangePct && (a.type === 'dash' || (a.type === 'blink' && a.to === 'aim'))) a = scaleAction(a, 1, 1 + e.dashRangePct / 100, 1);
+  if (e?.projectileRangePct && a.type === 'projectile') a = { ...a, range: a.range * (1 + e.projectileRangePct / 100) };
   switch (a.type) {
     case 'projectile': {
       const n = pa.single ? 1 : a.count;
@@ -807,8 +830,12 @@ export function stepCreations(world: World): void {
 
 /** Speed multiplier from buffs with OS diminishing returns (750–900 at 50 %, above 900 at 25 %). */
 export function effectiveSpeed(p: Player): number {
-  let pct = 0;
-  for (const b of p.buffs) pct += b.decays ? (b.speedPct * b.ticks) / b.total : b.speedPct;
+  let pct = p.itemSpeedPct;
+  const haste = itemHaste(p);
+  for (const b of p.buffs) {
+    const v = b.decays ? (b.speedPct * b.ticks) / b.total : b.speedPct;
+    pct += b.moveId.startsWith('item:') ? v : v * haste;
+  }
   const total = p.speed * (1 + pct / 100);
   if (total <= 750) return total;
   if (total <= 900) return 750 + (total - 750) * 0.5;
@@ -830,7 +857,7 @@ export function buffKnockbackResist(p: Player): number {
   return r;
 }
 export function buffDamageReduction(p: Player): number {
-  let r = p.dash?.guard?.reduction ?? 0;
+  let r = (p.dash?.guard?.reduction ?? 0) + (fx(p)?.damageReduction ?? 0);
   for (const b of p.buffs) r += b.damageReduction;
   return Math.min(0.9, r);
 }
@@ -843,8 +870,9 @@ export function buffKnockbackTaken(p: Player): number {
 
 /** Body size and power from the base stats plus transform buffs. */
 export function refreshBody(p: Player): void {
-  let size = 0;
-  let power = 0;
+  const e = fx(p);
+  let size = e?.sizePct ?? 0;
+  let power = e?.powerAdd ?? 0;
   for (const b of p.buffs) {
     size += b.sizePct;
     power += b.powerAdd;
@@ -869,6 +897,9 @@ export function resetMoveState(world: World): void {
     p.channel = null;
     p.buffs = [];
     p.banishTicks = 0;
+    p.poisons = [];
+    p.itemState.momentum = 0;
+    p.itemState.blinkBack = null;
     refreshBody(p);
   }
 }

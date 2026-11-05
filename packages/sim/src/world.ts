@@ -1,4 +1,5 @@
-import { gameplay, getPokemon, SIZE_TABLE, type KitPassive } from '@pokeathlon/data';
+import { gameplay, getPokemon, SIZE_TABLE, type ItemDef, type KitPassive } from '@pokeathlon/data';
+import { itemForSpawn, newItemState, stepItems, type ItemState, type Poison } from './items';
 import { stepBall } from './ball';
 import { stepCombatTimers } from './combat';
 import { ticks } from './constants';
@@ -30,7 +31,7 @@ import { stepOrbs } from './orbs';
 import { stepPassiveXp } from './progression';
 import type { BotMemory, TeamPlan } from './ai/memory';
 import { mixSeed } from './rng';
-import { buildStage, type Stage, type Team } from './stage';
+import { buildStage, onOwnHalf, type Stage, type Team } from './stage';
 import { stepStrike } from './strike';
 import { collectTelemetry, createTelemetry, playerTelemetry, type Telemetry } from './telemetry';
 import type { Vec2 } from './vec';
@@ -126,6 +127,15 @@ export interface Player {
   /** The kit's Strike-modifier passive and its stacks. */
   passive: KitPassive | null;
   passiveStacks: number;
+  // Held item (M5.5)
+  item: ItemDef | null;
+  /** The item works right now (goalie items: own half only). */
+  itemActive: boolean;
+  /** Speed % from the item this tick (momentum, advantage). */
+  itemSpeedPct: number;
+  itemState: ItemState;
+  /** Poisons ticking on this player (Poison Barb). */
+  poisons: Poison[];
 }
 
 export interface Ball {
@@ -229,6 +239,8 @@ export interface PlayerSpawn {
   slot?: number;
   /** Explicit start position (sandbox/tests). Defaults to the stage spawn for role/slot. */
   pos?: Vec2;
+  /** Held item id (must match the role's slot). */
+  item?: string;
 }
 
 export interface WorldOptions {
@@ -378,7 +390,13 @@ function makePlayer(id: number, s: PlayerSpawn, stage: Stage): Player {
     channel: null,
     passive: null,
     passiveStacks: 0,
+    item: itemForSpawn(s.item, role),
+    itemActive: false,
+    itemSpeedPct: 0,
+    itemState: newItemState(pos.x),
+    poisons: [],
   };
+  p.itemActive = !!p.item && (p.item.slot === 'forward' || onOwnHalf(stage, p.team, p.pos));
   applyPokemon(p, s.pokemonId);
   p.stagger = p.maxStagger;
   return p;
@@ -435,6 +453,7 @@ export function step(world: World, inputs: readonly (PlayerInput | undefined)[])
   const prevPos = world.players.map((p) => ({ x: p.pos.x, y: p.pos.y }));
   stepMatchStart(world);
   for (const p of world.players) stepCombatTimers(world, p);
+  for (const p of world.players) if (stepItems(world, p)) refreshBody(p);
   for (const p of world.players) stepMovement(world, p, inputs[p.id]);
   for (const p of world.players) stepStrike(world, p, inputs[p.id]);
   for (const p of world.players) stepMoves(world, p, inputs[p.id]);

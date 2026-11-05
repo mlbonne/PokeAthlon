@@ -13,6 +13,7 @@
     "rules/*.json",
     "stages/*.json",
     "kits/*.json",
+    "items/*.json",
     "balance/*.json",
     "test"
   ]

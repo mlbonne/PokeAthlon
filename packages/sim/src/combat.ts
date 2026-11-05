@@ -2,6 +2,7 @@ import { gameplay } from '@pokeathlon/data';
 import { TICK_RATE, ticks } from './constants';
 import { addXp } from './progression';
 import { releaseBall } from './ball';
+import { itemKnockbackDealt, itemOnHit } from './items';
 import { buffDamageReduction, buffKnockbackResist, buffKnockbackTaken, refreshBody } from './moves';
 import { inGoalArc } from './stage';
 import type { Vec2 } from './vec';
@@ -39,7 +40,8 @@ export function applyHit(world: World, attackerId: number, target: Player, hit: 
   const wasStaggered = target.staggered;
 
   const damage = hit.damage * (wasStaggered ? K.staggeredDamageTaken : 1) * (1 - buffDamageReduction(target));
-  let knockback = hit.light && !wasStaggered ? 0 : hit.knockback;
+  const attacker0 = world.players[attackerId];
+  let knockback = (hit.light && !wasStaggered ? 0 : hit.knockback) * itemKnockbackDealt(attacker0);
   if (wasStaggered) knockback *= K.staggeredKnockbackMultiplier;
   else if (knockback > 0) {
     let resist = buffKnockbackResist(target);
@@ -64,6 +66,7 @@ export function applyHit(world: World, attackerId: number, target: Player, hit: 
       world.events.push({ type: 'guardBreak', playerId: target.id });
     }
   }
+  itemOnHit(attacker0, target, damage, !!hit.light);
   // Any real hit makes a grabbing player drop the ball.
   if (world.ball.heldBy === target.id && (damage > 0 || knockback > 0 || hit.stun || hit.banish)) releaseBall(world, null, 0, 'drop');
 

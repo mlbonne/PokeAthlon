@@ -4,7 +4,8 @@ import { gainEnergy } from './combat';
 import { ticks } from './constants';
 import { AXIS_MAX, Button, type PlayerInput } from './input';
 import { frozenPhase } from './match';
-import { firePassive, gainPassive, stepStrikeHits } from './moves';
+import { fx, itemOnBallStrike, takeStrikeShot } from './items';
+import { fireExtra, firePassive, gainPassive, stepStrikeHits } from './moves';
 import { addXp } from './progression';
 import type { Player, World } from './world';
 
@@ -43,6 +44,9 @@ export function stepStrike(world: World, p: Player, inp: PlayerInput | undefined
     p.strikeHitIds = [];
     // Strike-modifier passive at full stacks: this Strike also fires it.
     if (p.passive && p.passiveStacks >= p.passive.stacks) firePassive(world, p, p.strikeDir);
+    // Zoom Lens: every so often a Strike also fires a projectile.
+    const shot = fx(p)?.strikeShot;
+    if (shot && takeStrikeShot(p)) fireExtra(world, p, `item:${p.item!.id}`, [shot.projectile], p.strikeDir);
     // Casting cancels Evade's untargetability (OS: "using any ability ends it early").
     if (gameplay.evade.cancelsOnStrike) p.elusiveTicks = 0;
     world.events.push({ type: 'strike', playerId: p.id, dir: { ...p.strikeDir } });
@@ -73,4 +77,5 @@ function tryHitBall(world: World, p: Player): void {
   gainEnergy(p, gameplay.energy.lightHit);
   addXp(world, p, gameplay.xp.strikeBall);
   gainPassive(p, 'strikeBall');
+  itemOnBallStrike(p);
 }

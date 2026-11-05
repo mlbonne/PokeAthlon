@@ -1,0 +1,168 @@
+{
+  "$comment": "Held items (M5.5) = OS Gear, numbers from the OS wiki Gear page (2026-11). One per player, picked at select, locked to the role slot. Goalie items stop working on the enemy half.",
+  "items": [
+    {
+      "id": "choice-scarf",
+      "name": "Choice Scarf",
+      "slot": "forward",
+      "os": "Slick Kicks",
+      "desc": "Strikes that hit the ball give +30% speed for 1.25 s.",
+      "effects": {
+        "speedOnBallStrike": {
+          "pct": 30,
+          "duration": 1.25
+        }
+      }
+    },
+    {
+      "id": "muscle-band",
+      "name": "Muscle Band",
+      "slot": "forward",
+      "os": "Pummelers",
+      "desc": "Your hits knock players 10% farther. +30% speed while your team has more players on the field.",
+      "effects": {
+        "knockbackDealtPct": 10,
+        "speedWhenAheadPct": 30
+      }
+    },
+    {
+      "id": "shell-bell",
+      "name": "Shell Bell",
+      "slot": "forward",
+      "os": "Vicious Vambrace",
+      "desc": "Heal Stagger equal to 75% of the damage you deal.",
+      "effects": {
+        "lifesteal": 0.75
+      }
+    },
+    {
+      "id": "quick-powder",
+      "name": "Quick Powder",
+      "slot": "forward",
+      "os": "Magnetized Soles",
+      "desc": "Crossing midfield (walking or dashing, not blinking) gives +18% speed for 1.65 s.",
+      "effects": {
+        "speedOnMidfield": {
+          "pct": 18,
+          "duration": 1.65
+        }
+      }
+    },
+    {
+      "id": "poison-barb",
+      "name": "Poison Barb",
+      "slot": "forward",
+      "os": "Siphoning Wand",
+      "desc": "Your hits poison: 6% of the target's max Stagger over 2.4 s (2% for LIGHT hits). You heal 125% of it.",
+      "effects": {
+        "poison": {
+          "pct": 0.06,
+          "lightPct": 0.02,
+          "duration": 2.4,
+          "heal": 1.25
+        }
+      }
+    },
+    {
+      "id": "quick-claw",
+      "name": "Quick Claw",
+      "slot": "goalie",
+      "os": "Momentum Boots",
+      "desc": "+2% speed, building up to +14% more over 10 s on your half. Getting hit resets the build-up.",
+      "effects": {
+        "momentum": {
+          "basePct": 2,
+          "perSecondPct": 1.4,
+          "maxPct": 14
+        }
+      }
+    },
+    {
+      "id": "eject-pack",
+      "name": "Eject Pack",
+      "slot": "goalie",
+      "os": "Eject Button",
+      "desc": "+50% dash and blink range, +40% haste, -25% secondary cooldown. Press your secondary again within 3.25 s to blink back to where you cast it.",
+      "effects": {
+        "dashRangePct": 50,
+        "hastePct": 40,
+        "secondaryCooldownPct": 25,
+        "blinkBack": {
+          "window": 3.25
+        }
+      }
+    },
+    {
+      "id": "zoom-lens",
+      "name": "Zoom Lens",
+      "slot": "goalie",
+      "os": "Strike Shot",
+      "desc": "+35% projectile and cast range. Every 11 s your Strike also fires a LIGHT projectile.",
+      "effects": {
+        "projectileRangePct": 35,
+        "strikeShot": {
+          "interval": 11,
+          "projectile": {
+            "type": "projectile",
+            "fx": {
+              "color": "#ffd166"
+            },
+            "speed": 1800,
+            "range": 750,
+            "radius": 35,
+            "hit": {
+              "ball": {
+                "base": 700,
+                "powerRatio": 0.5
+              },
+              "player": {
+                "base": 112,
+                "powerRatio": 0.47
+              },
+              "damage": {
+                "base": 60,
+                "powerRatio": 0.25
+              },
+              "light": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "rocky-helmet",
+      "name": "Rocky Helmet",
+      "slot": "goalie",
+      "os": "Powerhouse Pauldrons",
+      "desc": "+30% size, +20 power, -15% damage taken.",
+      "effects": {
+        "sizePct": 30,
+        "powerAdd": 20,
+        "damageReduction": 0.15
+      }
+    }
+  ],
+  "defaults": {
+    "$comment": "Starting pick per archetype and slot for CPUs (and the setup screen) until the balance snapshot has item win rates.",
+    "forward": {
+      "speedy-skirmisher": "choice-scarf",
+      "flashy-swordsman": "poison-barb",
+      "manipulating-mastermind": "quick-powder",
+      "empowering-enchanter": "shell-bell",
+      "stalwart-protector": "shell-bell",
+      "shield-user": "shell-bell",
+      "flexible-brawler": "muscle-band",
+      "hulking-beast": "muscle-band"
+    },
+    "goalie": {
+      "speedy-skirmisher": "quick-claw",
+      "flashy-swordsman": "eject-pack",
+      "manipulating-mastermind": "zoom-lens",
+      "empowering-enchanter": "zoom-lens",
+      "stalwart-protector": "rocky-helmet",
+      "shield-user": "rocky-helmet",
+      "flexible-brawler": "eject-pack",
+      "hulking-beast": "rocky-helmet"
+    }
+  }
+}

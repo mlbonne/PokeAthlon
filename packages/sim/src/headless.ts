@@ -1,3 +1,4 @@
+import { defaultItem, getPokemon } from '@pokeathlon/data';
 import { getBrain, type Brain } from './ai/index';
 import { TICK_RATE } from './constants';
 import { hashWorld } from './hash';
@@ -54,6 +55,11 @@ export function runHeadless(lineup: PlayerSpawn[], opts: HeadlessOptions = {}): 
     hash: hashWorld(w),
     telemetry: w.telemetry,
   };
+}
+
+/** Give every spawn without an item its archetype's default item for its slot (CPUs, quick play). */
+export function withDefaultItems(lineup: PlayerSpawn[]): PlayerSpawn[] {
+  return lineup.map((s) => (s.item ? s : { ...s, item: defaultItem(getPokemon(s.pokemonId).archetype, s.role === 'goalie' ? 'goalie' : 'forward').id }));
 }
 
 /**

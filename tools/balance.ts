@@ -18,6 +18,7 @@ import { availableParallelism } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMainThread, parentPort, Worker, workerData } from 'node:worker_threads';
+import { itemsFor } from '@pokeathlon/data';
 import { applyTuning } from '@pokeathlon/data/tuning';
 import { analyzeRoster, simTier, bestTier, TIERS, TIER_MEANING, type Tier } from '@pokeathlon/data/analyze';
 import { fitImpact, impactOf, impactShares, IMPACT_FEATURES, mixSeed, parseLineup, randInt, runHeadless, type PlayerSpawn } from '@pokeathlon/sim';
@@ -31,6 +32,7 @@ interface Spec {
 }
 interface PlayerOut {
   pokemon: string;
+  item: string;
   team: 0 | 1;
   role: 'forward' | 'goalie';
   goals: number;
@@ -64,6 +66,7 @@ function play(spec: Spec): GameOut {
     hash: r.hash,
     players: r.telemetry.players.map((t) => ({
       pokemon: t.pokemon,
+      item: t.item,
       team: t.team,
       role: t.role,
       goals: t.goals,
@@ -140,6 +143,7 @@ async function main(): Promise<void> {
   const seed0 = Number(arg('seed', '1'));
   const threads = Number(arg('threads', String(Math.max(1, availableParallelism() - 1))));
   const kits = analyzeRoster().map((k) => k.id);
+  const noItems = arg('items', 'on') === 'off';
 
   // ---- Specs ----
   const specs: Spec[] = [];
@@ -149,10 +153,16 @@ async function main(): Promise<void> {
       const slot = { rng: [mixSeed(seed * 7919 + 13)] };
       const pick = () => kits[randInt(slot, 0, 0, kits.length - 1)]!;
       const spec = `${pick()},${pick()},${pick()}/${pick()},${pick()},${pick()}`;
-      specs.push({ kind: '3v3', seed, lineup: parseLineup(spec) });
+      // Held items (M5.5): a random item of the player's slot, unless --items off.
+      const lineup = parseLineup(spec).map((s) => {
+        if (noItems) return s;
+        const pool = itemsFor(s.role === 'goalie' ? 'goalie' : 'forward');
+        return { ...s, item: pool[randInt(slot, 0, 0, pool.length - 1)]!.id };
+      });
+      specs.push({ kind: '3v3', seed, lineup });
     }
   }
-  console.log(`Balance run: ${specs.length} 3v3 games (random comps) on ${threads} threads, v2 bots at balance difficulty`);
+  console.log(`Balance run: ${specs.length} 3v3 games (random comps${noItems ? ', no items' : ', random items'}) on ${threads} threads, v2 bots at balance difficulty`);
   if (tuned.length) console.log(`What-if tuning:\n  ${tuned.join('\n  ')}`);
 
   const t0 = Date.now();
@@ -212,6 +222,18 @@ async function main(): Promise<void> {
     impact[k] = { forward: avg(mine.filter((s) => s.role === 'forward')), goalie: avg(mine.filter((s) => s.role === 'goalie')), all: avg(mine) };
   }
 
+  // ---- Held items: win rate of players holding item X when the other team doesn't hold it ----
+  const itemRecs: Record<string, Rec> = {};
+  for (const g of g3) {
+    if (g.winner < 0) continue;
+    for (const p of g.players) {
+      if (!p.item || g.players.some((o) => o.team !== p.team && o.item === p.item)) continue;
+      const r = (itemRecs[p.item] ??= rec());
+      r.games++;
+      if (g.winner === p.team) r.wins++;
+    }
+  }
+
   // ---- Per-move numbers (per game played) ----
   const moveStats: Record<string, Record<string, Record<string, number>>> = {};
   const gamesBy: Record<string, number> = {};
@@ -247,6 +269,15 @@ async function main(): Promise<void> {
     const cell = (s: ReturnType<typeof simTier> | null, x: Rec) => (s ? `${(s.tier + (s.uncertain ? '?' : '')).padEnd(5)} ${pct(x.wins / Math.max(1, x.games))} n=${x.games}` : '–').padEnd(22);
     console.log(`  ${r.name.padEnd(10)} overall ${(r.overall ?? '–').padEnd(5)} forward ${cell(r.fw, r.roles.forward)} goalie ${cell(r.gk, r.roles.goalie)} impact ${r.impact.all >= 0 ? '+' : ''}${r.impact.all.toFixed(1)} · theory ${r.theory}`);
   }
+  if (Object.keys(itemRecs).length) {
+    console.log('\nHeld items (win rate when only one team holds it):');
+    for (const slot of ['forward', 'goalie'] as const) {
+      for (const it of itemsFor(slot)) {
+        const r = itemRecs[it.id];
+        if (r) console.log(`  ${slot.padEnd(8)} ${it.name.padEnd(14)} ${pct(r.wins / Math.max(1, r.games))} n=${r.games}`);
+      }
+    }
+  }
   console.log('\nMatchups (3v3: win rate of teams with the row Pokémon vs teams with the column Pokémon):');
   console.log('  ' + ''.padEnd(10) + kits.map((k) => k.slice(0, 8).padStart(10)).join(''));
   for (const a of kits) console.log('  ' + a.padEnd(10) + kits.map((b) => (a === b ? '–' : pct(matchups[a]![b]!.wins / Math.max(1, matchups[a]![b]!.games))).padStart(10)).join(''));
@@ -277,6 +308,7 @@ async function main(): Promise<void> {
       budget: r.budget,
     })),
     matchups,
+    items: itemRecs,
     moves: Object.fromEntries(Object.entries(moveStats).map(([k, ms]) => [k, Object.fromEntries(Object.entries(ms).map(([id, m]) => [id, Object.fromEntries(Object.entries(m).map(([f, v]) => [f, +(v / gamesBy[k]!).toFixed(2)]))]))])),
   };
   const base = join(outDir, `balance-${stamp}${tag}`);
@@ -328,6 +360,7 @@ interface ReportLike {
   model: { features: readonly string[]; weights: number[]; accuracy: number; samples: number } | null;
   tiers: { pokemon: string; overall: Tier | null; forward: RoleOut; goalie: RoleOut; all: Rec; impact: { forward: number; goalie: number; all: number }; theory: Tier; budget: number }[];
   matchups: Record<string, Record<string, Rec>>;
+  items?: Record<string, Rec>;
   moves: Record<string, Record<string, Record<string, number>>>;
 }
 
@@ -393,7 +426,7 @@ ${r.tuning.length ? `<br><b>What-if tuning:</b> ${r.tuning.map(esc).join('; ')}$
 <table><tr><th>Pokémon</th><th>Overall</th><th>Forward</th><th>Goalie</th><th>Impact (pts)</th><th>Theory</th>${baseline ? '<th>Δ win rate</th>' : ''}</tr>${tierRows}</table>
 <p class="muted">Win rates come from 3v3 games, leaving out games where the same Pokémon was on both teams. The tier uses the win rate pulled toward 50 % by 100 phantom games. "?" means the 95 % interval spans more than one neighbouring tier. Impact is the change in win probability that the Pokémon's average stat line predicts. Theory is the tier from the kit analyzer's power budget.</p>
 <div class="legend">${TIERS.map((t) => `<span>${badge(t)} ${esc(TIER_MEANING[t])}</span>`).join('')}</div></section>
-<section><h2>Matchups (3v3)</h2><p class="muted">Win rate of teams fielding the row Pokémon against teams fielding the column Pokémon (neither on both sides).</p><table>${matrix}</table></section>
+${r.items && Object.keys(r.items).length ? `<section><h2>Held items</h2><p class="muted">Win rate of players holding the item when the other team doesn't hold it.</p><table><tr><th>Item</th><th>Win rate</th><th>n</th></tr>${Object.entries(r.items).sort((x, y) => y[1].wins / y[1].games - x[1].wins / x[1].games).map(([id, x]) => `<tr><th>${esc(id)}</th><td>${p(x.wins, x.games)}</td><td>${x.games}</td></tr>`).join('')}</table></section>` : ''}<section><h2>Matchups (3v3)</h2><p class="muted">Win rate of teams fielding the row Pokémon against teams fielding the column Pokémon (neither on both sides).</p><table>${matrix}</table></section>
 <section><h2>Impact model</h2><p class="muted">Logistic regression of each player's share of the match total on whether their team won (${r.model?.samples ?? 0} player-games, ${r.model ? (r.model.accuracy * 100).toFixed(1) : 0}% of outcomes predicted). Weights are log-odds per standard deviation.</p><table>${weights}</table></section>
 <section><h2>Moves (per 3v3 game played)</h2>${moves}</section>
 <p class="muted">Caveat: these are bot games. Bot balance is not human balance, so human playtest notes have the final say.</p>
