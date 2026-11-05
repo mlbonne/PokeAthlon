@@ -118,6 +118,8 @@ apply short status effects. No full damage chart: keeps it readable.
 
 ## 6. Stages (themes inspired by Pokébonk's biomes, our own art)
 
+> Superseded by [design/M6-stages.md](design/M6-stages.md) (2026-11-05). The table below is the original idea.
+
 | Stage | Layout idea | Hazard |
 |---|---|---|
 | **Viridian Pitch** (forest) | Standard, symmetric, walls on the long sides | None (training/ranked map) |
@@ -170,7 +172,7 @@ Each milestone ends in something you can play, a git tag, and a short changelog.
 | **M3** ✅ | **Kits** | Data-driven move system (hitboxes, projectiles, dashes, status, cooldowns). First 4 Pokémon (one per role) |
 | **M4** ✅ | **The 3v3 Patch** ([plan](design/M4-3v3-patch.md)) | Smart kit-agnostic CPUs (prediction, team jobs, utility AI, difficulty), balance toolkit (telemetry, kit analyzer, F3 debug meter, headless batch sim, impact score), playable 3v3 with gamepad |
 | **M5** ✅ | **Meta** ([plan](design/M5-meta.md)) | All 8 Pokémon (move-system extensions + 4 new kits), held items, drafted boosts, OS-style pick screen with CPU drafting, between-set draft, results screen with per-role MVP and accolades |
-| **M6** | **Stages** | 3–5 arenas with hazards, biome art pass |
+| **M6** | **Stages** | 5 arenas, each with one OS map gimmick (Speed Gate, gravity well, chasm, portals, speed strips) and a biome art pass based on Pokébonk v0.9.8's new areas. [Plan](design/M6-stages.md) |
 | **M7** | **Online** | Lobby, server-authoritative matches, prediction and interpolation, private rooms |
 | **M8** | **Polish and balance** | Audio, VFX, tutorial, balance pass from match telemetry, release build |
 
