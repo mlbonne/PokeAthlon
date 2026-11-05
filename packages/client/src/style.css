@@ -857,3 +857,161 @@ body.teams3 #card {
     width: 58px;
   }
 }
+
+/* ---------- Pick screen (M5.7) ---------- */
+.setup-card.pick {
+  width: min(1180px, 100%);
+}
+.pick-main {
+  display: grid;
+  grid-template-columns: 230px 1fr 230px;
+  gap: 12px;
+  align-items: start;
+}
+.pick-center {
+  min-width: 0;
+}
+.pick-center h2 small,
+.items h3 small {
+  color: var(--muted);
+  font-weight: 500;
+}
+.setup-card .slotcard {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  grid-template-rows: auto auto auto;
+  column-gap: 8px;
+  width: 100%;
+  margin-bottom: 6px;
+  text-align: left;
+  padding: 6px 8px;
+}
+.slotcard img,
+.slotcard .rnd {
+  grid-row: 1 / 4;
+  width: 44px;
+  height: 44px;
+  image-rendering: pixelated;
+}
+.slotcard .who {
+  font-size: 11px;
+  color: var(--muted);
+}
+.slotcard small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.slotcard .nm .tier {
+  min-width: 0;
+  font-size: 11px;
+}
+.slotcard .cpu {
+  font-size: 10px;
+  color: var(--accent);
+  font-style: normal;
+}
+.setup-card .slotcard.sel {
+  outline: 2px solid var(--accent);
+  background: rgba(255, 255, 255, 0.14);
+}
+.slotcard.blue {
+  border-left: 3px solid #3d7bff;
+}
+.slotcard.red {
+  border-left: 3px solid #ff4d5e;
+}
+.bans {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.bans .slotcard {
+  width: 230px;
+  border-left: 3px solid #888;
+}
+div.slotcard.cpu-ban {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  column-gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  opacity: 0.85;
+}
+.chips.grid {
+  margin-bottom: 10px;
+}
+.setup-card .chip {
+  position: relative;
+}
+.setup-card .chip .tier {
+  min-width: 0;
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 10px;
+  padding: 0 4px;
+}
+.setup-card .chip.taken {
+  opacity: 0.55;
+}
+.setup-card .chip[disabled] {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+.items {
+  margin: 4px 0 10px;
+}
+.items h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+.setup-card .item {
+  margin: 0 4px 4px 0;
+  font-size: 13px;
+}
+.item-desc {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.detail {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  min-height: 120px;
+}
+.detail .dhead {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.detail .dhead img {
+  width: 48px;
+  height: 48px;
+  image-rendering: pixelated;
+}
+.detail .moves {
+  margin: 8px 0 0;
+  padding-left: 16px;
+  font-size: 12px;
+}
+.detail .moves li {
+  margin-bottom: 4px;
+}
+.detail .nums {
+  display: block;
+  color: var(--muted);
+}
+.detail .notes {
+  display: block;
+  color: #b9a6ff;
+}
+@media (max-width: 900px) {
+  .pick-main {
+    grid-template-columns: 1fr;
+  }
+  .bans {
+    flex-direction: column;
+  }
+}

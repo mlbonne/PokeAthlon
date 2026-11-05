@@ -447,6 +447,30 @@ OS-style Striker Select for 6 players:
 - **Keeps:** CPU skill, Watch CPU vs CPU, Practice, saved last picks.
 - **Controls:** full gamepad navigation (D-pad/stick, A/B), as the setup screen has now.
 
+**✅ What shipped (5.7)**
+- **`client/src/setup.ts`** is now the pick screen, with the same API, so `main.ts` didn't change:
+  - your role, CPU skill, bans on/off, Reroll CPU picks;
+  - Blue's 3 slot cards (you + 2 CPU teammates) and Red's 3, each with portrait, role, per-role **tier badge** from the snapshot, item, and a "CPU pick" tag;
+  - click a slot, then a Pokémon in the grid (tier badges for the slot's role);
+  - "CPU picks" and Random are also options;
+  - no duplicates within a team (picking a teammate's Pokémon swaps them), mirrors across teams allowed;
+  - **held item** row for Blue slots (only that role's items, Recommended by default, with descriptions);
+  - **detail card** on hover/focus: stats, forward and goalie tiers, the passive and the 3 moves with the analyzer's numbers and notes.
+- **CPU picks are visible before you play**, and the same picks are played.
+- **CPU picks come from `client/src/cpuDraft.ts`** (pure, seeded, tested):
+  - goalies first, using the snapshot's per-role win rates;
+  - Easy random, Normal weighted toward strong picks, Hard the best available;
+  - items from the archetype defaults.
+- **Bans** (off by default):
+  - you ban one;
+  - Red's CPU bans the strongest Pokémon (Easy: random);
+  - banned Pokémon are greyed out and replaced in any slot.
+- **Not here:**
+  - the **starting boost** is picked in-match in the draft phase (its screen is 5.8), because the offers come from the match seed;
+  - CPUs don't counter-pick against the matchup matrix: the matrix isn't shipped in the client data yet.
+- **Tests:** `client/test/setup.test.ts` (7): lineups and roles, legal items for everyone, item choice, spectate and practice, reproducible CPU picks, Hard and Easy picking, bans.
+- **Checked in the browser:** the screen, bans, and Play starting the exact shown lineup with items (F3 meter).
+
 ### 5.8 Between-set draft screen
 
 The 8 boosts as cards, the pick order down the side, a short timer per pick, and the CPUs' picks shown as they happen.
