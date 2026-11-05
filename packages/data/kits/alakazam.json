@@ -1,0 +1,68 @@
+{
+  "$comment": "Manipulating Mastermind (OS Rune model, wiki 2026-11) with GAME_BREAKDOWN §13's Pokémon twist. Psychic = our ball grab (no OS equivalent: short hold, slowed, any hit drops it; throw ≤ 1.2× Strike). Teleport = Shadow Swap (11 s, swap places, an Unstable Anomaly pillar where you left: 200+100 % dmg, 250+125 % player KB, 1290+185 % core KB). Future Sight = Rune's Banish (40 s, 1.75 s banish, 270+130 % dmg) delivered as a telegraphed delayed area. Player knockback = OS × 1.875; power % → powerRatio.",
+  "pokemon": "alakazam",
+  "moves": [
+    {
+      "id": "psychic",
+      "name": "Psychic",
+      "slot": "primary",
+      "cooldown": 10,
+      "anim": "Charge",
+      "desc": "Grab the ball from up to 300 away and hold it for 0.6 s (slowed; any hit drops it). Press again to throw it. If you don't, it's tossed forward.",
+      "bot": "ballShot",
+      "actions": [{ "type": "grab", "fx": { "color": "#c77dff" }, "radius": 300, "hold": 0.6, "slowPct": 30, "throw": { "base": 1000, "powerRatio": 1.0 } }],
+      "recast": { "window": 0.6, "actions": [{ "type": "throw", "fx": { "color": "#c77dff" }, "ball": { "base": 1350, "powerRatio": 1.6 } }] }
+    },
+    {
+      "id": "teleport",
+      "name": "Teleport",
+      "slot": "secondary",
+      "cooldown": 11,
+      "anim": "Rotate",
+      "desc": "Swap places with the ally nearest your aim (up to 900 away), leaving a psychic burst where you stood.",
+      "bot": "support",
+      "actions": [
+        {
+          "type": "area",
+          "fx": { "color": "#9d4edd" },
+          "shape": "circle",
+          "radius": 160,
+          "hit": {
+            "ball": { "base": 1290, "powerRatio": 1.85 },
+            "player": { "base": 469, "powerRatio": 2.344 },
+            "damage": { "base": 200, "powerRatio": 1.0 },
+            "direction": "radial"
+          }
+        },
+        { "type": "blink", "fx": { "color": "#c77dff" }, "to": "ally", "distance": 900, "swap": true }
+      ]
+    },
+    {
+      "id": "future-sight",
+      "name": "Future Sight",
+      "slot": "special",
+      "cooldown": 40,
+      "range": 750,
+      "anim": "Charge",
+      "desc": "Mark an area. After 1 s it erupts, banishing enemies inside for 1.75 s and blasting the ball.",
+      "bot": "engage",
+      "actions": [
+        {
+          "type": "area",
+          "fx": { "color": "#7b2cbf" },
+          "shape": "circle",
+          "at": "target",
+          "radius": 190,
+          "delay": 1.0,
+          "telegraph": true,
+          "hit": {
+            "ball": { "base": 1290, "powerRatio": 1.85 },
+            "damage": { "base": 270, "powerRatio": 1.3 },
+            "banish": 1.75,
+            "direction": "radial"
+          }
+        }
+      ]
+    }
+  ]
+}
