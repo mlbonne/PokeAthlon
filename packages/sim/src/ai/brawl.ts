@@ -4,7 +4,7 @@ import { buffKnockbackResist, buffKnockbackTaken } from '../moves';
 import { inGoalArc } from '../stage';
 import { normalize, type Vec2 } from '../vec';
 import { isTargetable, type Player, type World } from '../world';
-import { moveModels, type MoveModel } from './model';
+import { attacksPlayers, moveModels, type MoveModel } from './model';
 
 /**
  * Brawling knowledge for the bots (brawling rework, docs/design/brawling-rework.md §3b).
@@ -83,8 +83,8 @@ export function bestKnockMove(p: Player, slots = 3): MoveModel | null {
   for (const m of moveModels(p.pokemonId)) {
     if (m.slot >= slots) continue;
     const st = p.moves[m.slot];
-    // Buffs (transforms) and grabs don't knock anyone by themselves.
-    if (!st || st.cooldown > 0 || !m.hitsPlayers || m.delivery === 'buff' || m.delivery === 'grab') continue;
+    // Buffs (transforms), grabs and ally blinks don't knock anyone by themselves.
+    if (!st || st.cooldown > 0 || !attacksPlayers(m)) continue;
     if (st.def.slot === 'special' && p.level < gameplay.xp.specialUnlockLevel) continue;
     if (!best || m.stats.staggeredKnockback > best.stats.staggeredKnockback) best = m;
   }

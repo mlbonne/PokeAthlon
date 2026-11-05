@@ -190,6 +190,70 @@ Not ported from OS:
 These two add the passing and anti-brawl tools the rework doc anticipated, so they are the main test of whether
 passing goes up (playstyle tool: clean passes, contested touches).
 
+**✅ What shipped (5.3)**
+
+Numbers come from the OS wiki (fetched 2026-11) for Rune and Asher, converted like the other kits (player knockback ×1.875).
+
+**Alakazam** (`kits/alakazam.json`, Rune model + the §13 twist, Passer):
+
+| Move | OS source | Our version |
+|---|---|---|
+| Primary: **Psychic** (10 s) | — (ours; Rune has no ball hold) | **Grab** the ball from up to 300 away and hold it 0.6 s (slowed 30 %; any hit drops it). **Recast** to throw: 1350+1.6, which is 1510 at Power 100, ≤ 1.2× Strike. If the hold runs out, it's tossed forward at 1000+1.0 |
+| Secondary: **Teleport** (11 s) | Shadow Swap (11 s; an Unstable Anomaly where you left) | A psychic burst where you stand (radius 160; Anomaly numbers: ball 1290+1.85, player 469+2.34, damage 200+1.0, radial), then **swap** with the ally nearest your aim (≤ 900) |
+| Special: **Future Sight** (40 s) | Banish (40 s, 1.75 s banish, 270+130 % damage) | Delivered as a **telegraphed** area: range 750, radius 190, erupts after 1 s, **banishes 1.75 s** and blasts the ball (1290+1.85) |
+
+**Blastoise** (`kits/blastoise.json`, Asher model, Wall):
+
+| Move | OS source | Our version |
+|---|---|---|
+| Primary: **Water Pulse** (10 s) | Barrier Beam (0.55 s wind-up; centre 175+87.5 %, LIGHT sides at 60 %; barrier stronger on own half) | 0.55 s wind-up, then a 650-long, 34° pulse. The **central 14° is a sweet spot** (ball 1330+1.75, player 328+1.64, damage 175+0.875); the edges are LIGHT at 60 %. A **wall** rises 260 in front (1.2 s; **side ×1.25 own half / ×0.4 enemy half**) |
+| Secondary: **Rapid Spin** (14.5 s) | Breakthrough (stops on the first enemy, then 25 % damage reduction for 5 s; Primary castable mid-dash) | A 480 **guarded dash** (+150 knockback resist, −50 % damage, breaks after 15 % of max Stagger taken) that stops on the first enemy (ball 1260+1.4, player 262+1.31, damage 140+0.7), then −25 % damage for 5 s. Water Pulse can be cast mid-spin |
+| Special: **Hydro Pump** (40 s) | — (§13; multi-hit like Pathsplitter's centre) | **Channel** for 1.5 s (slowed 60 %): a 700 × 170 jet pulsing 6 times. Each pulse: ball 900+0.8, player 94+0.47, damage 50+0.25 |
+
+**Theory budget:** Alakazam **106 (B)**, Blastoise **90 (C)**. Both are inside 88–112.
+
+**Bot changes:**
+- An ally blink now decides how a move is used, even when the move also hits. Without this, Teleport was treated as a melee attack.
+- Swaps also work as an escape: we're in danger and the ally is safe.
+- Grabs are also used offensively: the ball is out of Strike range but in grab range, and a throw would be a good shot.
+
+**Two bot findings from the measurements:**
+1. **Imaginary threats.** The first run had Alakazam winning **86 % as forward**.
+   - What-ifs showed it wasn't the kit:
+     - with Psychic disabled: 85 %;
+     - with Future Sight disabled: 87 %;
+     - with Teleport's burst knockback set to 0: **28 %**.
+   - Cause:
+     - The bots' kill-line and finisher logic counted the burst as a knockback threat, so enemies backed away from Alakazam and handed it the ball.
+     - Bots only cast Teleport to rescue or escape, so the threat was never real.
+   - Fix: a shared `attacksPlayers(model)` predicate. Buffs, grabs and ally blinks are neither feared nor used to finish, so bots fear only what a bot of the same skill would actually throw at them.
+2. **Telegraphs.** Bots now walk out of telegraphed enemy areas as soon as they appear (`telegraphEscape`, radially out of circles). Before, Future Sight landed 59 % of the time on bots that ignored the warning. Now it rarely lands on bots. Humans will decide whether it's too weak.
+
+**Measured** (600 random-comp 3v3s with all 8, balance difficulty, after both fixes; tier snapshot is written at 5.4):
+
+| Pokémon | Overall | Forward | Goalie |
+|---|---|---|---|
+| Snorlax | T0 | 69 % | 80 % |
+| Blastoise | **T0.5** | A? 53 % | T0.5? 58 % |
+| Machamp | T0.5 | 57 % | F? 37 % |
+| Togekiss | A | 51 % | 57 % |
+| Alakazam | **B** | F 32 % | B? 53 % |
+| Lucario | B | 49 % | 48 % |
+| Pikachu | C | 45 % | 39 % |
+| Greninja | D | 41 % | F 36 % |
+
+- Every new kit is inside D…T0.5 overall.
+- Ladder: v2 beats v1 in **100 %** of the 8 rotating 3v3 mirrors (gate ≥ 80 %).
+- **Watch items for the balance pass:**
+  - Snorlax is still T0;
+  - Alakazam is weak as a forward (Future Sight is easy to dodge, and the grab rarely turns into goals);
+  - Greninja is the weakest overall.
+
+Not ported from OS:
+- Rune's shadow placed at round start (Teleport only swaps with allies);
+- Asher's barrier breaking after one hit on the enemy half (approximated by the short ×0.4 duration);
+- Breakthrough's −20 % Strike cooldown on your half.
+
 ### 5.4 Roster sanity gate (not a balance pass)
 
 Run `kits`, `balance` and `playstyle` with all 8.

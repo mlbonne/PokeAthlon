@@ -52,6 +52,14 @@ export interface MoveModel {
   channel: boolean;
 }
 
+/**
+ * Is this a move bots throw at enemies (so also one to fear from an enemy)? Buffs, grabs and ally
+ * blinks may hit as a side effect, but bots don't aim them at players, so they aren't threats either:
+ * an imaginary threat makes every enemy back off and hand over the ball.
+ */
+export const attacksPlayers = (m: MoveModel): boolean =>
+  m.hitsPlayers && m.delivery !== 'buff' && m.delivery !== 'grab' && !(m.delivery === 'blink' && m.blinkTo !== 'aim');
+
 /** Keyed by the kit object, so a kit installed at runtime (tests, drafts) gets fresh models. */
 const cache = new WeakMap<KitDef, MoveModel[]>();
 const NONE: MoveModel[] = [];
@@ -72,7 +80,8 @@ export function moveModels(pokemonId: string): MoveModel[] {
 function model(def: MoveDef, slot: number, p: ReturnType<typeof getPokemon>): MoveModel {
   const stats = analyzeMove(def, p);
   // The action that decides how to aim: the first one that hits something, else the first.
-  const main = def.actions.find((a) => 'hit' in a && a.hit) ?? def.actions[0]!;
+  // An ally blink (swap / teleport to an ally) decides how the move is used even if it also hits.
+  const main = def.actions.find((a) => a.type === 'blink' && a.to === 'ally') ?? def.actions.find((a) => 'hit' in a && a.hit) ?? def.actions[0]!;
   const m: MoveModel = {
     slot,
     id: def.id,

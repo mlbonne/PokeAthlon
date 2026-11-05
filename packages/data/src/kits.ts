@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import alakazam from '../kits/alakazam.json' with { type: 'json' };
+import blastoise from '../kits/blastoise.json' with { type: 'json' };
 import greninja from '../kits/greninja.json' with { type: 'json' };
 import lucario from '../kits/lucario.json' with { type: 'json' };
 import machamp from '../kits/machamp.json' with { type: 'json' };
@@ -309,7 +311,7 @@ export function parseKit(json: unknown): KitDef {
 }
 
 export const kits: Record<string, KitDef> = Object.fromEntries(
-  [pikachu, snorlax, lucario, togekiss, greninja, machamp].map((k) => {
+  [pikachu, snorlax, lucario, togekiss, greninja, machamp, alakazam, blastoise].map((k) => {
     const kit = parseKit(k);
     return [kit.pokemon, kit];
   }),

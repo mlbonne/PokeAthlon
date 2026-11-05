@@ -8,7 +8,7 @@ import { normalize, rotateDeg, type Vec2 } from '../vec';
 import { isTargetable, type Player, type World } from '../world';
 import { DIFFICULTY, type Difficulty, type DifficultyParams } from './difficulty';
 import type { BotMemory, Job } from './memory';
-import { moveModels, type MoveModel } from './model';
+import { attacksPlayers, moveModels, type MoveModel } from './model';
 import { bestKnockMove, burstKnock, finisherSpot, killLine, knockOn, moveKnock, nearestEdge, pushDir, pushValue } from './brawl';
 import { bestShot, danger, evaluateShot, launchSpeed, perceive, strikeKnockback, strikeReach, type Perception } from './perceive';
 
@@ -166,8 +166,12 @@ export function smartBotInput(world: World, id: number, difficulty: Difficulty =
     buttons |= Button.Evade;
     action = `${action}+${evade}`;
   } else if (!evade) {
+    const out = D.dodges ? telegraphEscape(world, p) : null;
     const threat = sidestep(world, p);
-    if (threat && D.dodges) target = threat;
+    if (out) {
+      target = out;
+      action = `${action}·dodge-telegraph`;
+    } else if (threat && D.dodges) target = threat;
   }
 
   mem.action = `${job}:${action}`;
@@ -446,7 +450,7 @@ function canCast(world: World, p: Player): boolean {
   return true;
 }
 
-const hasEngage = (p: Player, slots = 3) => moveModels(p.pokemonId).some((m, i) => i < slots && m.hitsPlayers && (p.moves[i]?.cooldown ?? 1) === 0);
+const hasEngage = (p: Player, slots = 3) => moveModels(p.pokemonId).some((m, i) => i < slots && attacksPlayers(m) && (p.moves[i]?.cooldown ?? 1) === 0);
 
 interface Cast {
   slot: number;
@@ -553,8 +557,14 @@ function chooseCast(world: World, p: Player, job: Job, perc: Perception, D: Diff
       for (const a of world.players) {
         if (a.team !== p.team || a.id === p.id || a.koTicks > 0 || dist(a.pos, p.pos) > m.range) continue;
         const threatened = enemies(world, a).some((o) => isTargetable(o) && dist(o.pos, a.pos) < 450);
+        const aim = normalize({ x: a.pos.x - p.pos.x, y: a.pos.y - p.pos.y });
         if (danger(world, a) > 0.9 && threatened && danger(world, p) < 0.6) {
-          consider({ slot: m.slot, aim: normalize({ x: a.pos.x - p.pos.x, y: a.pos.y - p.pos.y }), dist: Math.max(1, dist(a.pos, p.pos)), value: 45, label: `${m.id}:rescue` });
+          consider({ slot: m.slot, aim, dist: Math.max(1, dist(a.pos, p.pos)), value: 45, label: `${m.id}:rescue` });
+        }
+        // Escape: we are the one in trouble and this ally is safe.
+        const meThreatened = foes.some((o) => dist(o.pos, p.pos) < 400);
+        if (danger(world, p) > 0.9 && meThreatened && !threatened && danger(world, a) < 0.5) {
+          consider({ slot: m.slot, aim, dist: Math.max(1, dist(a.pos, p.pos)), value: 40, label: `${m.id}:escape` });
         }
       }
     }
@@ -563,8 +573,13 @@ function chooseCast(world: World, p: Player, job: Job, perc: Perception, D: Diff
     if (m.delivery === 'grab' && m.hold > 0 && !ball.scored && ball.heldBy < 0 && ballDist <= m.radius + ball.radius - 10) {
       const save = perc.pred.goalAgainst === p.team;
       const contested = enemyT < 15;
+      const aim = normalize({ x: ball.pos.x - p.pos.x, y: ball.pos.y - p.pos.y });
       if (save || contested) {
-        consider({ slot: m.slot, aim: normalize({ x: ball.pos.x - p.pos.x, y: ball.pos.y - p.pos.y }), dist: 0, value: save ? 85 : 45, label: `${m.id}:grab` });
+        consider({ slot: m.slot, aim, dist: 0, value: save ? 85 : 45, label: `${m.id}:grab` });
+      } else if (job !== 'goalie' && it.t > 20) {
+        // Out of Strike range but in grab range: take it and throw if a good shot will be there.
+        const shot = bestShot(world, p, ball.pos, { x: 0, y: 0 }, m.stats.ballPower);
+        if (shot.score > 50) consider({ slot: m.slot, aim, dist: 0, value: 35, label: `${m.id}:grab-shot` });
       }
     }
 
@@ -696,6 +711,26 @@ function incomingThreat(world: World, p: Player): Threat | null {
     if (!o.cast) continue;
     const m = moveModels(o.pokemonId)[o.cast.slot];
     if (m && m.hitsPlayers && dist(o.pos, p.pos) < m.stats.reach + p.hurtRadius) return { heavy: m.stats.knockback > 0, dir: o.cast.dir };
+  }
+  return null;
+}
+
+/**
+ * Walk out of a telegraphed enemy area (visible on the ground, like a player sees it): the nearest
+ * way out of the shape, as soon as it appears. Returns where to go, or null.
+ */
+function telegraphEscape(world: World, p: Player): Vec2 | null {
+  for (const pa of world.pending) {
+    const o = world.players[pa.owner];
+    const a = pa.action;
+    if (!o || o.team === p.team || !a.telegraph || a.type !== 'area' || !a.hit) continue;
+    const c = a.at === 'target' ? pa.target : { x: o.pos.x + pa.dir.x * a.offset, y: o.pos.y + pa.dir.y * a.offset };
+    if (a.shape === 'line') continue; // lines are dodged by the sidestep
+    const r = a.radius + p.hurtRadius + 40;
+    const d = dist(c, p.pos);
+    if (d >= r) continue;
+    const away = normalize({ x: p.pos.x - c.x, y: p.pos.y - c.y }, { x: 0, y: p.pos.y > 0 ? -1 : 1 });
+    return { x: c.x + away.x * (r + 30), y: c.y + away.y * (r + 30) };
   }
   return null;
 }

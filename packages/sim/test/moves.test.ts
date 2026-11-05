@@ -6,6 +6,7 @@ import {
   Button,
   dsin,
   effectiveSpeed,
+  movesFor,
   quantizeInput,
   rotateDeg,
   step,
@@ -62,6 +63,7 @@ describe('casting rules', () => {
 
   it('Pokémon without a kit simply have no moves', () => {
     const w = sandbox([{ pokemonId: 'alakazam', team: 0, pos: { x: 0, y: 0 } }]);
+    w.players[0]!.moves = movesFor('missingno');
     expect(w.players[0]!.moves).toHaveLength(0);
     expect(types(cast(w, 0, Button.Move1))).not.toContain('cast');
   });
