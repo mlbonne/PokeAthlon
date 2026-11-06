@@ -154,3 +154,31 @@ describe('background tabs (M7.4)', () => {
     b.c.close();
   });
 });
+
+describe('one-port hosting (M7.5)', () => {
+  it('serves the built game and the rooms on the same port, and never leaves the game folder', async () => {
+    const { mkdtempSync, writeFileSync } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { gameServer } = await import('../src/static');
+    const dir = mkdtempSync(join(tmpdir(), 'pa-dist-'));
+    writeFileSync(join(dir, 'index.html'), '<title>PokéAthlon</title>');
+    writeFileSync(join(dir, 'app.js'), 'console.log(1)');
+    const http = gameServer(dir);
+    server = await startServer({ server: http });
+    await new Promise<void>((r) => http.listen(0, r));
+    const port = (http.address() as { port: number }).port;
+    const page = await fetch(`http://localhost:${port}/?online=1`);
+    expect(await page.text()).toContain('PokéAthlon');
+    const js = await fetch(`http://localhost:${port}/app.js`);
+    expect(js.headers.get('content-type')).toContain('javascript');
+    const sneaky = await fetch(`http://localhost:${port}/..%2F..%2Fpackage.json`);
+    expect(await sneaky.text()).not.toContain('"name"');
+    // The rooms answer on the same port.
+    const a = join_(port);
+    await until(() => a.c.room !== null);
+    a.c.close();
+    await new Promise<void>((r) => http.close(() => r()));
+  });
+});
+const join_ = (port: number) => join(port, { name: 'Host', create: true });

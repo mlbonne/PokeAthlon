@@ -15,7 +15,15 @@ interface Prefs {
   server: string;
 }
 
-const defaultServer = () => `ws://${location.hostname || 'localhost'}:${DEFAULT_PORT}`;
+/**
+ * The room server's address: the page's own host when the game is served by `npm run host` (one
+ * port, works through a tunnel, wss on https), else port 8787 next to the Vite dev server.
+ */
+const defaultServer = (): string => {
+  if (location.protocol === 'https:') return `wss://${location.host}`;
+  if (location.protocol === 'http:' && location.port !== '5173') return `ws://${location.host}`;
+  return `ws://${location.hostname || 'localhost'}:${DEFAULT_PORT}`;
+};
 
 function loadPrefs(): Prefs {
   try {

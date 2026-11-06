@@ -134,3 +134,9 @@ Your answers: rollback, private rooms with bots in empty seats, a typed nickname
 - **7.5 Hosting:** play outside your home network. You choose: a tunnel from your PC, Cloudflare free, or a paid host.
 - **7.6 Playtest** with friends.
 - **Smoothing:** a remote player corrected by a rollback jumps to the right place instead of sliding there.
+
+## 7.5 Hosting (2026-11-06)
+- **`npm run host`:** builds the game, then serves the game **and** the rooms on one port (8787). One address, or one tunnel, is enough. The game uses the page's own address for the rooms (and `wss://` on https), so nobody has to type a server address.
+  - **Your network:** `http://<your PC address>:8787/?online=1`.
+  - **Elsewhere:** a tunnel to port 8787. For a Cloudflare quick tunnel, `cloudflared tunnel --url http://localhost:8787` prints a public `https://….trycloudflare.com` address that changes each run.
+- `npm run server` + `npm run dev:lan` still work for development (game on 5173, rooms on 8787).
