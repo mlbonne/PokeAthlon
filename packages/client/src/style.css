@@ -709,7 +709,8 @@ body.teams3 #card {
 }
 
 /* ---------- Match setup screen (M4.5) ---------- */
-#setup {
+#setup,
+#online {
   position: fixed;
   inset: 0;
   display: grid;
@@ -720,7 +721,8 @@ body.teams3 #card {
   backdrop-filter: blur(3px);
   z-index: 10;
 }
-#setup[hidden] {
+#setup[hidden],
+#online[hidden] {
   display: none;
 }
 .setup-card {
@@ -1309,6 +1311,112 @@ div.slotcard.cpu-ban {
 }
 @media (max-width: 700px) {
   .rcols {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Online (M7) ---------- */
+.setup-card.online {
+  width: min(860px, 100%);
+}
+.online-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.online-form label {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+}
+.online input,
+.online select {
+  font: inherit;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  padding: 6px 10px;
+  min-width: 0;
+}
+.online select:disabled {
+  opacity: 0.75;
+}
+.online option {
+  background: #221c44;
+}
+.online input.code {
+  width: 7ch;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 700;
+  text-align: center;
+}
+.online .or {
+  color: var(--muted);
+}
+.online .status {
+  color: #ffd166;
+}
+.online code {
+  font-size: 12px;
+  color: #cfd6ff;
+  word-break: break-all;
+}
+.code-big {
+  letter-spacing: 0.18em;
+  color: var(--accent);
+}
+.online .seat {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.online .seat.me {
+  outline: 2px solid var(--accent);
+}
+.online .seat img,
+.online .seat .rnd {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  image-rendering: pixelated;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  color: var(--muted);
+}
+.online .seat-body {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.online .seat .who {
+  font-size: 13px;
+}
+.online .seat small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.net-status {
+  position: fixed;
+  right: 12px;
+  bottom: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  pointer-events: none;
+}
+@media (max-width: 640px) {
+  .online-form {
+    grid-template-columns: 1fr;
+  }
+  .online .teams {
     grid-template-columns: 1fr;
   }
 }

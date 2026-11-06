@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@pokeathlon/data": "0.1.0",
+    "@pokeathlon/net": "0.1.0",
     "@pokeathlon/sim": "0.1.0",
     "three": "^0.187.0"
   },

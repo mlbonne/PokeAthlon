@@ -7,5 +7,5 @@
     "types": ["vite/client"]
   },
   "include": ["src", "test", "vite.config.ts"],
-  "references": [{ "path": "../data" }, { "path": "../sim" }]
+  "references": [{ "path": "../data" }, { "path": "../sim" }, { "path": "../net" }]
 }

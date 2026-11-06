@@ -19,10 +19,12 @@ import {
   type World,
 } from '@pokeathlon/sim';
 import { getKit } from '@pokeathlon/data';
+import type { NetClient } from '@pokeathlon/net';
 import { AbilityBar } from './abilityBar';
 import { DraftScreen } from './draftScreen';
 import { ResultsScreen } from './results';
 import { SetupScreen, type MatchConfig } from './setup';
+import { OnlineScreen } from './online';
 import { DebugMenu } from './debug/menu';
 import type { FrameRecorder } from './recorder';
 import { Hud, nameOf, TEAM_NAMES } from './hud';
@@ -142,14 +144,15 @@ function dexOf(id: string): string {
   return roster.find((r) => r.id === id)!.dex;
 }
 
-function startMatch(): void {
+/** Start a match: a new local one, or `online` (the world every player of a room runs). */
+function startMatch(online: World | null = null): void {
   if (view) {
     scene.remove(view.group);
     view.bar.remove();
     hudRoot.querySelectorAll('.scoreboard, .banner, .plate, .pop, .team-hud').forEach((e) => e.remove());
   }
   // Held items (M5.5): everyone without a pick gets their archetype's default until the pick screen (5.7).
-  const world = createWorld(
+  const world = online ?? createWorld(
     withDefaultItems(config.lineup.map((s) => ({ ...s }))),
     // Boost drafts (M5.6/5.8) in real matches; ?boosts=0 turns them off.
     { mode: PRACTICE ? 'sandbox' : 'match', boosts: !PRACTICE && params.get('boosts') !== '0', ...(PRACTICE ? { ballPos: { x: -400, y: 0 } } : {}) },
@@ -232,23 +235,68 @@ const debugHooks = {
 const menu = new DebugMenu(hudRoot, debugHooks);
 
 // ---------- Setup screen ----------
-const setup = new SetupScreen(document.body, (c) => {
-  applyConfig(c);
-  setup.hide();
-  startMatch();
+const setup = new SetupScreen(
+  document.body,
+  (c) => {
+    leaveOnline();
+    applyConfig(c);
+    setup.hide();
+    startMatch();
+  },
+  () => {
+    setup.hide();
+    onlineScreen.show();
+  },
+);
+
+// ---------- Online (M7) ----------
+/** The room connection while an online match runs (null = offline). */
+let net: NetClient | null = null;
+const onlineScreen = new OnlineScreen(document.body, {
+  match: (world, seat, client) => {
+    net = client;
+    setup.hide();
+    results.hide();
+    applyConfig({ lineup: world.players.map((p) => ({ pokemonId: p.pokemonId, team: p.team })), me: seat ?? -1, diff: 'normal', practice: false });
+    startMatch(world);
+    acc = 0;
+    toast(seat === null ? 'Watching the match' : `Online match: you play for ${TEAM_NAMES[world.players[seat]!.team]}`);
+  },
+  lobby: () => {
+    net = null;
+    results.hide();
+    hudRoot.querySelector('.net-status')?.remove();
+  },
+  back: () => setup.show(),
+  toast,
 });
+/** Back to offline play: leave the room. */
+function leaveOnline(): void {
+  if (!net && !onlineScreen.room) return;
+  onlineScreen.leave();
+  net = null;
+  hudRoot.querySelector('.net-status')?.remove();
+}
 /** Set cards, match results and the hold-Tab scoreboard (M5.9). */
 const results: ResultsScreen = new ResultsScreen(document.body, {
   rematch: () => {
     results.hide();
+    if (net) return backToRoom();
     startMatch();
   },
   picks: () => {
     results.hide();
+    if (net) return backToRoom();
     setup.show();
   },
 });
 
+
+/** Online: the host takes everyone back to the room; the others open it and wait. */
+function backToRoom(): void {
+  if (net && onlineScreen.room?.host === net.you) net.send({ t: 'lobby' });
+  onlineScreen.show();
+}
 
 let toastTimer = 0;
 function toast(text: string): void {
@@ -419,6 +467,16 @@ function simStep(input: PlayerInput): void {
   const mine = pendingPick >= 0 && world.draft ? { ...input, pick: pendingPick } : input;
   world.players.forEach((p, i) => (view.prevPos[i] = { ...p.pos }));
   view.prevBall = { ...world.ball.pos };
+  if (net?.session) {
+    // Online: the rollback session runs the tick (and re-runs past ones when a guess was wrong).
+    const res = net.advance(SPECTATE ? NEUTRAL_INPUT : mine);
+    if (!world.draft || res.events.some((e) => e.type === 'boostPick' && e.playerId === ME)) pendingPick = -1;
+    for (const e of res.events) {
+      onEvent(e);
+      results.onEvent(world, e);
+    }
+    return;
+  }
   const myTeam = world.players[ME]?.team ?? 0;
   step(
     world,
@@ -471,7 +529,8 @@ window.addEventListener('resize', resize);
 resize();
 applyConfig(config);
 startMatch();
-if (!urlConfig && !RECORD) setup.show();
+if (params.get('online') === '1' || onlineScreen.net) onlineScreen.show();
+else if (!urlConfig && !RECORD) setup.show();
 if (params.get('meter') === '1') {
   menu.toggle();
   view.overlay.object.visible = true;
@@ -484,7 +543,7 @@ function frame(now: number): void {
 
   for (const d of input.takeDigits()) {
     const def = roster[d - 1];
-    if (!def) continue;
+    if (!def || net) continue;
     myPokemon = def.id;
     config.lineup[ME] = { ...config.lineup[ME]!, pokemonId: def.id };
     setPokemon(view.world, ME, def.id);
@@ -498,31 +557,45 @@ function frame(now: number): void {
       menu.toggle();
       view.overlay.object.visible = menu.visible;
     }
-    if (a === 'restart' && !setup.visible) startMatch();
+    if (a === 'restart' && !setup.visible && !net) startMatch();
     if (a === 'menu') {
-      if (setup.visible) setup.hide();
+      // Online the match never pauses: Esc opens the room screen over it.
+      if (net) {
+        if (onlineScreen.visible) onlineScreen.hide();
+        else onlineScreen.show();
+      } else if (onlineScreen.visible) {
+        onlineScreen.hide();
+        setup.show();
+      } else if (setup.visible) setup.hide();
       else setup.show();
     }
-    if (a.startsWith('nav-') && setup.visible) setup.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
+    if (a.startsWith('nav-') && onlineScreen.visible) onlineScreen.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
+    else if (a.startsWith('nav-') && setup.visible) setup.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
     else if (a.startsWith('nav-') && results.visible && results.el.classList.contains('final')) results.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
     else if (a.startsWith('nav-') && draft.visible) draft.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
     if (a.startsWith('pad-on:')) toast(`Controller connected: ${a.slice(7).split('(')[0]!.trim()}`);
     if (a.startsWith('pad-off:')) toast('Controller disconnected');
   }
 
-  // Fixed-step simulation (paused while the setup screen is open).
-  acc += setup.visible ? 0 : dt;
+  // Fixed-step simulation (paused while a menu is open, except online where the match goes on).
+  const online = !!net?.session;
+  acc += online ? dt : setup.visible || onlineScreen.visible ? 0 : dt;
   let steps = 0;
   while (acc >= DT && steps < 5) {
-    const me = view.world.players[ME]!;
-    const m = mouseWorld(input);
-    lastInput = input.poll(m ? { x: m.x - me.pos.x, y: m.y - me.pos.y } : null);
-    simStep(lastInput);
+    // Online pacing: usually 1 tick, now and then 0 when ahead of the others, more to catch up.
+    const n = online ? net!.ticksThisFrame() : 1;
+    for (let k = 0; k < n; k++) {
+      const me = view.world.players[ME]!;
+      const m = mouseWorld(input);
+      lastInput = onlineScreen.visible ? NEUTRAL_INPUT : input.poll(m ? { x: m.x - me.pos.x, y: m.y - me.pos.y } : null);
+      simStep(lastInput);
+    }
     acc -= DT;
     steps++;
   }
   if (steps === 5) acc = 0;
-  results.update(view.world, dt, input.isHeld('Tab') && !setup.visible);
+  if (online) showNetStatus();
+  results.update(view.world, dt, input.isHeld('Tab') && !setup.visible && !onlineScreen.visible);
   if (setup.visible) {
     draft.el.hidden = true;
     results.hide();
@@ -530,6 +603,22 @@ function frame(now: number): void {
   else draft.update(view.world, SPECTATE ? -1 : ME);
   render(dt, now, acc / DT);
   requestAnimationFrame(frame);
+}
+
+/** Room, ping and rollbacks in a corner while online. */
+let netStatusAt = 0;
+function showNetStatus(): void {
+  const now = performance.now();
+  if (!net?.session || now - netStatusAt < 500) return;
+  netStatusAt = now;
+  const s = net.session.stats;
+  let el = hudRoot.querySelector<HTMLElement>('.net-status');
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'net-status';
+    hudRoot.append(el);
+  }
+  el.textContent = `Room ${onlineScreen.room?.code ?? ''} · ${Math.round(net.rtt)} ms · rollbacks ${s.rollbacks}${net.desyncAt >= 0 ? ' · OUT OF SYNC' : ''}`;
 }
 
 const camFocus = { x: 0, y: 0 };

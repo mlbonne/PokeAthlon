@@ -74,6 +74,8 @@ export type ClientMsg =
   | { t: 'settings'; settings: RoomSettings }
   | { t: 'start'; lineup: PlayerSpawn[] }
   | { t: 'lobby' }
+  /** A player whose seat was benched (tab in the background) is back and wants it again. */
+  | { t: 'back' }
   | { t: 'in'; i: WireInput }
   | { t: 'hash'; k: number; h: string }
   | { t: 'ping'; c: number };

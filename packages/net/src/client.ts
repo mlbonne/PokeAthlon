@@ -61,6 +61,8 @@ export class NetClient {
   rtt = 0;
   desyncAt = -1;
   private latest: number[] = [];
+  /** Your seat was handed to a bot because this tab fell behind (it was in the background). */
+  benched = false;
   private skipCount = 0;
   private pingTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -117,6 +119,7 @@ export class NetClient {
       }
       case 'ctl':
         if (!this.session) return;
+        if (m.c.seat === this.seat && m.c.bot) this.benched = true;
         if (m.c.bot) this.session.setBot(m.c.seat, m.c.tick);
         else this.session.setHuman(m.c.seat, m.c.tick);
         return;
@@ -172,6 +175,7 @@ export class NetClient {
     }
     this.session = session;
     this.seat = you;
+    this.benched = false;
     this.desyncAt = -1;
     this.on.match?.(world, you, session);
   }
@@ -183,6 +187,11 @@ export class NetClient {
   ticksThisFrame(): number {
     const s = this.session;
     if (!s) return 0;
+    // The game only calls this while the tab is visible: ask for the seat back (once).
+    if (this.benched) {
+      this.benched = false;
+      this.send({ t: 'back' });
+    }
     const others = this.latest.filter((k, i) => k >= 0 && i !== this.seat);
     if (others.length === 0) return 1;
     const target = Math.max(...others) - INPUT_DELAY;

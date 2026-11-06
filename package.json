@@ -13,6 +13,7 @@
   },
   "scripts": {
     "dev": "npm run dev -w @pokeathlon/client",
+    "dev:lan": "npm run dev -w @pokeathlon/client -- --host",
     "build": "npm run build -w @pokeathlon/client",
     "preview": "npm run preview -w @pokeathlon/client",
     "test": "vitest run",

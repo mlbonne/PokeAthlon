@@ -42,11 +42,17 @@ interface Match {
   owners: (number | null)[];
   hashes: Map<number, string>;
   desynced: boolean;
+  /** Seats handed to a bot because their player stopped sending (tab in the background). */
+  idle: Set<number>;
+  /** When the server last got an input from each seat (ms). */
+  lastAt: number[];
 }
 
 /** Codes avoid letters that read alike (I/L/O/0). */
 const CODE_LETTERS = 'ABCDEFGHJKMNPQRSTUVWXYZ';
 const MAX_NAME = 16;
+/** A player who sent nothing for this long while behind the others gets a bot until they're back. */
+export const IDLE_MS = 3000;
 /** How far ahead a rejoining player takes their seat back (90 ticks = 1.5 s). */
 export const REJOIN_LEAD = 90;
 /** Hashes kept for comparison. */
@@ -103,7 +109,10 @@ export class RoomServer {
   private readonly clients = new Set<Client>();
   private nextId = 1;
 
-  constructor(private readonly rand: () => number = Math.random) {}
+  constructor(
+    private readonly rand: () => number = Math.random,
+    private readonly now: () => number = Date.now,
+  ) {}
 
   get roomCount(): number {
     return this.rooms.size;
@@ -121,7 +130,32 @@ export class RoomServer {
 
   /** Pacing: every room in a match gets the latest input tick per seat (call about twice a second). */
   tickSync(): void {
-    for (const r of this.rooms.values()) if (r.match) r.broadcast({ t: 'sync', k: r.latest() });
+    for (const r of this.rooms.values()) {
+      if (!r.match) continue;
+      this.checkIdle(r);
+      r.broadcast({ t: 'sync', k: r.latest() });
+    }
+  }
+
+  /**
+   * Browsers stop running a tab that isn't visible. A player who falls far behind would make
+   * everyone else wait, so a bot takes their seat; their next input brings them back (resume).
+   */
+  private checkIdle(r: Room): void {
+    const m = r.match!;
+    const latest = r.latest();
+    const front = Math.max(...latest);
+    const now = this.now();
+    for (let s = 0; s < latest.length; s++) {
+      // Silent and behind. (The others stop too, since they wait for this seat, but they're ahead.)
+      if (latest[s]! < 0 || now - m.lastAt[s]! < IDLE_MS || front - latest[s]! <= INPUT_DELAY + 2) continue;
+      const owner = r.clients.find((o) => o.member.id === m.owners[s] && !o.member.away);
+      if (!owner) continue;
+      const ctl: SeatControl = { seat: s, tick: m.inputs[s]!.length, bot: true };
+      m.control.push(ctl);
+      m.idle.add(s);
+      r.broadcast({ t: 'ctl', c: ctl });
+    }
   }
 
   private newCode(): string {
@@ -175,6 +209,12 @@ export class RoomServer {
         return;
       case 'in':
         return this.input(c, r, msg.i);
+      case 'back': {
+        // Back from the background: replay the match for them and hand the seat back.
+        const s = c.member.seat;
+        if (r.match && s !== null && r.match.owners[s] === c.member.id && r.match.idle.delete(s)) this.resume(c, r);
+        return;
+      }
       case 'hash':
         return this.hash(r, msg.k, msg.h);
     }
@@ -237,7 +277,7 @@ export class RoomServer {
       humans: owners.map((o) => o !== null),
     };
     // Ticks before INPUT_DELAY are neutral on every machine: the first real input is for tick INPUT_DELAY.
-    r.match = { start, inputs: Array.from({ length: SEATS }, () => Array<WireInput | null>(INPUT_DELAY).fill(null)), control: [], owners, hashes: new Map(), desynced: false };
+    r.match = { start, inputs: Array.from({ length: SEATS }, () => Array<WireInput | null>(INPUT_DELAY).fill(null)), control: [], owners, hashes: new Map(), desynced: false, idle: new Set(), lastAt: Array<number>(SEATS).fill(this.now()) };
     for (const o of r.clients) o.conn.send({ t: 'start', match: start, you: o.member.seat !== null && owners[o.member.seat] === o.member.id ? o.member.seat : null });
     r.sendState();
   }
@@ -245,11 +285,13 @@ export class RoomServer {
   private input(c: Client, r: Room, w: WireInput): void {
     const m = r.match;
     const s = c.member.seat;
-    if (!m || s === null || m.owners[s] !== c.member.id || !r.humanNow(s)) return;
+    if (!m || s === null || m.owners[s] !== c.member.id) return;
+    if (!r.humanNow(s)) return;
     if (!Array.isArray(w) || w.length !== 8 || !w.every((n) => Number.isInteger(n))) return;
     const list = m.inputs[s]!;
     if (w[0] !== list.length) return; // out of order or for a tick the bot already played
     list.push(w);
+    m.lastAt[s] = this.now();
     r.broadcast({ t: 'in', s, i: w }, c);
   }
 
@@ -311,6 +353,7 @@ export class RoomServer {
     const s = c.member.seat!;
     const latest = Math.max(...m.inputs.map((l) => l.length));
     const ctl: SeatControl = { seat: s, tick: latest + REJOIN_LEAD, bot: false };
+    m.lastAt[s] = this.now() + 5000; // time to replay the match before it counts as idle
     m.control.push(ctl);
     const inputs = m.inputs.map((l) => l.filter((w): w is WireInput => w !== null));
     c.conn.send({ t: 'resume', match: m.start, you: s, inputs, control: [...m.control] });
