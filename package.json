@@ -29,7 +29,8 @@
     "playstyle": "tsx tools/playstyle.ts",
     "kits": "tsx tools/kits.ts",
     "determinism": "tsx tools/determinism.ts",
-    "server": "tsx packages/server/src/main.ts"
+    "server": "tsx packages/server/src/main.ts",
+    "host": "npm run build && tsx packages/server/src/main.ts --serve-game"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
