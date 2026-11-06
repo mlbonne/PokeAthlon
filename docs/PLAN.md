@@ -172,7 +172,7 @@ Each milestone ends in something you can play, a git tag, and a short changelog.
 | **M3** ✅ | **Kits** | Data-driven move system (hitboxes, projectiles, dashes, status, cooldowns). First 4 Pokémon (one per role) |
 | **M4** ✅ | **The 3v3 Patch** ([plan](design/M4-3v3-patch.md)) | Smart kit-agnostic CPUs (prediction, team jobs, utility AI, difficulty), balance toolkit (telemetry, kit analyzer, F3 debug meter, headless batch sim, impact score), playable 3v3 with gamepad |
 | **M5** ✅ | **Meta** ([plan](design/M5-meta.md)) | All 8 Pokémon (move-system extensions + 4 new kits), held items, drafted boosts, OS-style pick screen with CPU drafting, between-set draft, results screen with per-role MVP and accolades |
-| **M6** | **Stages** | 5 arenas, each with one OS map gimmick (Speed Gate, gravity well, chasm, portals, speed strips) and a biome art pass based on Pokébonk v0.9.8's new areas. [Plan](design/M6-stages.md) |
+| **M6** | **Stages** | 5 arenas, each with one OS map gimmick (Speed Gate, gravity well, chasm, portals, speed strips) and a biome art pass based on Pokébonk v0.9.8's new areas. [Plan](design/M6-stages.md). **Status (2026-11-06):** stage 1 Pokémon Stadium ✅; the other stages are on hold by your call. **Planned: a stage editor** so you can build your own stages ([M6-stages.md](design/M6-stages.md#stage-editor-planned)) |
 | **M7** | **Online** | Lobby, server-authoritative matches, prediction and interpolation, private rooms |
 | **M8** | **Polish and balance** | Audio, VFX, tutorial, balance pass from match telemetry, release build |
 

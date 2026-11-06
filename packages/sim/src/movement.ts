@@ -4,7 +4,7 @@ import { DT } from './constants';
 import { collideBox, collideCircle, collideSegment, pointInPolygon } from './geometry';
 import { AXIS_MAX, type PlayerInput } from './input';
 import { frozenPhase } from './match';
-import { actionSlowPct, effectiveSpeed, stepDash } from './moves';
+import { actionSlowPct, clampInside, effectiveSpeed, stepDash } from './moves';
 import { approach, clampLen, type Vec2 } from './vec';
 import type { Player, World } from './world';
 
@@ -23,8 +23,10 @@ export function stepMovement(world: World, p: Player, inp: PlayerInput | undefin
     return;
   }
 
+  const prev = { ...p.pos };
   if (p.dash) {
     stepDash(world, p);
+    keepInside(world, p, prev);
     for (const s of world.stage.playerWalls) collideSegment(p.pos, p.vel, p.radius, s, 0);
     collideTerrain(world, p, 0);
     return;
@@ -46,8 +48,21 @@ export function stepMovement(world: World, p: Player, inp: PlayerInput | undefin
   }
 
   // Walking can't take you off the arena: the outline is a wall.
+  keepInside(world, p, prev);
   for (const s of world.stage.playerWalls) collideSegment(p.pos, p.vel, p.radius, s, 0);
   collideTerrain(world, p, 0);
+}
+
+/**
+ * The outline walls only push a circle out of a segment. A fast dash can carry the centre past one in
+ * a single tick, and then the wall would hold the player on the OUTSIDE. Under control (walking,
+ * dashing) you never leave the arena: pull the centre back to the last inside point on the way.
+ */
+function keepInside(world: World, p: Player, prev: Vec2): void {
+  const poly = world.stage.playerOutline;
+  if (pointInPolygon(p.pos, poly)) return;
+  const from = pointInPolygon(prev, poly) ? prev : { x: 0, y: 0 };
+  p.pos = clampInside(world, from, p.pos);
 }
 
 /** Knockback slide: control is lost and the arena outline is NOT a wall. Leaving it = KO. */

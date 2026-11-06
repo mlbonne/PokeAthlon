@@ -585,7 +585,7 @@ function fireBlink(world: World, p: Player, pa: PendingAction, a: Extract<MoveAc
 }
 
 /** The furthest point from `from` toward `to` that is still inside the players' outline. */
-function clampInside(world: World, from: Vec2, to: Vec2): Vec2 {
+export function clampInside(world: World, from: Vec2, to: Vec2): Vec2 {
   const poly = world.stage.playerOutline;
   if (pointInPolygon(to, poly)) return to;
   let lo = 0;
