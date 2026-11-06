@@ -6,9 +6,9 @@ import { idle, run, sandbox } from './helpers';
 
 describe('seeded RNG', () => {
   it('is reproducible per seed and differs between seeds', () => {
-    const a = createWorld(parseLineup('pikachu/lucario'), { seed: 7 });
-    const b = createWorld(parseLineup('pikachu/lucario'), { seed: 7 });
-    const c = createWorld(parseLineup('pikachu/lucario'), { seed: 8 });
+    const a = createWorld(parseLineup('zeraora/lucario'), { seed: 7 });
+    const b = createWorld(parseLineup('zeraora/lucario'), { seed: 7 });
+    const c = createWorld(parseLineup('zeraora/lucario'), { seed: 8 });
     const draw = (w: typeof a) => Array.from({ length: 20 }, () => randInt(w.ai, 0, 0, 1000));
     expect(draw(a)).toEqual(draw(b));
     expect(draw(c)).not.toEqual(draw(a));
@@ -17,7 +17,7 @@ describe('seeded RNG', () => {
   });
 
   it('floats are in [0, 1) and roughly uniform', () => {
-    const w = createWorld(parseLineup('pikachu/lucario'), { seed: 1 });
+    const w = createWorld(parseLineup('zeraora/lucario'), { seed: 1 });
     const xs = Array.from({ length: 4000 }, () => randFloat(w.ai, 0));
     expect(Math.min(...xs)).toBeGreaterThanOrEqual(0);
     expect(Math.max(...xs)).toBeLessThan(1);
@@ -29,7 +29,7 @@ describe('seeded RNG', () => {
 
 describe('telemetry', () => {
   it('credits a Strike on the ball to the strike source', () => {
-    const w = sandbox([{ pokemonId: 'pikachu', team: 0, pos: { x: -120, y: 0 } }], { x: 0, y: 0 });
+    const w = sandbox([{ pokemonId: 'zeraora', team: 0, pos: { x: -120, y: 0 } }], { x: 0, y: 0 });
     const press: PlayerInput = quantizeInput(0, 0, 1, 0, Button.Strike);
     run(w, 1, [press]);
     run(w, 5, [idle]);
@@ -63,7 +63,7 @@ describe('telemetry', () => {
   });
 
   it('counts time alive and distance moved', () => {
-    const w = sandbox([{ pokemonId: 'pikachu', team: 0, pos: { x: 0, y: 0 } }], { x: 0, y: -850 });
+    const w = sandbox([{ pokemonId: 'zeraora', team: 0, pos: { x: 0, y: 0 } }], { x: 0, y: -850 });
     run(w, 60, [quantizeInput(1, 0)]);
     const t = w.telemetry.players[0]!;
     expect(t.aliveTicks).toBe(60);
@@ -74,7 +74,7 @@ describe('telemetry', () => {
 
 describe('headless runner', () => {
   it('same seed → same match; different seed → different match', () => {
-    const lineup = parseLineup('pikachu/lucario');
+    const lineup = parseLineup('zeraora/lucario');
     const a = runHeadless(lineup, { seed: 3, until: 'goal' });
     const b = runHeadless(lineup, { seed: 3, until: 'goal' });
     const c = runHeadless(lineup, { seed: 4, until: 'goal' });
@@ -85,7 +85,7 @@ describe('headless runner', () => {
   });
 
   it('telemetry totals agree with the match stats', () => {
-    const r = runHeadless(parseLineup('pikachu,lucario,bronzong/togekiss,lucario,bronzong'), { seed: 1, until: 'set' });
+    const r = runHeadless(parseLineup('zeraora,lucario,bronzong/hoopa,lucario,bronzong'), { seed: 1, until: 'set' });
     const ps = r.telemetry.players;
     const dealt = ps.reduce((s, p) => s + p.damageDealt, 0);
     const taken = ps.reduce((s, p) => s + p.damageTaken, 0);
@@ -101,14 +101,14 @@ describe('headless runner', () => {
   });
 
   it('parses 1v1 and 3v3 lineups (last of each 3v3 team is the goalie)', () => {
-    expect(parseLineup('pikachu/lucario').map((s) => s.team)).toEqual([0, 1]);
+    expect(parseLineup('zeraora/lucario').map((s) => s.team)).toEqual([0, 1]);
     const l = parseLineup('a,b,c/d,e,f');
     expect(l.filter((s) => s.role === 'goalie').map((s) => s.pokemonId)).toEqual(['c', 'f']);
     expect(() => parseLineup('a,b/c')).toThrow();
   });
 
   it('the hash covers bot RNG state', () => {
-    const w = createWorld(parseLineup('pikachu/lucario'), { seed: 1 });
+    const w = createWorld(parseLineup('zeraora/lucario'), { seed: 1 });
     const h = hashWorld(w);
     randInt(w.ai, 0, 0, 9);
     expect(hashWorld(w)).not.toBe(h);

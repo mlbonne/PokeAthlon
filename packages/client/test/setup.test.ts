@@ -5,8 +5,8 @@ import { cpuBan, cpuPick, pickable, roleStrength, seededRand } from '../src/cpuD
 import { AUTO, buildConfig, resolvePicks, type Saved } from '../src/setup';
 
 const base: Saved = {
-  blue: ['pikachu', 'lucario', 'bronzong'],
-  red: ['togekiss', '?', 'bronzong'],
+  blue: ['zeraora', 'lucario', 'bronzong'],
+  red: ['hoopa', '?', 'bronzong'],
   items: [AUTO, AUTO, AUTO],
   role: 'forward',
   diff: 'normal',
@@ -21,7 +21,7 @@ describe('match setup', () => {
     const c = buildConfig(base, 'play', fixed);
     expect(c.me).toBe(0);
     expect(c.lineup).toHaveLength(6);
-    expect(c.lineup[0]).toMatchObject({ pokemonId: 'pikachu', team: 0, slot: 0 });
+    expect(c.lineup[0]).toMatchObject({ pokemonId: 'zeraora', team: 0, slot: 0 });
     expect(c.lineup.filter((s) => s.role === 'goalie').map((s) => s.team)).toEqual([0, 1]);
     expect(c.lineup[4]!.pokemonId).toBe('lucario');
     for (const s of c.lineup) expect(getItem(s.item!).slot).toBe(s.role === 'goalie' ? 'goalie' : 'forward');
@@ -53,12 +53,12 @@ describe('match setup', () => {
 
 describe('CPU picks', () => {
   it('fill CPU slots without duplicates within a team, reproducibly per seed', () => {
-    const s: Saved = { ...base, blue: ['pikachu', AUTO, AUTO], red: [AUTO, AUTO, AUTO] };
+    const s: Saved = { ...base, blue: ['zeraora', AUTO, AUTO], red: [AUTO, AUTO, AUTO] };
     const a = resolvePicks(s);
     expect(resolvePicks(s)).toEqual(a);
     expect(new Set(a.blue).size).toBe(3);
     expect(new Set(a.red).size).toBe(3);
-    expect(a.blue[0]).toBe('pikachu');
+    expect(a.blue[0]).toBe('zeraora');
   });
 
   it('Hard takes the strongest available for the role; Easy can take anything', () => {
@@ -70,7 +70,7 @@ describe('CPU picks', () => {
   });
 
   it('bans: nobody can field a banned Pokémon', () => {
-    const s: Saved = { ...base, blue: ['pikachu', AUTO, AUTO], red: [AUTO, AUTO, AUTO], bans: true, ban: 'bronzong', diff: 'hard' };
+    const s: Saved = { ...base, blue: ['zeraora', AUTO, AUTO], red: [AUTO, AUTO, AUTO], bans: true, ban: 'bronzong', diff: 'hard' };
     const r = resolvePicks(s);
     expect(r.redBan).toBe(cpuBan('hard', ['bronzong'], seededRand(1)));
     for (const id of [...r.blue, ...r.red]) expect([s.ban, r.redBan]).not.toContain(id);

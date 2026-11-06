@@ -78,7 +78,7 @@
           "sizePct": 40,
           "knockbackTakenPct": 25,
           "strikeHit": {
-            "player": { "base": 281, "powerRatio": 1.406 },
+            "player": { "base": 225, "powerRatio": 1.125 },
             "damage": { "base": 60, "powerRatio": 0.35 }
           }
         }

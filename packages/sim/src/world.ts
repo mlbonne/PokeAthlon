@@ -22,6 +22,7 @@ import {
   type ChannelState,
   type ChargeState,
   type Creation,
+  type Guardian,
   type DashState,
   type MoveState,
   type PendingAction,
@@ -225,6 +226,8 @@ export interface World {
   match: MatchState;
   projectiles: Projectile[];
   creations: Creation[];
+  /** Guardian zones (Atlas-style KO rescue). */
+  guardians: Guardian[];
   pending: PendingAction[];
   nextEntityId: number;
   /** Events produced by the most recent step. */
@@ -325,6 +328,7 @@ export function createWorld(spawns: PlayerSpawn[], opts: WorldOptions = {}): Wor
     },
     projectiles: [],
     creations: [],
+    guardians: [],
     pending: [],
     nextEntityId: 1,
     events: [],
@@ -530,6 +534,7 @@ export function removePlayers(world: World, keep: (p: Player) => boolean): void 
   tel.liveShot = null;
   world.projectiles = [];
   world.creations = [];
+  world.guardians = [];
   world.pending = [];
   world.ball.lastHitBy = -1;
   world.ball.controlBy = -1;

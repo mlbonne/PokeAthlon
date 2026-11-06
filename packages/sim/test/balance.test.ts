@@ -5,13 +5,13 @@ import { fitImpact, impactOf, impactShares, IMPACT_FEATURES, type ImpactStats } 
 
 describe('what-if tuning', () => {
   it('sets, multiplies and adds stats and move fields', () => {
-    const before = getPokemon('togekiss').stats.power;
-    const cd = getKit('togekiss')!.moves.find((m) => m.id === 'air-slash')!.cooldown;
-    const out = applyTuning(['togekiss.power+=5', 'togekiss.air-slash.cooldown=7']);
-    expect(getPokemon('togekiss').stats.power).toBe(before + 5);
-    expect(getKit('togekiss')!.moves.find((m) => m.id === 'air-slash')!.cooldown).toBe(7);
+    const before = getPokemon('lucario').stats.power;
+    const cd = getKit('lucario')!.moves.find((m) => m.id === 'aura-sphere')!.cooldown;
+    const out = applyTuning(['lucario.power+=5', 'lucario.aura-sphere.cooldown=7']);
+    expect(getPokemon('lucario').stats.power).toBe(before + 5);
+    expect(getKit('lucario')!.moves.find((m) => m.id === 'aura-sphere')!.cooldown).toBe(7);
     expect(out).toHaveLength(2);
-    applyTuning([`togekiss.power=${before}`, `togekiss.air-slash.cooldown=${cd}`]); // restore
+    applyTuning([`lucario.power=${before}`, `lucario.aura-sphere.cooldown=${cd}`]); // restore
   });
 
   it('scales every hit of a move with a shortcut, and paths reach nested fields', () => {

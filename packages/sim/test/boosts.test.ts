@@ -36,7 +36,7 @@ function give(w: World, who: number, id: string): void {
   step(w, w.players.map(() => idle)); // stepBoosts + refreshBody
 }
 const pick = (i: number): PlayerInput => ({ ...quantizeInput(0, 0), pick: i });
-const lineup = () => parseLineup('pikachu,lucario,bronzong/togekiss,machamp,blastoise');
+const lineup = () => parseLineup('zeraora,lucario,bronzong/hoopa,machamp,blastoise');
 
 describe('boost data', () => {
   it('19 boosts with unique ids; draft settings', () => {
@@ -112,7 +112,7 @@ describe('boost effects', () => {
     expect(p.power).toBeCloseTo(p0 + (1.3 * p.maxStagger) / 100, 0);
   });
 
-  it('Quick Draw: primary −25 %; Calm Mind: +7 Cooldown Rate', () => {
+  it('Quick Draw: primary −35 %; Calm Mind: +7 Cooldown Rate', () => {
     const cd = (ids: string[]) => {
       const w = world([{ pokemonId: 'lucario', team: 0, pos: { x: -400, y: 0 } }]);
       for (const id of ids) give(w, 0, id);
@@ -120,12 +120,12 @@ describe('boost effects', () => {
       return w.players[0]!.moves[0]!.cooldown;
     };
     const base = cd([]);
-    expect(cd(['quick-draw'])).toBe(Math.round(base * 0.75) - 0);
+    expect(cd(['quick-draw'])).toBe(Math.round(base * 0.65) - 0);
     expect(cd(['calm-mind'])).toBe(Math.round((base * 100) / 107));
   });
 
   it('Sparks get stronger per Spark held', () => {
-    const w = world([{ pokemonId: 'pikachu', team: 0, pos: { x: -400, y: 0 } }]);
+    const w = world([{ pokemonId: 'zeraora', team: 0, pos: { x: -400, y: 0 } }]);
     const p = w.players[0]!;
     const p0 = p.power;
     give(w, 0, 'swords-dance');
@@ -135,7 +135,7 @@ describe('boost effects', () => {
   });
 
   it('Sturdy prevents the first KO each set', () => {
-    const w = world([{ pokemonId: 'pikachu', team: 0, pos: { x: -400, y: 0 } }]);
+    const w = world([{ pokemonId: 'zeraora', team: 0, pos: { x: -400, y: 0 } }]);
     const p = w.players[0]!;
     give(w, 0, 'sturdy');
     p.pos = { x: 0, y: 2000 };
@@ -156,29 +156,29 @@ describe('boost effects', () => {
     run(w, 1, [idle]);
     expect(p.power).toBeCloseTo(p0 + 40, 0);
 
-    const w2 = world([{ pokemonId: 'pikachu', team: 0, pos: { x: -400, y: 0 } }]);
+    const w2 = world([{ pokemonId: 'zeraora', team: 0, pos: { x: -400, y: 0 } }]);
     const q = w2.players[0]!;
     const s0 = effectiveSpeed(q);
     give(w2, 0, 'speed-boost');
     run(w2, 13 * 60, [idle]);
-    expect(effectiveSpeed(q)).toBeCloseTo(s0 * 1.12, 0);
+    expect(effectiveSpeed(q)).toBeCloseTo(s0 * 1.08, 0);
     applyHit(w2, 0, q, { dir: { x: 0, y: 1 }, knockback: 0, damage: 1 });
     run(w2, 1, [idle]);
     expect(effectiveSpeed(q)).toBeCloseTo(s0, 0);
   });
 
-  it('Run Away: +40 % speed and 0 Power near the edge', () => {
-    const w = world([{ pokemonId: 'pikachu', team: 0, pos: { x: -400, y: 0 } }]);
+  it('Run Away: +50 % speed and 0 Power near the edge', () => {
+    const w = world([{ pokemonId: 'zeraora', team: 0, pos: { x: -400, y: 0 } }]);
     const p = w.players[0]!;
     give(w, 0, 'run-away');
     const s0 = effectiveSpeed(p);
     p.pos = { x: -400, y: w.stage.halfWidth - 150 };
     run(w, 1, [idle]);
     expect(p.power).toBe(0);
-    expect(effectiveSpeed(p)).toBeCloseTo(s0 * 1.4, 0);
+    expect(effectiveSpeed(p)).toBeCloseTo(s0 * 1.5, 0);
   });
 
-  it('Mega Launcher: projectiles fly 70 % farther and hit 17.5 % harder; Tough Claws +15 %', () => {
+  it('Mega Launcher: projectiles fly 70 % farther and hit 17.5 % harder; Tough Claws +25 %', () => {
     const shot = (ids: string[]) => {
       const w = world([
         { pokemonId: 'lucario', team: 0, pos: { x: -400, y: 0 } },
@@ -196,13 +196,13 @@ describe('boost effects', () => {
     const ml = shot(['mega-launcher']);
     expect(ml.range).toBeCloseTo(base.range * 1.7);
     expect(ml.dmg).toBeCloseTo(base.dmg * 1.175);
-    expect(shot(['tough-claws']).dmg).toBeCloseTo(base.dmg * 1.15);
+    expect(shot(['tough-claws']).dmg).toBeCloseTo(base.dmg * 1.25);
   });
 
   it('Moxie: +1 stack per takedown, −2 when KO\'d', () => {
     const w = world([
       { pokemonId: 'lucario', team: 0, pos: { x: -400, y: 0 } },
-      { pokemonId: 'pikachu', team: 1, pos: { x: 0, y: 2000 } },
+      { pokemonId: 'zeraora', team: 1, pos: { x: 0, y: 2000 } },
     ]);
     give(w, 0, 'moxie');
     const p = w.players[0]!;

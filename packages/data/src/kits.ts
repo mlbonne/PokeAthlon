@@ -1,12 +1,12 @@
 import { z } from 'zod';
+import arcanineHisui from '../kits/arcanine-hisui.json' with { type: 'json' };
 import blastoise from '../kits/blastoise.json' with { type: 'json' };
 import bronzong from '../kits/bronzong.json' with { type: 'json' };
 import greninja from '../kits/greninja.json' with { type: 'json' };
 import hoopa from '../kits/hoopa.json' with { type: 'json' };
 import lucario from '../kits/lucario.json' with { type: 'json' };
 import machamp from '../kits/machamp.json' with { type: 'json' };
-import pikachu from '../kits/pikachu.json' with { type: 'json' };
-import togekiss from '../kits/togekiss.json' with { type: 'json' };
+import zeraora from '../kits/zeraora.json' with { type: 'json' };
 
 /**
  * Data-driven moves (M3). A move is a list of actions built from a small vocabulary that covers
@@ -210,6 +210,23 @@ export const ProjectileAction = z.object({
 });
 
 /**
+ * Guardian (OS Atlas's Celestial Intervention): a zone placed on the caster (or the aimed point)
+ * for `duration`. It heals allies inside by `healPct` of their max Stagger on cast and every
+ * `interval`, and any ally of the caster who would be KO'd anywhere while it stands is rescued
+ * instead: moved to the zone with `rescueHealPct` of their Stagger. Once per ally per cast.
+ */
+export const GuardianAction = z.object({
+  type: z.literal('guardian'),
+  ...common,
+  at: z.enum(['self', 'target']).default('self'),
+  radius: pos,
+  duration: pos,
+  interval: pos,
+  healPct: nonneg.default(0),
+  rescueHealPct: frac.default(0.75),
+});
+
+/**
  * Ball grab (M5.1): if the ball is within `radius`, hold it in front of the caster for `hold`
  * seconds (the only "hold" in the game). The caster is slowed; any hit on them drops it.
  * At the end it is dropped, or thrown with `throw` if set. A `throw` action (usually a recast) throws it early.
@@ -241,6 +258,7 @@ export const MoveAction = z.discriminatedUnion('type', [
   BlinkAction,
   GrabAction,
   ThrowAction,
+  GuardianAction,
 ]);
 export type MoveAction = z.infer<typeof MoveAction>;
 
@@ -318,7 +336,7 @@ export function parseKit(json: unknown): KitDef {
 }
 
 export const kits: Record<string, KitDef> = Object.fromEntries(
-  [pikachu, bronzong, lucario, togekiss, greninja, machamp, hoopa, blastoise].map((k) => {
+  [zeraora, bronzong, lucario, greninja, machamp, hoopa, blastoise, arcanineHisui].map((k) => {
     const kit = parseKit(k);
     return [kit.pokemon, kit];
   }),
@@ -388,6 +406,8 @@ export function scaleAction(a: MoveAction, power: number, range: number, duratio
       return { ...a, ...(a.throw ? { throw: scaleScaling(a.throw, power) } : {}) };
     case 'throw':
       return { ...a, ball: scaleScaling(a.ball, power) };
+    case 'guardian':
+      return { ...a, radius: a.radius * range, duration: a.duration * duration };
   }
 }
 

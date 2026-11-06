@@ -44,7 +44,7 @@ export const RANDOM = '?';
 export const AUTO = 'auto';
 
 const DEFAULTS: Saved = {
-  blue: ['pikachu', AUTO, AUTO],
+  blue: ['zeraora', AUTO, AUTO],
   red: [AUTO, AUTO, AUTO],
   items: [AUTO, AUTO, AUTO],
   role: 'forward',

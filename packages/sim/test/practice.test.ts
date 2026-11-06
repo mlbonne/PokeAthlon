@@ -25,7 +25,7 @@ import { idle, run, sandbox } from './helpers';
 
 describe('ball prediction', () => {
   it('matches the real ball when nobody touches it, and leaves the world unchanged', () => {
-    const w = sandbox([{ pokemonId: 'pikachu', team: 0, pos: { x: 0, y: 800 } }], { x: 0, y: 0 });
+    const w = sandbox([{ pokemonId: 'zeraora', team: 0, pos: { x: 0, y: 800 } }], { x: 0, y: 0 });
     w.ball.vel = { x: 1500, y: 300 };
     const before = JSON.stringify(w.ball);
     const pred = predictBall(w, 60);
@@ -37,7 +37,7 @@ describe('ball prediction', () => {
   });
 
   it('reports the goal a ball is heading into', () => {
-    const w = sandbox([{ pokemonId: 'pikachu', team: 0, pos: { x: 0, y: 800 } }], { x: 1000, y: 0 });
+    const w = sandbox([{ pokemonId: 'zeraora', team: 0, pos: { x: 0, y: 800 } }], { x: 1000, y: 0 });
     practiceDisableBarriers(w);
     w.ball.vel = { x: 2000, y: 0 };
     const pred = predictBall(w, 120);
@@ -50,7 +50,7 @@ describe('shots, saves, redirects, ball speed', () => {
   it('a Strike at an open goal is a shot; the defender touching it is a save', () => {
     const w = sandbox(
       [
-        { pokemonId: 'pikachu', team: 0, pos: { x: 780, y: 0 } },
+        { pokemonId: 'zeraora', team: 0, pos: { x: 780, y: 0 } },
         { pokemonId: 'lucario', team: 1, pos: { x: 1200, y: 0 } },
       ],
       { x: 900, y: 0 },
@@ -67,7 +67,7 @@ describe('shots, saves, redirects, ball speed', () => {
   });
 
   it('a whole bot match records shots, saves and goal speeds consistently', () => {
-    const r = runHeadless(parseLineup('pikachu/lucario'), { seed: 2, until: 'set' });
+    const r = runHeadless(parseLineup('zeraora/lucario'), { seed: 2, until: 'set' });
     const t = r.telemetry;
     const goals = t.players.reduce((s, p) => s + p.goals, 0);
     const shots = t.players.reduce((s, p) => s + p.shots, 0);
@@ -79,18 +79,18 @@ describe('shots, saves, redirects, ball speed', () => {
 });
 
 describe('practice controls', () => {
-  const duel = () => createWorld(parseLineup('pikachu/lucario'), { mode: 'sandbox' });
+  const duel = () => createWorld(parseLineup('zeraora/lucario'), { mode: 'sandbox' });
 
   it('spawns, swaps and destroys the enemy, keeping ids, telemetry and RNG in step', () => {
     const w = duel();
     practiceSpawnEnemy(w, 'bronzong');
-    expect(w.players.map((p) => p.pokemonId)).toEqual(['pikachu', 'bronzong']);
-    expect(w.telemetry.players.map((t) => t.pokemon)).toEqual(['pikachu', 'bronzong']);
+    expect(w.players.map((p) => p.pokemonId)).toEqual(['zeraora', 'bronzong']);
+    expect(w.telemetry.players.map((t) => t.pokemon)).toEqual(['zeraora', 'bronzong']);
     expect(w.ai.rng).toHaveLength(2);
     practiceDestroyTeam(w, 1);
     expect(w.players).toHaveLength(1);
     expect(w.telemetry.players).toHaveLength(1);
-    practiceSpawnEnemy(w, 'togekiss');
+    practiceSpawnEnemy(w, 'hoopa');
     expect(w.players.map((p) => p.id)).toEqual([0, 1]);
     run(w, 30, [idle, idle]); // still steps fine
   });

@@ -12,11 +12,13 @@ License: [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) (non-co
 "CHUNSOFT" entries are original *Pokémon Mystery Dungeon* assets by Spike Chunsoft.
 The bracketed tags are the license labels recorded per contribution in SpriteCollab.
 
-### Pikachu (#0025)
+### Zeraora (#0807)
 - Sprites:
-  - CHUNSOFT (https://www.spike-chunsoft.com/) [Unspecified]
+  - Emmuffin (https://twitter.com/Ernmuffin) [PMDCollab_1]
+  - Caitemis (https://caitemis-art.tumblr.com/) [PMDCollab_2]
 - Portraits:
-  - CHUNSOFT (https://www.spike-chunsoft.com/) [Unspecified]
+  - Emmuffin (https://twitter.com/Ernmuffin) [PMDCollab_1]
+  - Top_Kec (@topkec.bsky.social) [PMDCollab_2]
 
 ### Greninja (#0658)
 - Sprites:
@@ -32,13 +34,6 @@ The bracketed tags are the license labels recorded per contribution in SpriteCol
 - Portraits:
   - programmedsleepstate [CC_BY-NC_4]
 
-### Togekiss (#0468)
-- Sprites:
-  - CHUNSOFT (https://www.spike-chunsoft.com/) [Unspecified]
-- Portraits:
-  - CHUNSOFT (https://www.spike-chunsoft.com/) [Unspecified]
-  - Unknown contributor [PMDCollab_1]
-
 ### Bronzong (#0437)
 - Sprites:
   - CHUNSOFT (https://www.spike-chunsoft.com/) [Unspecified]
@@ -52,6 +47,14 @@ The bracketed tags are the license labels recorded per contribution in SpriteCol
   - CHUNSOFT (https://www.spike-chunsoft.com/) [CC_BY-NC_4]
   - Emmuffin (https://twitter.com/Ernmuffin) [CC_BY-NC_4]
   - Top_Kec (@topkec.bsky.social) [CC_BY-NC_4]
+
+### Hisuian Arcanine (#0059/0001)
+- Sprites:
+  - baronessfaron [PMDCollab_2]
+  - Emmuffin (https://twitter.com/Ernmuffin) [PMDCollab_2]
+- Portraits:
+  - Emboarger [PMDCollab_1]
+  - baronessfaron [PMDCollab_1, PMDCollab_2]
 
 ### Lucario (#0448)
 - Sprites:

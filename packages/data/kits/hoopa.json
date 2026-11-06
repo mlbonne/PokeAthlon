@@ -17,7 +17,7 @@
       "id": "hyperspace-hole",
       "name": "Hyperspace Hole",
       "slot": "secondary",
-      "cooldown": 11,
+      "cooldown": 9,
       "anim": "Rotate",
       "desc": "Fling a portal that chips the first enemy it touches. Where it stops, you come out 0.35 s later with a burst. Evade to dodge the burst.",
       "bot": "engage",
@@ -62,7 +62,7 @@
       "cooldown": 40,
       "range": 750,
       "anim": "Charge",
-      "desc": "Mark an area. After 1 s it erupts, banishing enemies inside for 1.75 s and blasting the ball.",
+      "desc": "Mark an area. After 0.75 s it erupts, banishing enemies inside for 1.75 s and blasting the ball.",
       "bot": "engage",
       "actions": [
         {
@@ -70,8 +70,8 @@
           "fx": { "color": "#7b2cbf" },
           "shape": "circle",
           "at": "target",
-          "radius": 190,
-          "delay": 1.0,
+          "radius": 240,
+          "delay": 0.75,
           "telegraph": true,
           "hit": {
             "ball": { "base": 1290, "powerRatio": 1.85 },

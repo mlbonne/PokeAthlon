@@ -52,7 +52,7 @@ describe('charge-and-release', () => {
   function chargeShot(holdTicks: number) {
     const w = world([
       { pokemonId: 'greninja', team: 0, pos: { x: -400, y: 0 } },
-      { pokemonId: 'pikachu', team: 1, pos: { x: 0, y: 0 } },
+      { pokemonId: 'zeraora', team: 1, pos: { x: 0, y: 0 } },
     ]);
     const evs: SimEvent[] = [];
     for (let i = 0; i < holdTicks; i++) evs.push(...tick(w, 0, press(Button.Signature)));
@@ -91,7 +91,7 @@ describe('recast', () => {
   it('blink forward, hit along the path, recast to blink back to the mark', () => {
     const w = world([
       { pokemonId: 'greninja', team: 0, pos: { x: -400, y: 0 } },
-      { pokemonId: 'pikachu', team: 1, pos: { x: -150, y: 20 } },
+      { pokemonId: 'zeraora', team: 1, pos: { x: -150, y: 20 } },
     ]);
     const evs = tick(w, 0, press(Button.Move2));
     expect(types(evs)).toContain('blink');
@@ -118,7 +118,7 @@ describe('ball grab and throw', () => {
     world(
       [
         { pokemonId: 'hoopa', team: 0, pos: { x: -300, y: 0 } },
-        { pokemonId: 'pikachu', team: 1, pos: { x: 400, y: 300 } },
+        { pokemonId: 'zeraora', team: 1, pos: { x: 400, y: 300 } },
       ],
       { x: -150, y: 0 },
     );
@@ -167,8 +167,8 @@ describe('teleport / swap', () => {
   it('swaps places with the ally nearest the aim', () => {
     const w = world([
       { pokemonId: 'hoopa', team: 0, pos: { x: -400, y: 0 } },
-      { pokemonId: 'pikachu', team: 0, pos: { x: 200, y: 100 } },
-      { pokemonId: 'pikachu', team: 0, pos: { x: -400, y: 600 } },
+      { pokemonId: 'zeraora', team: 0, pos: { x: 200, y: 100 } },
+      { pokemonId: 'zeraora', team: 0, pos: { x: -400, y: 600 } },
     ]);
     const evs = tick(w, 0, press(Button.Move2, { x: 1, y: 0 }));
     expect(evs.find((e) => e.type === 'blink')).toMatchObject({ swapWith: 1 });
@@ -189,7 +189,7 @@ describe('delayed area, telegraph and banish', () => {
   it('telegraphs, then banishes: untargetable, frozen, back in place', () => {
     const w = world([
       { pokemonId: 'hoopa', team: 0, pos: { x: -400, y: 0 } },
-      { pokemonId: 'pikachu', team: 1, pos: { x: 100, y: 0 } },
+      { pokemonId: 'zeraora', team: 1, pos: { x: 100, y: 0 } },
     ]);
     const evs = tick(w, 0, press(Button.Signature, { x: 1, y: 0 }, 500));
     expect(evs.find((e) => e.type === 'telegraph')).toMatchObject({ shape: 'circle', time: 1 });
@@ -212,7 +212,7 @@ describe('sweet spot', () => {
     const at = (x: number) => {
       const w = world([
         { pokemonId: 'greninja', team: 0, pos: { x: -400, y: 0 } },
-        { pokemonId: 'pikachu', team: 1, pos: { x: -400 + x, y: 0 } },
+        { pokemonId: 'zeraora', team: 1, pos: { x: -400 + x, y: 0 } },
       ]);
       return hits(tick(w, 0, press(Button.Move1)))[0]!;
     };
@@ -253,8 +253,8 @@ describe('side condition', () => {
       tick(w, 0, press(Button.Move1, { x: 0, y: 1 }));
       return w.creations[0]!.ticks;
     };
-    const own = wallTicks(-600 * -Math.sign(sandbox([{ pokemonId: 'pikachu', team: 0 }]).stage.goals[0].side));
-    const enemy = wallTicks(600 * -Math.sign(sandbox([{ pokemonId: 'pikachu', team: 0 }]).stage.goals[0].side));
+    const own = wallTicks(-600 * -Math.sign(sandbox([{ pokemonId: 'zeraora', team: 0 }]).stage.goals[0].side));
+    const enemy = wallTicks(600 * -Math.sign(sandbox([{ pokemonId: 'zeraora', team: 0 }]).stage.goals[0].side));
     expect(own).toBe(240 - 1);
     expect(enemy).toBe(60 - 1);
   });
@@ -264,7 +264,7 @@ describe('guarded dash', () => {
   it('resists knockback and damage, and breaks after enough damage', () => {
     const w = world([
       { pokemonId: 'blastoise', team: 0, pos: { x: -400, y: 0 } },
-      { pokemonId: 'pikachu', team: 1, pos: { x: 400, y: 400 } },
+      { pokemonId: 'zeraora', team: 1, pos: { x: 400, y: 400 } },
     ]);
     const b = w.players[0]!;
     tick(w, 0, press(Button.Move2));
@@ -309,7 +309,7 @@ describe('transform buff', () => {
   it('grows the body, adds power, Strike hits players, more knockback taken; all undone at the end', () => {
     const w = world([
       { pokemonId: 'machamp', team: 0, pos: { x: -400, y: 0 } },
-      { pokemonId: 'pikachu', team: 1, pos: { x: -280, y: 0 } },
+      { pokemonId: 'zeraora', team: 1, pos: { x: -280, y: 0 } },
     ]);
     const m = w.players[0]!;
     const r0 = m.radius;

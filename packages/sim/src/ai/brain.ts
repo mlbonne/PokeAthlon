@@ -608,6 +608,21 @@ function chooseCast(world: World, p: Player, job: Job, perc: Perception, D: Diff
       else if (danger(world, p) > 0.8 && foes.some((o) => dist(o.pos, p.pos) < 500)) consider({ slot: m.slot, aim: p.facing, dist: 0, value: 30, label: `${m.id}:escape` });
     }
 
+    // Guardian zones (self-placed): save a teammate about to be KO'd anywhere, or heal hurt
+    // teammates standing in it.
+    if (m.delivery === 'guardian') {
+      let inZone = 0;
+      for (const a of world.players) {
+        if (a.team !== p.team || a.koTicks > 0) continue;
+        const threatened = enemies(world, a).some((o) => isTargetable(o) && dist(o.pos, a.pos) < 450);
+        if (m.rescue && danger(world, a) > 0.9 && threatened) {
+          consider({ slot: m.slot, aim: p.facing, dist: 0, value: a.id === p.id ? 50 : 55, label: `${m.id}:rescue` });
+        }
+        if (dist(a.pos, p.pos) <= m.radius + a.hurtRadius) inZone += 1 - a.stagger / Math.max(1, a.maxStagger);
+      }
+      if (m.heal > 0 && inZone > 0.6) consider({ slot: m.slot, aim: p.facing, dist: 0, value: 25 + 30 * inZone, label: `${m.id}:heal` });
+    }
+
     // Walls: block a shot that is heading into our goal.
     if (m.delivery === 'wall' && perc.pred.goalAgainst === p.team) {
       for (let t = 6; t < Math.min(45, perc.pred.path.length); t += 3) {

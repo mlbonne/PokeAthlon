@@ -345,6 +345,17 @@ function actionStats(raw: MoveAction, def: MoveDef, p: PokemonDef, offset = 0): 
       base.hitsBall = true;
       break;
     }
+    case 'guardian': {
+      const pulses = 1 + Math.floor(a.duration / a.interval + 1e-9);
+      base.reach = (a.at === 'target' ? def.range : 0) + a.radius;
+      base.end = start + a.duration;
+      base.hitArea = Math.PI * a.radius * a.radius;
+      base.sweptArea = base.hitArea;
+      base.heal = a.healPct * pulses;
+      if (a.rescueHealPct > 0) base.shield.push(`KO rescue ${a.duration}s (${Math.round(a.rescueHealPct * 100)} %)`);
+      base.notes.push(`guardian ${a.duration} s, heals ${Math.round(a.healPct * 100)} % × ${pulses}`);
+      break;
+    }
   }
   return base;
 }

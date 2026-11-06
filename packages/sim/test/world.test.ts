@@ -11,7 +11,7 @@ import {
 } from '../src/index';
 import { run, sandbox } from './helpers';
 
-const spawn = () => sandbox([{ pokemonId: 'pikachu', team: 0, pos: { x: -600, y: 0 } }], { x: 0, y: 600 });
+const spawn = () => sandbox([{ pokemonId: 'zeraora', team: 0, pos: { x: -600, y: 0 } }], { x: 0, y: 600 });
 
 describe('movement', () => {
   it('reaches the pokemon top speed and travels about speed × time', () => {
@@ -58,7 +58,7 @@ describe('movement', () => {
   });
 
   it('players are frozen during the kickoff countdown', () => {
-    const w = createWorld([{ pokemonId: 'pikachu', team: 0 }], { mode: 'match' });
+    const w = createWorld([{ pokemonId: 'zeraora', team: 0 }], { mode: 'match' });
     const start = { ...w.players[0]!.pos };
     run(w, 60, [quantizeInput(1, 0)]);
     expect(w.match.phase).toBe('kickoff');
@@ -71,7 +71,7 @@ describe('determinism', () => {
     const play = () => {
       const w = createWorld(
         [
-          { pokemonId: 'pikachu', team: 0 },
+          { pokemonId: 'zeraora', team: 0 },
           { pokemonId: 'bronzong', team: 1 },
         ],
         { mode: 'match' },

@@ -125,6 +125,26 @@ export interface Projectile {
   onEnd: MoveAction[] | null;
 }
 
+/** A guardian zone (OS Atlas's Celestial Intervention): heals allies inside, rescues allies from KOs. */
+export interface Guardian {
+  id: number;
+  owner: number;
+  team: 0 | 1;
+  moveId: string;
+  color: string;
+  pos: Vec2;
+  radius: number;
+  ticks: number;
+  total: number;
+  interval: number;
+  /** Ticks until the next heal pulse. */
+  next: number;
+  healPct: number;
+  rescueHealPct: number;
+  /** Allies already rescued by this guardian (once each). */
+  rescued: number[];
+}
+
 /** A creation wall: a capsule (segment + radius) that blocks players, the ball and projectiles. */
 export interface Creation {
   id: number;
@@ -527,6 +547,30 @@ function fire(world: World, p: Player, pa: PendingAction): void {
       world.events.push({ type: 'grab', playerId: p.id, moveId: pa.moveId, caught });
       break;
     }
+    case 'guardian': {
+      const pos = a.at === 'target' ? clampInside(world, p.pos, pa.target) : { ...p.pos };
+      const total = ticks(a.duration);
+      const g: Guardian = {
+        id: world.nextEntityId++,
+        owner: p.id,
+        team: p.team,
+        moveId: pa.moveId,
+        color: a.fx.color,
+        pos,
+        radius: a.radius,
+        ticks: total,
+        total,
+        interval: Math.max(1, ticks(a.interval)),
+        next: 0,
+        healPct: a.healPct,
+        rescueHealPct: a.rescueHealPct,
+        rescued: [],
+      };
+      world.guardians.push(g);
+      world.events.push({ type: 'guardian', playerId: p.id, moveId: pa.moveId, pos: { ...pos }, radius: a.radius, time: a.duration, color: a.fx.color });
+      stepGuardian(world, g); // heals on activation
+      break;
+    }
     case 'throw':
       if (world.ball.heldBy === p.id) {
         releaseBall(world, pa.dir, scaled(a.ball, p.power), pa.moveId);
@@ -852,11 +896,51 @@ export function stepStrikeHits(world: World, p: Player): void {
   }
 }
 
-/** Creations expire. */
+/** Creations expire; guardians heal on their pulse, then expire. */
 export function stepCreations(world: World): void {
   for (let i = world.creations.length - 1; i >= 0; i--) {
     if (--world.creations[i]!.ticks <= 0) world.creations.splice(i, 1);
   }
+  for (let i = world.guardians.length - 1; i >= 0; i--) {
+    const g = world.guardians[i]!;
+    stepGuardian(world, g);
+    if (--g.ticks <= 0) world.guardians.splice(i, 1);
+  }
+}
+
+/** One tick of a guardian: a heal pulse every `interval` (Elusive allies count too). */
+function stepGuardian(world: World, g: Guardian): void {
+  if (g.next > 0) {
+    g.next--;
+    return;
+  }
+  g.next = g.interval - 1;
+  if (g.healPct <= 0) return;
+  for (const o of world.players) {
+    if (o.team !== g.team || o.koTicks > 0 || o.banishTicks > 0) continue;
+    if (dist2(o.pos, g.pos) > (g.radius + o.hurtRadius) ** 2) continue;
+    o.stagger = Math.min(o.maxStagger, o.stagger + o.maxStagger * g.healPct);
+  }
+}
+
+/**
+ * An ally of a standing guardian is about to be KO'd: pull them to the guardian with
+ * `rescueHealPct` of their Stagger instead. Once per ally per guardian. Returns true if rescued.
+ */
+export function guardianRescue(world: World, p: Player): boolean {
+  const g = world.guardians.find((x) => x.team === p.team && x.rescueHealPct > 0 && !x.rescued.includes(p.id));
+  if (!g) return false;
+  g.rescued.push(p.id);
+  const from = { ...p.pos };
+  p.pos = { ...g.pos };
+  p.vel = { x: 0, y: 0 };
+  p.knockVel = { x: 0, y: 0 };
+  p.knockTicks = 0;
+  p.dash = null;
+  p.stagger = p.maxStagger * g.rescueHealPct;
+  p.staggered = false;
+  world.events.push({ type: 'rescue', playerId: p.id, by: g.owner, from, to: { ...g.pos } });
+  return true;
 }
 
 /** Speed multiplier from buffs with OS diminishing returns (750–900 at 50 %, above 900 at 25 %). */
@@ -921,6 +1005,7 @@ export function refreshBody(p: Player): void {
 export function resetMoveState(world: World): void {
   world.projectiles = [];
   world.creations = [];
+  world.guardians = [];
   world.pending = [];
   for (const p of world.players) {
     p.cast = null;

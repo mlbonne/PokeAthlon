@@ -63,8 +63,8 @@ const hudRoot = document.querySelector<HTMLElement>('#hud')!;
 // ---------- Match ----------
 // With no URL mode the game opens the match setup screen (Esc / Start returns to it).
 // URL modes (skip the setup screen):
-//   ?quick=1               straight into a 3v3 (you: Pikachu forward) vs CPUs
-//   ?cpu=pikachu,lucario   CPU vs CPU spectator match (both sides played by bots)
+//   ?quick=1               straight into a 3v3 (you: Zeraora forward) vs CPUs
+//   ?cpu=zeraora,lucario   CPU vs CPU spectator match (both sides played by bots)
 //   &record=1              no real-time loop; frames are advanced by window.__rec (match recorder)
 //   &meter=1               open the F3 debug menu on start (also bakes it into recordings)
 //   ?practice=1            practice sandbox: no kickoff, an idle enemy dummy (F3 → Practice)
@@ -83,11 +83,11 @@ const cpuLineup = (() => {
 })();
 const RECORD = params.get('record') === '1';
 const urlDiff = (params.get('diff') ?? '') as MatchConfig['diff'] | '';
-/** Default 3v3: you (Pikachu, forward) with Lucario and Bronzong vs Togekiss, Lucario, Bronzong. */
-const defaultLineup = (): MatchConfig['lineup'] => parseLineup('pikachu,lucario,bronzong/togekiss,lucario,bronzong');
+/** Default 3v3: you (Zeraora, forward) with Lucario and Bronzong vs Hoopa, Lucario, Bronzong. */
+const defaultLineup = (): MatchConfig['lineup'] => parseLineup('zeraora,lucario,bronzong/hoopa,lucario,bronzong');
 /** Practice sandbox: you and one enemy dummy (OS practice mode). */
 const practiceLineup = (): MatchConfig['lineup'] => [
-  { pokemonId: 'pikachu', team: 0 },
+  { pokemonId: 'zeraora', team: 0 },
   { pokemonId: 'lucario', team: 1 },
 ];
 const urlConfig: MatchConfig | null = cpuLineup
@@ -105,7 +105,7 @@ let PRACTICE = false;
 let ME = 0;
 let DIFF: string = config.diff;
 let brain = getBrain('v2');
-let myPokemon = 'pikachu';
+let myPokemon = 'zeraora';
 
 function applyConfig(c: MatchConfig): void {
   config = c;
@@ -317,7 +317,7 @@ const $name = document.querySelector<HTMLDivElement>('#mon-name')!;
 const $info = document.querySelector<HTMLDivElement>('#mon-info')!;
 const $portrait = document.querySelector<HTMLImageElement>('#portrait')!;
 function showCard(def: PokemonDef): void {
-  $name.textContent = `${def.name}  #${def.dex}`;
+  $name.textContent = `${def.name}  #${def.dex.slice(0, 4)}`;
   const s = def.stats;
   $info.textContent =
     `${def.archetype.replace(/-/g, ' ')} · ${def.types.join('/')}\n` +
@@ -406,6 +406,12 @@ function onEvent(e: SimEvent): void {
       hud.pop('Blasted off!', s.x, s.y, 'ko');
       effects.ring(toThreeX(e.pos.x), toThreeZ(e.pos.y), 0xff4d5e, 3, 0.5);
       effects.shake(0.3);
+      break;
+    }
+    case 'rescue': {
+      const s = at(e.to, 2.2);
+      hud.pop('Saved!', s.x, s.y, 'stg');
+      effects.ring(toThreeX(e.to.x), toThreeZ(e.to.y), 0xfff3b0, 2.2, 0.5);
       break;
     }
     case 'respawn':

@@ -39,7 +39,7 @@ describe('stage', () => {
 function attackWorld(ball = { x: 0, y: 0 }): World {
   return sandbox(
     [
-      { pokemonId: 'pikachu', team: 0, pos: { x: -900, y: -800 } },
+      { pokemonId: 'zeraora', team: 0, pos: { x: -900, y: -800 } },
       { pokemonId: 'bronzong', team: 1, pos: { x: -900, y: 800 } },
     ],
     ball,
@@ -99,7 +99,7 @@ describe('barriers, gates and goals', () => {
 function liveMatch(): World {
   const w = createWorld(
     [
-      { pokemonId: 'pikachu', team: 0 },
+      { pokemonId: 'zeraora', team: 0 },
       { pokemonId: 'lucario', team: 1 },
     ],
     { mode: 'match' },
@@ -111,7 +111,7 @@ function liveMatch(): World {
 
 describe('match flow', () => {
   it('kickoff: players at their starts, ball on a side spot, then play', () => {
-    const w = createWorld([{ pokemonId: 'pikachu', team: 0 }], { mode: 'match' });
+    const w = createWorld([{ pokemonId: 'zeraora', team: 0 }], { mode: 'match' });
     expect(w.match.phase).toBe('kickoff');
     expect(w.players[0]!.pos).toEqual(w.stage.spawns[0].forwards[0]);
     expect(w.ball.pos).toEqual(w.stage.ballSpawns[0]);
@@ -178,7 +178,7 @@ describe('match flow', () => {
   it('assists: teammates who touched the ball in the last 3 s', () => {
     const w = createWorld(
       [
-        { pokemonId: 'pikachu', team: 0, slot: 0 },
+        { pokemonId: 'zeraora', team: 0, slot: 0 },
         { pokemonId: 'greninja', team: 0, slot: 1 },
         { pokemonId: 'bronzong', team: 1, role: 'goalie' },
       ],

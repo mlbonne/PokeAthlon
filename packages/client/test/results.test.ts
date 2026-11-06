@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createWorld, parseLineup } from '@pokeathlon/sim';
 import { accolades, setMvps } from '../src/results';
 
-const world = () => createWorld(parseLineup('pikachu,lucario,bronzong/togekiss,machamp,blastoise'), { mode: 'match' });
+const world = () => createWorld(parseLineup('zeraora,lucario,bronzong/hoopa,machamp,blastoise'), { mode: 'match' });
 const zero = { goals: 0, assists: 0, kos: 0, saves: 0, damageDealt: 0, shots: 0, redirects: 0, orbs: 0, deaths: 0 };
 
 describe('results', () => {
