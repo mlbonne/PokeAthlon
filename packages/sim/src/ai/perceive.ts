@@ -34,7 +34,15 @@ export function perceive(world: World): Perception {
   const hit = cache.get(world);
   if (hit && hit.tick === world.tick) return hit;
   const b = world.ball;
-  const pred = b.scored ? { path: [], goalAgainst: -1 as const, ticks: 0, barriersBroken: [] } : reusePrediction(world, hit) ?? predictBall(world, MAX_LOOKAHEAD);
+  // The last prediction lives in the world state (not in this cache), so whether it can be reused
+  // is the same on every machine and after a netcode rollback.
+  const last = world.ai.ballPred;
+  const pred = b.scored
+    ? { path: [], goalAgainst: -1 as const, ticks: 0, barriersBroken: [] }
+    : last && last.tick === world.tick
+      ? last.pred
+      : (reusePrediction(world, last) ?? predictBall(world, MAX_LOOKAHEAD));
+  world.ai.ballPred = { tick: world.tick, pred };
   const ballAt = (t: number): Vec2 => (t <= 0 || pred.path.length === 0 ? b.pos : pred.path[Math.min(t, pred.path.length) - 1]!);
   const intercept = world.players.map((p) => interceptFor(world, p, ballAt, pred.path.length));
   const perc: Perception = { tick: world.tick, pred, ballAt, intercept };
@@ -42,12 +50,17 @@ export function perceive(world: World): Perception {
   return perc;
 }
 
+/** Drop the per-tick cache (the world was restored to another state). */
+export function forgetPerception(world: World): void {
+  cache.delete(world);
+}
+
 /**
  * Nobody but the players touches the ball, and players only change it through the events above,
  * so an untouched ball follows last tick's prediction exactly: shift it by one tick instead of
  * re-simulating (keeps headless batches fast). Re-simulate when it gets short.
  */
-function reusePrediction(world: World, prev: Perception | undefined): BallPrediction | null {
+function reusePrediction(world: World, prev: { tick: number; pred: BallPrediction } | null): BallPrediction | null {
   if (!prev || prev.tick !== world.tick - 1 || prev.pred.path.length < MAX_LOOKAHEAD / 2) return null;
   if (world.events.some((e) => INVALIDATES.has(e.type)) || world.creations.length > 0) return null;
   const q = prev.pred.path[0];

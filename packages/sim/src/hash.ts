@@ -86,3 +86,18 @@ export function hashWorld(w: World): string {
   for (const r of w.ai.rng) mixU32(r);
   return (h >>> 0).toString(16).padStart(8, '0');
 }
+
+/**
+ * Hash of the WHOLE match state (everything but the static stage and last tick's events), for
+ * netcode desync checks. Slower than {@link hashWorld} (about 1 ms), so it runs about once a second.
+ * Numbers are written in their shortest exact form, so equal hashes mean bit-equal states.
+ */
+export function hashWorldDeep(w: World): string {
+  const json = JSON.stringify(w, (k, v: unknown) => (k === 'stage' || k === 'events' ? undefined : v));
+  let h = 0x811c9dc5;
+  for (let i = 0; i < json.length; i++) {
+    h ^= json.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(16).padStart(8, '0');
+}

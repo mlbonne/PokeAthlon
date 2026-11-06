@@ -13,6 +13,7 @@
   },
   "scripts": {
     "dev": "npm run dev -w @pokeathlon/client",
+    "dev:lan": "npm run dev -w @pokeathlon/client -- --host",
     "build": "npm run build -w @pokeathlon/client",
     "preview": "npm run preview -w @pokeathlon/client",
     "test": "vitest run",
@@ -26,7 +27,9 @@
     "ladder": "tsx tools/sim-batch.ts --ladder",
     "balance": "tsx tools/balance.ts",
     "playstyle": "tsx tools/playstyle.ts",
-    "kits": "tsx tools/kits.ts"
+    "kits": "tsx tools/kits.ts",
+    "determinism": "tsx tools/determinism.ts",
+    "server": "tsx packages/server/src/main.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

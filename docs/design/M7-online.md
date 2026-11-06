@@ -70,3 +70,67 @@ Each can come later on top of rooms.
 2. **Scope:** private rooms with codes only (no matchmaking), with bots filling empty seats?
 3. **Names:** just a nickname you type in, with no accounts?
 4. **Hosting:** decide now, or when we reach 7.5? (My suggestion: your PC first, then Cloudflare.)
+
+## ✅ What shipped (2026-11-06: steps 7.0–7.4)
+
+Your answers: rollback, private rooms with bots in empty seats, a typed nickname, hosting decided later.
+
+### How to play with friends
+1. **On the host PC:**
+   - start the room server with `npm run server`, which listens on port 8787;
+   - start the game with `npm run dev:lan` (`npm run dev` only serves this PC).
+   - Windows may ask to allow Node through the firewall: allow it on private networks.
+2. **Everyone opens the game:**
+   - on the host PC: `http://localhost:5173/?online=1`;
+   - on other PCs on the same network: `http://<host PC address>:5173/?online=1` (the server window prints the address).
+
+   The server field fills itself in.
+3. **The room:**
+   - one player clicks **Create a room**, and the others type its 4-letter code or open the share link;
+   - each player takes a seat and picks a Pokémon and item;
+   - the host (★) sets CPU skill and boosts, picks for the CPU seats, and clicks **Start match**.
+4. **Friends outside your network** need a tunnel or port forwarding. That's step 7.5, not done yet.
+
+### What's in it
+- **7.0 Determinism:**
+  - `snapshotWorld` / `restoreWorld` save and restore the game state (about 0.6 ms), and `hashWorldDeep` hashes the whole state;
+  - the probe gives the same 18 checkpoint hashes in Node and Chromium (`npm run determinism`, `determinism.html`). ⚠ Firefox wasn't tested: it isn't installed here. Live hash checks would catch a difference.
+  - **Bug found and fixed:** the bots kept their ball prediction outside the game state, so after a rollback they saw something slightly different and matches with bots drifted apart. The prediction now lives in `world.ai.ballPred`.
+- **7.1 Rollback** (`packages/net`, `RollbackSession`):
+  - 2-tick input delay, guessing other players' inputs, rewinding up to 8 ticks, then waiting;
+  - bots computed on every machine;
+  - a seat can switch between bot and human (drop-out and rejoin);
+  - effects aren't shown twice after a rewind;
+  - a state hash every 2 s.
+  - **Tests** use a fake network with lag and jitter: 2 or 6 players stay in sync; the online result equals an offline replay; drop-out and rejoin.
+- **7.2 Server** (`packages/server`, `npm run server`):
+  - rooms with 4-letter codes, seats, host settings and picks;
+  - passes inputs between players and keeps a full input log;
+  - compares hashes and reports a desync;
+  - sends pacing updates.
+  - Uses `ws` 8.21.3.
+- **7.3 Game:**
+  - **Play online** on the pick screen (or `?online=1`, or a `&room=CODE` link);
+  - a room screen;
+  - the match runs through the rollback session, and the boost draft works online (picks are inputs).
+  - **Esc** opens the room screen over the match, which doesn't pause online;
+  - the results screen takes you back to the room (the host ends the match for everyone);
+  - room, ping and rollback count show in a corner.
+- **7.4 Network trouble:**
+  - **Dropped connection:** a CPU plays your seat from the next tick. Reloading the page rejoins the same seat: the match so far is replayed, then the seat comes back 1.5 s ahead.
+  - **Background tab:** browsers stop running a tab you switch away from. A player who sends nothing for 3 s while behind gets a CPU, and takes the seat back automatically on returning to the tab. Without this, everyone else would freeze.
+  - **Host leaves:** the host role passes on.
+  - **Desync:** an "out of sync" message.
+
+### Checked
+- **Tests:** 194 pass, including real WebSocket tests (room, match in sync, end match, drop and rejoin, background tab, desync detection).
+- **In the browser:** two tabs (Ash on Blue, Misty on Red) created and joined a room and played about 30 s through the server: the same boost picks, the same positions, no desync.
+- ⚠ **Not checked:**
+  - real play at real ping on two PCs, since the test tabs were driven by a script;
+  - Firefox and Safari;
+  - how rollback corrections look on screen.
+
+### Not done yet
+- **7.5 Hosting:** play outside your home network. You choose: a tunnel from your PC, Cloudflare free, or a paid host.
+- **7.6 Playtest** with friends.
+- **Smoothing:** a remote player corrected by a rollback jumps to the right place instead of sliding there.

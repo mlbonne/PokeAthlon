@@ -137,6 +137,7 @@ export class SetupScreen {
   constructor(
     root: HTMLElement,
     private readonly onStart: (c: MatchConfig) => void,
+    private readonly onOnline: () => void = () => {},
   ) {
     this.el = document.createElement('div');
     this.el.id = 'setup';
@@ -259,6 +260,7 @@ export class SetupScreen {
           <button class="big" data-go="play">Play</button>
           <button data-go="spectate">Watch CPU vs CPU</button>
           <button data-go="practice">Practice</button>
+          <button data-go="online">Play online</button>
         </div>
         <p class="hint">Click a slot, then a Pokémon. Mouse, keyboard or controller (D-pad + A). In a match: Esc / Start returns here · F3 / Back debug menu.</p>
       </div>`;
@@ -324,6 +326,10 @@ export class SetupScreen {
       }
       if (key === 'reroll') s.seed = (s.seed * 48271 + 11) % 2147483647;
       focus = `[data-set="${t.dataset.set}"]`;
+    } else if (t.dataset.go === 'online') {
+      save(s);
+      this.onOnline();
+      return;
     } else if (t.dataset.go) {
       save(s);
       this.onStart(this.config(t.dataset.go as 'play' | 'spectate' | 'practice'));

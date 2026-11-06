@@ -28,6 +28,8 @@ export { beginKickoff, frozenPhase, scoreGoal } from './match';
 export { addXp, specialUnlocked } from './progression';
 export * from './practice';
 export * from './rng';
+export * from './snapshot';
+export * from './determinism';
 export * from './stage';
 export * from './telemetry';
 export * from './vec';
