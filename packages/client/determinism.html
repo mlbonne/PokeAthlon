@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>PokéAthlon determinism check</title>
+    <style>
+      body { font: 15px/1.5 system-ui, sans-serif; background: #15122b; color: #eee; padding: 24px; }
+      code { font-size: 18px; color: #ffd166; }
+    </style>
+  </head>
+  <body>
+    <h1>Determinism check (M7.0)</h1>
+    <p>Runs a fixed 3-minute 3v3 bot match. Every browser must show the same final hash as <code>npm run determinism</code>.</p>
+    <p id="out">Running…</p>
+    <script type="module">
+      import { determinismProbe } from '@pokeathlon/sim';
+      setTimeout(() => {
+        const t = performance.now();
+        const h = determinismProbe();
+        document.querySelector('#out').innerHTML =
+          `Final hash: <code id="final">${h.at(-1)}</code> (${Math.round(performance.now() - t)} ms)<br><small>${h.join(' ')}</small>`;
+      }, 50);
+    </script>
+  </body>
+</html>

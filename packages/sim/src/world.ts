@@ -32,6 +32,7 @@ import { stepMovement } from './movement';
 import { stepOrbs } from './orbs';
 import { stepPassiveXp } from './progression';
 import type { BotMemory, TeamPlan } from './ai/memory';
+import type { BallPrediction } from './ball';
 import { mixSeed } from './rng';
 import { buildStage, onOwnHalf, type Stage, type Team } from './stage';
 import { stepStrike } from './strike';
@@ -234,7 +235,13 @@ export interface World {
    * Bot state: one seeded RNG stream per player (hashed, so replays stay exact), each bot's
    * memory and each team's job plan. Plain data, a pure function of the match so far.
    */
-  ai: { rng: number[]; bots: (BotMemory | null)[]; teams: [TeamPlan | null, TeamPlan | null] };
+  ai: {
+    rng: number[];
+    bots: (BotMemory | null)[];
+    teams: [TeamPlan | null, TeamPlan | null];
+    /** Last ball prediction the bots made and its tick (state, so a rollback restores it too). */
+    ballPred: { tick: number; pred: BallPrediction } | null;
+  };
   /** Balance telemetry, updated at the end of every step. */
   telemetry: Telemetry;
   /** Boost drafts on (M5.6): before the first kickoff and after every set. */
@@ -322,7 +329,7 @@ export function createWorld(spawns: PlayerSpawn[], opts: WorldOptions = {}): Wor
     nextEntityId: 1,
     events: [],
     seed: opts.seed ?? 0,
-    ai: { rng: spawns.map((_, i) => mixSeed(((opts.seed ?? 0) * 16 + i) >>> 0)), bots: spawns.map(() => null), teams: [null, null] },
+    ai: { rng: spawns.map((_, i) => mixSeed(((opts.seed ?? 0) * 16 + i) >>> 0)), bots: spawns.map(() => null), teams: [null, null], ballPred: null },
     telemetry: null as unknown as Telemetry,
     boostsOn: mode === 'match' && !!opts.boosts,
     draft: null,

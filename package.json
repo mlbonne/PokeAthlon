@@ -26,7 +26,8 @@
     "ladder": "tsx tools/sim-batch.ts --ladder",
     "balance": "tsx tools/balance.ts",
     "playstyle": "tsx tools/playstyle.ts",
-    "kits": "tsx tools/kits.ts"
+    "kits": "tsx tools/kits.ts",
+    "determinism": "tsx tools/determinism.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
