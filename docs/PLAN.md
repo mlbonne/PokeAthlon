@@ -138,7 +138,7 @@ apply short status effects. No full damage chart: keeps it readable.
 | Build | **Vite** | Fast dev server and builds |
 | Rendering | **Three.js** | Tilted top-down 3D arena with billboarded PMD sprites, the look Pokébonk proves works |
 | Simulation | **Custom 2D fixed-step physics** (circles and segments, 60 Hz, seeded RNG) | Small, deterministic, fully under our control. Gameplay is 2D even if the view is 3D |
-| Netcode (M7) | **Authoritative Node server over WebSocket** with client prediction. Rollback considered later | The same sim code runs in browser and server |
+| Netcode (M7) | **Rollback over a small Node WebSocket relay** (proposed in [M7-online.md](design/M7-online.md); originally server-authoritative) | The same deterministic sim runs on every player's machine; only inputs travel |
 | Tests | **Vitest** | Unit tests for physics, rules and data validation; golden replays for determinism |
 | Data | JSON + **Zod** schemas | Pokémon, moves, items, stages; validated at load and in CI |
 | Packaging (optional) | Browser first, desktop wrapper (Tauri/Electron) later | |
@@ -173,7 +173,7 @@ Each milestone ends in something you can play, a git tag, and a short changelog.
 | **M4** ✅ | **The 3v3 Patch** ([plan](design/M4-3v3-patch.md)) | Smart kit-agnostic CPUs (prediction, team jobs, utility AI, difficulty), balance toolkit (telemetry, kit analyzer, F3 debug meter, headless batch sim, impact score), playable 3v3 with gamepad |
 | **M5** ✅ | **Meta** ([plan](design/M5-meta.md)) | All 8 Pokémon (move-system extensions + 4 new kits), held items, drafted boosts, OS-style pick screen with CPU drafting, between-set draft, results screen with per-role MVP and accolades |
 | **M6** | **Stages** | 5 arenas, each with one OS map gimmick (Speed Gate, gravity well, chasm, portals, speed strips) and a biome art pass based on Pokébonk v0.9.8's new areas. [Plan](design/M6-stages.md). **Status (2026-11-06):** stage 1 Pokémon Stadium ✅; the other stages are on hold by your call. **Planned: a stage editor** so you can build your own stages ([M6-stages.md](design/M6-stages.md#stage-editor-planned)) |
-| **M7** | **Online** | Lobby, server-authoritative matches, prediction and interpolation, private rooms |
+| **M7** | **Online** ([plan](design/M7-online.md)) | Private 3v3 rooms with codes, bots fill empty seats; rollback netcode over a small input-relay server (replaces the earlier server-authoritative idea, see the plan §2) |
 | **M8** | **Polish and balance** | Audio, VFX, tutorial, balance pass from match telemetry, release build |
 
 Short term: **M0–M2 is the vertical slice**: proof that the core loop is fun before content gets built.
