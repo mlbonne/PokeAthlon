@@ -16,12 +16,12 @@ import {
 } from '../src/index';
 import { sandbox } from './helpers';
 
-const trio = parseLineup('pikachu,lucario,bronzong/togekiss,lucario,bronzong');
+const trio = parseLineup('zeraora,lucario,bronzong/hoopa,lucario,bronzong');
 
 describe('bot brain v2', () => {
   it('is deterministic: same seed, same match', () => {
-    const a = runHeadless(parseLineup('pikachu/lucario'), { seed: 5, until: 'goal' });
-    const b = runHeadless(parseLineup('pikachu/lucario'), { seed: 5, until: 'goal' });
+    const a = runHeadless(parseLineup('zeraora/lucario'), { seed: 5, until: 'goal' });
+    const b = runHeadless(parseLineup('zeraora/lucario'), { seed: 5, until: 'goal' });
     expect(a.hash).toBe(b.hash);
   });
 
@@ -29,7 +29,7 @@ describe('bot brain v2', () => {
     let v2 = 0;
     for (let s = 1; s <= 4; s++) {
       const swap = s % 2 === 0;
-      const r = runHeadless(parseLineup('pikachu/pikachu'), { seed: s, brains: swap ? ['v1', 'v2'] : ['v2', 'v1'], until: 'set', maxMinutes: 10 });
+      const r = runHeadless(parseLineup('zeraora/zeraora'), { seed: s, brains: swap ? ['v1', 'v2'] : ['v2', 'v1'], until: 'set', maxMinutes: 10 });
       if (r.sets[swap ? 1 : 0] === 1) v2++; // `until: 'set'` → whoever took the first set
     }
     expect(v2).toBeGreaterThanOrEqual(3);
@@ -57,15 +57,22 @@ describe('bot brain v2', () => {
 
   it('hardly ever whiffs a Strike (hold-to-strike timing)', () => {
     const r = runHeadless(trio, { seed: 3, until: 'set' });
+    // One set is only ~20 swings per bot, and a ball held by Hoopa's Psychic can't be hit, so check
+    // the whole lobby tightly and each bot loosely.
+    let hits = 0;
+    let casts = 0;
     for (const p of r.telemetry.players) {
       const s = p.moves.strike;
       if (!s) continue;
-      expect(s.ballHits / s.casts).toBeGreaterThan(0.85);
+      hits += s.ballHits;
+      casts += s.casts;
+      expect(s.ballHits / s.casts).toBeGreaterThan(0.75);
     }
+    expect(hits / casts).toBeGreaterThan(0.9);
   });
 
   it('every kit gets a move model, and bots use their moves', () => {
-    for (const id of ['pikachu', 'lucario', 'bronzong', 'togekiss']) expect(moveModels(id)).toHaveLength(3);
+    for (const id of ['zeraora', 'lucario', 'bronzong', 'hoopa']) expect(moveModels(id)).toHaveLength(3);
     const r = runHeadless(trio, { seed: 4, until: 'set' });
     const casts = r.telemetry.players.reduce((s, p) => s + Object.entries(p.moves).filter(([k]) => k !== 'strike').reduce((a, [, m]) => a + m.casts, 0), 0);
     expect(casts).toBeGreaterThan(20);
@@ -81,7 +88,7 @@ describe('shot evaluation', () => {
   const open = (): World => {
     const w = sandbox(
       [
-        { pokemonId: 'pikachu', team: 0, pos: { x: 600, y: 0 } },
+        { pokemonId: 'zeraora', team: 0, pos: { x: 600, y: 0 } },
         { pokemonId: 'lucario', team: 1, pos: { x: -900, y: 600 } },
       ],
       { x: 700, y: 0 },
@@ -100,7 +107,7 @@ describe('shot evaluation', () => {
   });
 
   it('predictBall can launch a hypothetical hit and reports broken barriers', () => {
-    const w = sandbox([{ pokemonId: 'pikachu', team: 0, pos: { x: 0, y: 0 } }], { x: 900, y: 370 });
+    const w = sandbox([{ pokemonId: 'zeraora', team: 0, pos: { x: 0, y: 0 } }], { x: 900, y: 370 });
     const pred = predictBall(w, 60, { vel: { x: 1500, y: 0 } });
     expect(pred.barriersBroken.length).toBeGreaterThan(0);
     expect(w.barriers.every((b) => b.alive)).toBe(true); // the real world is untouched

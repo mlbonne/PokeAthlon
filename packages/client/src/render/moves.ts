@@ -31,6 +31,7 @@ export class MoveViews {
   readonly object = new THREE.Group();
   private readonly projectiles = new Map<number, THREE.Group>();
   private readonly walls = new Map<number, THREE.Mesh>();
+  private readonly guardians = new Map<number, THREE.Group>();
   private readonly auras: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>[] = [];
   private flashes: Flash[] = [];
   private time = 0;
@@ -126,6 +127,40 @@ export class MoveViews {
       if (!liveW.has(id)) {
         this.object.remove(m);
         this.walls.delete(id);
+      }
+    }
+
+    // Guardian zones: a soft disc with a bright rim that pulses on each heal and fades out at the end.
+    const liveG = new Set<number>();
+    for (const g of world.guardians) {
+      liveG.add(g.id);
+      let grp = this.guardians.get(g.id);
+      if (!grp) {
+        grp = new THREE.Group();
+        const color = new THREE.Color(g.color);
+        const disc = new THREE.Mesh(
+          new THREE.CircleGeometry(g.radius * W, 48),
+          new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.18, depthWrite: false }),
+        );
+        const rim = new THREE.Mesh(
+          new THREE.RingGeometry(g.radius * W * 0.93, g.radius * W, 48),
+          new THREE.MeshBasicMaterial({ color: color.clone().lerp(new THREE.Color(0xffffff), 0.5), transparent: true, opacity: 0.8, depthWrite: false }),
+        );
+        disc.rotation.x = rim.rotation.x = -Math.PI / 2;
+        grp.add(disc, rim);
+        grp.position.set(toThreeX(g.pos.x), 0.04, toThreeZ(g.pos.y));
+        this.guardians.set(g.id, grp);
+        this.object.add(grp);
+      }
+      const fade = Math.min(1, g.ticks / 15);
+      const pulse = 1 - g.next / Math.max(1, g.interval);
+      (grp.children[0] as THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>).material.opacity = (0.12 + 0.12 * pulse) * fade;
+      (grp.children[1] as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>).material.opacity = 0.8 * fade;
+    }
+    for (const [id, grp] of this.guardians) {
+      if (!liveG.has(id)) {
+        this.object.remove(grp);
+        this.guardians.delete(id);
       }
     }
 

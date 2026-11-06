@@ -2,7 +2,7 @@
  * Static kit report: every move's reach, area, timing, damage, DPS, knockback and ball power, plus a
  * per-Pokémon summary and provisional power budget. Pure data, no matches played.
  *
- *   npm run kits [-- --only pikachu,lucario] [--out reports]
+ *   npm run kits [-- --only zeraora,lucario] [--out reports]
  *
  * Prints Markdown tables and writes reports/kits-<date>.md and .json.
  */

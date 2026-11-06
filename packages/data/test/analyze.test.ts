@@ -3,9 +3,9 @@ import { analyzeMove, analyzeRoster, analyzeStrike, BUDGET_PART_CAP, KO_EDGE_DIS
 import { getPokemon, MoveDef, SIZE_TABLE } from '../src/index';
 import { gameplay } from '../src/rules';
 
-const pikachu = getPokemon('pikachu'); // power 95, normal size (body 46)
+const zeraora = getPokemon('zeraora'); // power 95, normal size (body 46)
 const BODY = SIZE_TABLE.normal.radius;
-const P = pikachu.stats.power;
+const P = zeraora.stats.power;
 
 /** Build a validated move from a few fields. */
 function move(actions: unknown[], extra: Record<string, unknown> = {}) {
@@ -16,7 +16,7 @@ const hit = { player: { base: 200, powerRatio: 1 }, damage: { base: 100, powerRa
 
 describe('kit analyzer: shapes', () => {
   it('projectile: reach = body + range + radius, flight time, corridor area', () => {
-    const m = analyzeMove(move([{ type: 'projectile', fx, speed: 1000, range: 600, radius: 30, hit }]), pikachu);
+    const m = analyzeMove(move([{ type: 'projectile', fx, speed: 1000, range: 600, radius: 30, hit }]), zeraora);
     expect(m.reach).toBe(BODY + 600 + 30);
     expect(m.timeToReach).toBeCloseTo(0.6);
     expect(m.hitArea).toBeCloseTo(Math.PI * 900);
@@ -27,27 +27,27 @@ describe('kit analyzer: shapes', () => {
   });
 
   it('decelerating projectile stops early (v² / 2a)', () => {
-    const m = analyzeMove(move([{ type: 'projectile', fx, speed: 1500, decel: 1500, range: 900, radius: 70, hit }]), pikachu);
+    const m = analyzeMove(move([{ type: 'projectile', fx, speed: 1500, decel: 1500, range: 900, radius: 70, hit }]), zeraora);
     expect(m.reach).toBe(BODY + 750 + 70);
     expect(m.timeToReach).toBeCloseTo(1.0); // 750 = 1500 t − 750 t² → t = 1
   });
 
   it('a stream of shots hits one target count times; a fan only once', () => {
-    const stream = analyzeMove(move([{ type: 'projectile', fx, count: 4, interval: 0.1, speed: 1000, range: 500, radius: 20, hit }]), pikachu);
+    const stream = analyzeMove(move([{ type: 'projectile', fx, count: 4, interval: 0.1, speed: 1000, range: 500, radius: 20, hit }]), zeraora);
     expect(stream.hitsPerCast).toBe(4);
     expect(stream.duration).toBeCloseTo(0.3 + 0.5);
-    const fan = analyzeMove(move([{ type: 'projectile', fx, count: 3, spreadDeg: 30, speed: 1000, range: 500, radius: 20, hit }]), pikachu);
+    const fan = analyzeMove(move([{ type: 'projectile', fx, count: 3, spreadDeg: 30, speed: 1000, range: 500, radius: 20, hit }]), zeraora);
     expect(fan.hitsPerCast).toBe(1);
   });
 
   it('areas: circle, cone, line and target-placed', () => {
-    const cone = analyzeMove(move([{ type: 'area', fx, shape: 'cone', radius: 200, angleDeg: 90, hit }]), pikachu);
+    const cone = analyzeMove(move([{ type: 'area', fx, shape: 'cone', radius: 200, angleDeg: 90, hit }]), zeraora);
     expect(cone.reach).toBe(200);
     expect(cone.hitArea).toBeCloseTo((Math.PI * 200 * 200) / 4);
-    const line = analyzeMove(move([{ type: 'area', fx, shape: 'line', length: 300, width: 100, offset: 50, hit }]), pikachu);
+    const line = analyzeMove(move([{ type: 'area', fx, shape: 'line', length: 300, width: 100, offset: 50, hit }]), zeraora);
     expect(line.reach).toBe(350);
     expect(line.hitArea).toBe(30000);
-    const target = analyzeMove(move([{ type: 'area', fx, shape: 'circle', radius: 320, at: 'target', delay: 1, hit }], { range: 900, castTime: 0.2 }), pikachu);
+    const target = analyzeMove(move([{ type: 'area', fx, shape: 'circle', radius: 320, at: 'target', delay: 1, hit }], { range: 900, castTime: 0.2 }), zeraora);
     expect(target.reach).toBe(1220);
     expect(target.timeToReach).toBeCloseTo(1.2);
     expect(target.lockTime).toBeCloseTo(0.2);
@@ -56,7 +56,7 @@ describe('kit analyzer: shapes', () => {
   it('repeats add hits; LIGHT hits only knock back Staggered targets', () => {
     const m = analyzeMove(
       move([{ type: 'area', fx, shape: 'circle', radius: 100, repeat: 4, repeatInterval: 0.1, hit: { ...hit, light: true } }]),
-      pikachu,
+      zeraora,
     );
     expect(m.hitsPerCast).toBe(4);
     expect(m.damagePerCast).toBe(4 * (100 + P));
@@ -66,22 +66,22 @@ describe('kit analyzer: shapes', () => {
   });
 
   it('dash: reach, mobility and lock time', () => {
-    const m = analyzeMove(move([{ type: 'dash', fx, distance: 500, time: 0.25, hit }]), pikachu);
+    const m = analyzeMove(move([{ type: 'dash', fx, distance: 500, time: 0.25, hit }]), zeraora);
     expect(m.reach).toBe(500 + BODY);
     expect(m.mobility).toBe(500);
     expect(m.lockTime).toBeCloseTo(0.25);
-    const free = analyzeMove(move([{ type: 'dash', fx, distance: 500, time: 0.25, castWhileDashing: true }]), pikachu);
+    const free = analyzeMove(move([{ type: 'dash', fx, distance: 500, time: 0.25, castWhileDashing: true }]), zeraora);
     expect(free.lockTime).toBe(0);
     expect(free.hitsPerCast).toBe(0);
   });
 
   it('decaying speed buffs count half their bonus', () => {
-    const m = analyzeMove(move([{ type: 'buff', fx, target: 'self', duration: 4, speedPct: 50, decays: true }]), pikachu);
-    expect(m.mobility).toBeCloseTo(pikachu.stats.speed * 0.5 * 4 * 0.5);
+    const m = analyzeMove(move([{ type: 'buff', fx, target: 'self', duration: 4, speedPct: 50, decays: true }]), zeraora);
+    expect(m.mobility).toBeCloseTo(zeraora.stats.speed * 0.5 * 4 * 0.5);
   });
 
   it('Strike reach = Strike radius + the ball radius', () => {
-    const s = analyzeStrike(pikachu);
+    const s = analyzeStrike(zeraora);
     expect(s.reach).toBeCloseTo(SIZE_TABLE.normal.strikeWidth / 2 + gameplay.ball.radius);
     expect(s.cooldown).toBe(gameplay.strike.cooldown);
   });
@@ -91,7 +91,7 @@ describe('kit analyzer: roster', () => {
   const all = analyzeRoster();
 
   it('covers every Pokémon with a kit, with three moves each', () => {
-    expect(all.map((f) => f.id).sort()).toEqual(['blastoise', 'bronzong', 'greninja', 'hoopa', 'lucario', 'machamp', 'pikachu', 'togekiss']);
+    expect(all.map((f) => f.id).sort()).toEqual(['arcanine-hisui', 'blastoise', 'bronzong', 'greninja', 'hoopa', 'lucario', 'machamp', 'zeraora']);
     for (const f of all) expect(f.moves).toHaveLength(3);
   });
 

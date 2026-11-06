@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { gameplay } from '@pokeathlon/data';
+import { gameplay, getPokemon } from '@pokeathlon/data';
 import { Button, hitBall, pointInPolygon, quantizeInput, step, ticks, TICK_RATE, type World } from '../src/index';
 import { idle, run, sandbox, speedOf } from './helpers';
 
 const STRIKE = (aimX: number, aimY: number) => quantizeInput(0, 0, aimX, aimY, Button.Strike);
-const PIKACHU_KB = 1230 + 1.25 * 95;
+const PIKACHU_KB = 1230 + 1.25 * getPokemon('zeraora').stats.power;
 
-/** Pikachu (power 95) standing `dx` from a ball at (0, by). */
+/** Zeraora (power 95) standing `dx` from a ball at (0, by). */
 function setup(dx = -130, by = 0): World {
-  return sandbox([{ pokemonId: 'pikachu', team: 0, pos: { x: dx, y: by } }], { x: 0, y: by });
+  return sandbox([{ pokemonId: 'zeraora', team: 0, pos: { x: dx, y: by } }], { x: 0, y: by });
 }
 
 describe('strike', () => {
@@ -36,9 +36,9 @@ describe('strike', () => {
     expect(miss.events.map((e) => e.type)).toEqual(['strike']);
   });
 
-  it('Very Large strikers (Bronzong) get the OS Large Strike: diameter 285', () => {
-    const w = sandbox([{ pokemonId: 'bronzong', team: 0, pos: { x: -189, y: 0 } }], { x: 0, y: 0 });
-    expect(w.players[0]!.strikeRadius).toBe(142.5);
+  it('Large strikers (Bronzong) get the OS Medium Strike: diameter 265', () => {
+    const w = sandbox([{ pokemonId: 'bronzong', team: 0, pos: { x: -178, y: 0 } }], { x: 0, y: 0 });
+    expect(w.players[0]!.strikeRadius).toBe(132.5);
     step(w, [STRIKE(1, 0)]);
     expect(w.events.some((e) => e.type === 'ballHit')).toBe(true);
   });
@@ -114,7 +114,7 @@ describe('ball physics', () => {
     expect(gameplay.ball.bodyBlocking).toBe(false);
     const w = sandbox(
       [
-        { pokemonId: 'pikachu', team: 0, pos: { x: -130, y: -600 } },
+        { pokemonId: 'zeraora', team: 0, pos: { x: -130, y: -600 } },
         { pokemonId: 'bronzong', team: 1, pos: { x: 500, y: -600 } },
       ],
       { x: 0, y: -600 },
@@ -128,7 +128,7 @@ describe('ball physics', () => {
 
 /** Put the ball in motion directly (no hitstop) for physics checks. */
 function moving(vx: number, vy: number, x = 0, y = 0): World {
-  const w = sandbox([{ pokemonId: 'pikachu', team: 0, pos: { x: -900, y: 800 } }], { x, y });
+  const w = sandbox([{ pokemonId: 'zeraora', team: 0, pos: { x: -900, y: 800 } }], { x, y });
   w.ball.vel = { x: vx, y: vy };
   return w;
 }

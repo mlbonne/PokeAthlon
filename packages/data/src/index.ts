@@ -26,13 +26,15 @@ export const Archetype = z.enum([
   'empowering-enchanter',
   'stalwart-protector',
   'shield-user',
+  'angelic-support',
   'flexible-brawler',
   'hulking-beast',
 ]);
 
 export const PokemonDef = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
-  dex: z.string().regex(/^\d{4}$/),
+  /** SpriteCollab folder: `0059`, or a form folder like `0059/0001` (Hisuian Arcanine). */
+  dex: z.string().regex(/^\d{4}(\/\d{4})?$/),
   name: z.string().min(1),
   archetype: Archetype,
   types: z.array(z.string()).min(1).max(2),

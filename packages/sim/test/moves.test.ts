@@ -51,7 +51,7 @@ describe('deterministic trig', () => {
 
 describe('casting rules', () => {
   it('moves cast on press, go on cooldown, and specials need level 2', () => {
-    const w = sandbox([{ pokemonId: 'pikachu', team: 0, pos: { x: -500, y: 0 } }], { x: 0, y: -850 });
+    const w = sandbox([{ pokemonId: 'zeraora', team: 0, pos: { x: -500, y: 0 } }], { x: 0, y: -850 });
     expect(types(cast(w, 0, Button.Signature))).not.toContain('cast'); // Lv 1: locked
     expect(types(cast(w, 0, Button.Move1))).toContain('cast');
     expect(w.players[0]!.moves[0]!.cooldown).toBeGreaterThan(0);
@@ -69,9 +69,9 @@ describe('casting rules', () => {
   });
 });
 
-describe('Pikachu (Speedy Skirmisher)', () => {
-  it('Thunder Shock fires 4 bolts over time; a bolt nudges the ball with a LIGHT hit', () => {
-    const w = duel('pikachu', { x: -500, y: 0 }, 'machamp', { x: 600, y: 600 }, { x: -200, y: 0 });
+describe('Zeraora (Speedy Skirmisher)', () => {
+  it('Discharge fires 4 bolts over time; a bolt nudges the ball with a LIGHT hit', () => {
+    const w = duel('zeraora', { x: -500, y: 0 }, 'machamp', { x: 600, y: 600 }, { x: -200, y: 0 });
     cast(w, 0, Button.Move1);
     const ids = new Set(w.projectiles.map((p) => p.id));
     for (let i = 0; i < 30; i++) {
@@ -84,7 +84,7 @@ describe('Pikachu (Speedy Skirmisher)', () => {
   });
 
   it('bolts are LIGHT on players: slow, no knockback', () => {
-    const w = duel('pikachu', { x: -300, y: 0 }, 'machamp', { x: 100, y: 0 });
+    const w = duel('zeraora', { x: -300, y: 0 }, 'machamp', { x: 100, y: 0 });
     cast(w, 0, Button.Move1);
     const evs = run(w, 15, [idle, idle]);
     const hits = evs.filter((e) => e.type === 'hit');
@@ -94,7 +94,7 @@ describe('Pikachu (Speedy Skirmisher)', () => {
   });
 
   it('Agility: +30 % speed for 5 s', () => {
-    const w = duel('pikachu', { x: -300, y: 0 });
+    const w = duel('zeraora', { x: -300, y: 0 });
     const base = effectiveSpeed(w.players[0]!);
     cast(w, 0, Button.Move2);
     expect(effectiveSpeed(w.players[0]!)).toBeCloseTo(base * 1.3, 6);
@@ -102,8 +102,8 @@ describe('Pikachu (Speedy Skirmisher)', () => {
     expect(effectiveSpeed(w.players[0]!)).toBeCloseTo(base, 6);
   });
 
-  it('Volt Tackle dashes through an enemy and knocks it away', () => {
-    const w = duel('pikachu', { x: -400, y: 0 }, 'machamp', { x: -50, y: 0 });
+  it('Wild Charge dashes through an enemy and knocks it away', () => {
+    const w = duel('zeraora', { x: -400, y: 0 }, 'machamp', { x: -50, y: 0 });
     cast(w, 0, Button.Signature);
     const evs = run(w, 40, [idle, idle]);
     expect(types(evs)).toContain('dash');
@@ -160,8 +160,8 @@ describe('Lucario (Flexible Brawler)', () => {
     cast(w, 0, Button.Move1);
     const evs = run(w, 20, [idle, idle]);
     const hit = evs.find((e) => e.type === 'hit');
-    // Player knockback 375 + 168.8 % Power since the brawling rework (×1.25 × 1.5).
-    expect(hit && hit.type === 'hit' && hit.knockback).toBeCloseTo(375 + 1.688 * 105, 6);
+    // Player knockback 319 + 143.5 % Power (brawling rework, then −15 % in the 2026-11 balance pass).
+    expect(hit && hit.type === 'hit' && hit.knockback).toBeCloseTo(319 + 1.435 * 105, 6);
   });
 
   it('Extreme Speed dashes ~520 and Aura Sphere can be cast mid-dash', () => {
@@ -180,48 +180,6 @@ describe('Lucario (Flexible Brawler)', () => {
     const hits = evs.filter((e) => e.type === 'hit');
     expect(hits.some((h) => h.type === 'hit' && h.light)).toBe(true);
     expect(hits.some((h) => h.type === 'hit' && !h.light && h.knockback > 300)).toBe(true);
-  });
-});
-
-describe('Togekiss (Empowering Enchanter)', () => {
-  it('Air Slash pierces: hits the ball and the enemy behind it', () => {
-    const w = duel('togekiss', { x: -600, y: 0 }, 'machamp', { x: 0, y: 0 }, { x: -300, y: 0 });
-    cast(w, 0, Button.Move1);
-    const evs = run(w, 40, [idle, idle]);
-    expect(types(evs)).toContain('ballHit');
-    expect(types(evs)).toContain('hit');
-  });
-
-  it('Tailwind speeds up nearby allies and fades over 3 s', () => {
-    const w = sandbox([
-      { pokemonId: 'togekiss', team: 0, pos: { x: -300, y: 0 } },
-      { pokemonId: 'pikachu', team: 0, slot: 1, pos: { x: -100, y: 0 } },
-      { pokemonId: 'machamp', team: 1, pos: { x: 600, y: 600 } },
-    ]);
-    const base = effectiveSpeed(w.players[1]!);
-    cast(w, 0, Button.Move2);
-    expect(effectiveSpeed(w.players[1]!)).toBeCloseTo(base * 1.4, 1);
-    run(w, ticks(1.5), [idle, idle, idle]);
-    expect(effectiveSpeed(w.players[1]!)).toBeCloseTo(base * 1.2, 0);
-  });
-
-  it('Wish lands after 1 s at the target: heals allies, blasts enemies', () => {
-    const w = sandbox(
-      [
-        { pokemonId: 'togekiss', team: 0, pos: { x: -600, y: 0 } },
-        { pokemonId: 'pikachu', team: 0, slot: 1, pos: { x: 0, y: 100 } },
-        { pokemonId: 'machamp', team: 1, pos: { x: 100, y: -100 } },
-      ],
-      { x: 0, y: -850 },
-    );
-    addXp(w, w.players[0]!, gameplay.xp.levelThresholds[1]!);
-    const ally = w.players[1]!;
-    applyHit(w, 2, ally, { dir: { x: 1, y: 0 }, knockback: 0, damage: 500 });
-    const hurt = ally.stagger;
-    cast(w, 0, Button.Signature, { x: 1, y: 0 }, 600);
-    run(w, ticks(0.2) + ticks(1) + 2, [idle, idle, idle]);
-    expect(ally.stagger).toBeGreaterThan(hurt + ally.maxStagger * 0.2);
-    expect(w.players[2]!.lastHitBy).toBe(0);
   });
 });
 
@@ -279,7 +237,7 @@ describe('interactions', () => {
   });
 
   it('a stunned ball ignores knockback', () => {
-    const w = duel('pikachu', { x: -130, y: 0 }, 'machamp', { x: 600, y: 600 }, { x: 0, y: 0 });
+    const w = duel('zeraora', { x: -130, y: 0 }, 'machamp', { x: 600, y: 600 }, { x: 0, y: 0 });
     w.ball.stunTicks = 30;
     step(w, [quantizeInput(0, 0, 1, 0, Button.Strike), idle]);
     expect(w.ball.vel).toEqual({ x: 0, y: 0 });

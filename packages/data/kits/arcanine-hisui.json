@@ -1,0 +1,112 @@
+{
+  "$comment": "Shield User (OS Asher model, wiki 2026-11). Blastoise's kit until 2026-11-06, now Hisuian Arcanine's (Rock Slide = Water Pulse, Flare Blitz = Rapid Spin, Flamethrower = Hydro Pump). Water Pulse = Barrier Beam (0.55 s wind-up; centre sweet spot 175+87.5 %, LIGHT sides at 60 %; a barrier that is bigger and lasts on your own half, flimsy on the enemy half). Rapid Spin = Breakthrough (14.5 s dash that stops on the first enemy; 25 % damage reduction for 5 s) plus GAME_BREAKDOWN §13's guard: knockback resist while spinning, ended by Stagger damage. Hydro Pump = §13 channelled push beam (multi-hit like Pathsplitter's centre: 50+25 % dmg, 100+50 % KB per pulse... halved per pulse here). Player knockback = OS × 1.875; power % → powerRatio.",
+  "pokemon": "arcanine-hisui",
+  "moves": [
+    {
+      "id": "rock-slide",
+      "name": "Rock Slide",
+      "slot": "primary",
+      "cooldown": 10,
+      "castTime": 0.55,
+      "anim": "Shoot",
+      "desc": "Wind up, then fire a pulse: its centre hits hard, its edges are LIGHT. A rock wall rises in front of you, stronger and longer-lasting on your own half.",
+      "bot": "defend",
+      "actions": [
+        {
+          "type": "area",
+          "fx": { "color": "#e85d04" },
+          "shape": "cone",
+          "radius": 650,
+          "angleDeg": 34,
+          "hit": {
+            "ball": { "base": 1064, "powerRatio": 1.4 },
+            "player": { "base": 197, "powerRatio": 0.984 },
+            "damage": { "base": 105, "powerRatio": 0.525 },
+            "light": true
+          },
+          "sweetSpot": {
+            "from": 0,
+            "to": 1,
+            "angleDeg": 14,
+            "hit": {
+              "ball": { "base": 1330, "powerRatio": 1.75 },
+              "player": { "base": 328, "powerRatio": 1.641 },
+              "damage": { "base": 175, "powerRatio": 0.875 }
+            }
+          }
+        },
+        {
+          "type": "wall",
+          "fx": { "color": "#a68a64" },
+          "count": 1,
+          "spreadDeg": 0,
+          "distance": 260,
+          "length": 320,
+          "thickness": 40,
+          "duration": 1.2,
+          "side": { "own": 1.25, "enemy": 0.4 },
+          "hit": {
+            "ball": { "base": 320, "powerRatio": 0.24 },
+            "player": { "base": 75, "powerRatio": 0.375 },
+            "damage": { "base": 40, "powerRatio": 0.2 },
+            "light": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "flare-blitz",
+      "name": "Flare Blitz",
+      "slot": "secondary",
+      "cooldown": 14.5,
+      "anim": "QuickStrike",
+      "desc": "Charge forward wreathed in fire (knockback resist, half damage), stopping on the first enemy. Then take 25 % less damage for 5 s. Rock Slide can be cast mid-charge.",
+      "bot": "engage",
+      "actions": [
+        {
+          "type": "dash",
+          "fx": { "color": "#e85d04" },
+          "distance": 480,
+          "time": 0.32,
+          "stopOnHit": true,
+          "castWhileDashing": true,
+          "knockbackResist": 150,
+          "damageReduction": 0.5,
+          "breakOnDamage": 0.15,
+          "hit": {
+            "ball": { "base": 1260, "powerRatio": 1.4 },
+            "player": { "base": 262, "powerRatio": 1.312 },
+            "damage": { "base": 140, "powerRatio": 0.7 }
+          }
+        },
+        { "type": "buff", "fx": { "color": "#a68a64" }, "target": "self", "duration": 5, "damageReduction": 0.25 }
+      ]
+    },
+    {
+      "id": "flamethrower",
+      "name": "Flamethrower",
+      "slot": "special",
+      "cooldown": 40,
+      "anim": "Shoot",
+      "desc": "Breathe a wide stream of fire forward for 1.5 s (slowed), steadily pushing enemies and the ball away.",
+      "bot": "engage",
+      "actions": [
+        {
+          "type": "channel",
+          "fx": { "color": "#ff9e00" },
+          "shape": "line",
+          "length": 700,
+          "width": 170,
+          "duration": 1.5,
+          "interval": 0.25,
+          "slowPct": 60,
+          "hit": {
+            "ball": { "base": 900, "powerRatio": 0.8 },
+            "player": { "base": 85, "powerRatio": 0.422 },
+            "damage": { "base": 50, "powerRatio": 0.25 }
+          }
+        }
+      ]
+    }
+  ]
+}

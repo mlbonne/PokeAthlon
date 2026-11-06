@@ -6,10 +6,10 @@
       "name": "Choice Scarf",
       "slot": "forward",
       "os": "Slick Kicks",
-      "desc": "Strikes that hit the ball give +30% speed for 1.25 s.",
+      "desc": "Strikes that hit the ball give +25% speed for 1.25 s.",
       "effects": {
         "speedOnBallStrike": {
-          "pct": 30,
+          "pct": 25,
           "duration": 1.25
         }
       }
@@ -30,9 +30,9 @@
       "name": "Shell Bell",
       "slot": "forward",
       "os": "Vicious Vambrace",
-      "desc": "Heal Stagger equal to 75% of the damage you deal.",
+      "desc": "Heal Stagger equal to 100% of the damage you deal.",
       "effects": {
-        "lifesteal": 0.75
+        "lifesteal": 1.0
       }
     },
     {
@@ -82,11 +82,11 @@
       "name": "Eject Pack",
       "slot": "goalie",
       "os": "Eject Button",
-      "desc": "+50% dash and blink range, +40% haste, -25% secondary cooldown. Press your secondary again within 3.25 s to blink back to where you cast it.",
+      "desc": "+50% dash and blink range, +40% haste, -35% secondary cooldown. Press your secondary again within 3.25 s to blink back to where you cast it.",
       "effects": {
         "dashRangePct": 50,
         "hastePct": 40,
-        "secondaryCooldownPct": 25,
+        "secondaryCooldownPct": 35,
         "blinkBack": {
           "window": 3.25
         }
@@ -134,11 +134,11 @@
       "name": "Rocky Helmet",
       "slot": "goalie",
       "os": "Powerhouse Pauldrons",
-      "desc": "+30% size, +20 power, -15% damage taken.",
+      "desc": "+30% size, +10 power, -10% damage taken.",
       "effects": {
         "sizePct": 30,
-        "powerAdd": 20,
-        "damageReduction": 0.15
+        "powerAdd": 10,
+        "damageReduction": 0.1
       }
     }
   ],
@@ -151,6 +151,7 @@
       "empowering-enchanter": "shell-bell",
       "stalwart-protector": "shell-bell",
       "shield-user": "shell-bell",
+      "angelic-support": "shell-bell",
       "flexible-brawler": "muscle-band",
       "hulking-beast": "muscle-band"
     },
@@ -161,6 +162,7 @@
       "empowering-enchanter": "zoom-lens",
       "stalwart-protector": "rocky-helmet",
       "shield-user": "rocky-helmet",
+      "angelic-support": "quick-claw",
       "flexible-brawler": "eject-pack",
       "hulking-beast": "rocky-helmet"
     }

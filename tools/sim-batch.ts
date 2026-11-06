@@ -1,7 +1,7 @@
 /**
  * Headless bot-vs-bot batch runner: many seeded matches, no browser, spread over worker threads.
  *
- *   npm run sim -- --lineup pikachu/lucario [--games 100] [--seed 1] [--swap] [--until match|set|goal]
+ *   npm run sim -- --lineup zeraora/lucario [--games 100] [--seed 1] [--swap] [--until match|set|goal]
  *                  [--brains v2,v2] [--threads N] [--max-minutes 30] [--out reports]
  *   npm run ladder [-- --games 60 --brains v2,v1]
  *
@@ -150,7 +150,7 @@ async function main(): Promise<void> {
   if (flag('ladder')) return ladder();
   const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-  const lineupSpec = arg('lineup', 'pikachu,lucario,bronzong/togekiss,lucario,bronzong');
+  const lineupSpec = arg('lineup', 'zeraora,lucario,bronzong/hoopa,lucario,bronzong');
   const [lineupA, lineupB] = lineupSpec.split(/[/:]/) as [string, string];
   parseLineup(lineupSpec); // validate early
   const games = Number(arg('games', '100'));

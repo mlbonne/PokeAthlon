@@ -5,7 +5,7 @@ import { idle, run, sandbox } from './helpers';
 /** Regression: a player got stuck outside the arena after dashing through the edge. */
 describe('arena edge', () => {
   const dashAt = (dir: { x: number; y: number }, speed: number) => {
-    const w = sandbox([{ pokemonId: 'pikachu', team: 0, pos: { x: 0, y: 0 } }], { x: 0, y: -850 });
+    const w = sandbox([{ pokemonId: 'zeraora', team: 0, pos: { x: 0, y: 0 } }], { x: 0, y: -850 });
     const p = w.players[0]!;
     const sideY = Math.max(...w.stage.playerOutline.map((v) => v.y));
     p.pos = { x: dir.x * (sideY - 40), y: dir.y * (sideY - 40) };
@@ -33,7 +33,7 @@ describe('arena edge', () => {
   });
 
   it('a player already outside while walking is pulled back in', () => {
-    const w = sandbox([{ pokemonId: 'pikachu', team: 0, pos: { x: 0, y: 0 } }], { x: 0, y: -850 });
+    const w = sandbox([{ pokemonId: 'zeraora', team: 0, pos: { x: 0, y: 0 } }], { x: 0, y: -850 });
     const p = w.players[0]!;
     p.pos = { x: -1200, y: 900 };
     run(w, 2, [idle]);

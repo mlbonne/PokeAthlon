@@ -19,7 +19,7 @@
           "radius": 45,
           "hit": {
             "ball": { "base": 1300, "powerRatio": 1.5 },
-            "player": { "base": 375, "powerRatio": 1.688 },
+            "player": { "base": 319, "powerRatio": 1.435 },
             "damage": { "base": 200, "powerRatio": 0.9 }
           }
         }

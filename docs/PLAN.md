@@ -87,22 +87,38 @@ Each Pokémon also has an **archetype** that describes how it plays. Any archety
 | **Wall** | Protects barriers and goal | Walls, wide hitboxes, big size, shields | Goalie |
 | **Brawler** | Wins fights, gets KOs | High knockback, gap-closers, Stagger damage | Forward |
 
-## 5. Starting roster (8). Sprite sets verified in SpriteCollab
+## 5. Roster (8 now). Sprite sets verified in SpriteCollab
 
 All of these have Walk, Idle, Attack, Hurt, Charge and Swing animations, plus Shoot or Strike.
 
 | # | Pokémon | Archetype | Kit sketch (Move 1 / Move 2 / Special) |
 |---|---|---|---|
-| 0025 | **Pikachu** | Striker | Quick Attack (dash that hits the ball) / Thunder Shock (skillshot, short stun) / Volt Tackle (long piercing charge) |
+| 0807 | **Zeraora** | Striker (OS Kai) | Discharge (4 light bolts) / Agility (haste) / Wild Charge (long piercing charge). Took over Pikachu's kit (2026-11-06) |
 | 0658 | **Greninja** | Striker | Water Shuriken (3 small ball nudges) / Shadow Sneak (blink behind target) / Hydro Cannon |
 | 0720 | **Hoopa** | Passer | Psychic (grab and redirect the ball) / Hyperspace Hole (portal shot; Hoopa comes out where it stops with a burst, evade to dodge it) / Future Sight (delayed AoE). Replaced Alakazam (2026-11-06) |
-| 0468 | **Togekiss** | Passer | Air Slash (lob pass) / Follow Me (pulls enemies' aggro) / Wish (team shield) |
 | 0437 | **Bronzong** | Wall | Gyro Ball (slowing roll) / Heavy Slam (leap, AoE stun) / Light Screen (arc of walls). Took over Snorlax's kit (2026-11-06) |
-| 0009 | **Blastoise** | Wall | Withdraw (shell shield) / Rapid Spin (spin that deflects) / Hydro Pump (pushback beam) |
+| 0009 | **Blastoise** | Support (OS Atlas) | Surf (decelerating wave that passes through enemies) / Whirlpool (ring that bursts, then swirls in) / Aqua Ring (healing zone that pulls any ally about to be KO'd into it). Reworked 2026-11-06 |
+| 0059/0001 | **Hisuian Arcanine** | Wall (OS Asher) | Rock Slide (blast + rock wall, stronger on your half) / Flare Blitz (guarded charge) / Flamethrower (channelled push). Blastoise's old kit, added 2026-11-06 |
 | 0448 | **Lucario** | Brawler | Aura Sphere (homing knockback) / Close Combat (combo) / Extreme Speed |
 | 0068 | **Machamp** | Brawler | Cross Chop / Seismic Toss (grab and throw) / Dynamic Punch (big knockback, confuse) |
 
-**Planned:** Snorlax comes back as a new kit modelled on OS **Asher**: a heavy physical hitter that dashes in and punishes, playable as goalie or brawler.
+Togekiss was removed on 2026-11-06 (its kit is in git history: `packages/data/kits/togekiss.json` before that date).
+
+Snorlax is out for now. Hisuian Arcanine (Asher) and Blastoise (Atlas) shipped on 2026-11-06.
+
+**Planned roster** (each modelled on one OS striker; see GAME_BREAKDOWN §5 for the OS kits). All have sprite sets in SpriteCollab; the regional and Mega forms are form folders (Alolan Ninetales `0038/0001`, Hisuian Decidueye `0724/0001`, Mega Mewtwo Y `0150/0002`), `import-sprites` supports them (roster `dex` like `0059/0001`).
+
+| Pokémon | OS model | Notes |
+|---|---|---|
+| Pikachu | Octavia (Ramping Speedster) | Comes back with a new kit: slowing sonic wave, ramping haste that refreshes on hit, pulse special |
+| Alolan Ninetales | Estelle (Tempo Sniper) | |
+| Inteleon | Drek'ar (Nimble Blaster) | |
+| Goodra | Juno (Clever Summoner) | |
+| Hisuian Decidueye | Rasmus (Whip Fighter) | |
+| Porygon-Z | Ai.Mi (Magical Playmaker) | |
+| Mega Mewtwo Y | Era (Empowering Enchanter) | |
+| Dragapult | Luna (Chaotic Rocketeer) | |
+| Meloetta | Finii (Gravity Mage) | |
 
 Backups with full sprite sets: Gengar, Garchomp, Dragonite, Gardevoir, Charizard, Blaziken, Gyarados, Politoed, Sylveon, Raichu.
 

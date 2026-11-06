@@ -4,7 +4,7 @@ import { TICK_RATE, type Player, type World } from '@pokeathlon/sim';
 const TEAM_NAMES = ['Blue', 'Red'] as const;
 const nameOf = (p: Player) => roster.find((r) => r.id === p.pokemonId)?.name ?? p.pokemonId;
 
-const dexOf = (p: Player) => roster.find((r) => r.id === p.pokemonId)?.dex ?? '0025';
+const dexOf = (p: Player) => roster.find((r) => r.id === p.pokemonId)?.dex ?? roster[0]!.dex;
 
 /**
  * HTML HUD layered over the canvas: scoreboard, team panels (portrait, level, Stagger, Energy and

@@ -16,7 +16,7 @@ describe('full match (bots)', () => {
   it('a 1v1 bot match is played to a winner', () => {
     const { w, counts, minutes } = playMatch(
       [
-        { pokemonId: 'pikachu', team: 0 },
+        { pokemonId: 'zeraora', team: 0 },
         { pokemonId: 'lucario', team: 1 },
       ],
       30,
@@ -31,10 +31,10 @@ describe('full match (bots)', () => {
   it('a 3v3 bot match is played to a winner', () => {
     const { w, counts, minutes } = playMatch(
       [
-        { pokemonId: 'pikachu', team: 0, slot: 0 },
+        { pokemonId: 'zeraora', team: 0, slot: 0 },
         { pokemonId: 'lucario', team: 0, slot: 1 },
         { pokemonId: 'bronzong', team: 0, role: 'goalie' },
-        { pokemonId: 'togekiss', team: 1, slot: 0 },
+        { pokemonId: 'hoopa', team: 1, slot: 0 },
         { pokemonId: 'lucario', team: 1, slot: 1 },
         { pokemonId: 'bronzong', team: 1, role: 'goalie' },
       ],

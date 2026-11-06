@@ -10,7 +10,7 @@ export interface MoveModel {
   id: string;
   stats: MoveStats;
   /** Main delivery: what the bot has to aim. */
-  delivery: 'projectile' | 'dash' | 'selfArea' | 'targetArea' | 'buff' | 'wall' | 'blink' | 'grab';
+  delivery: 'projectile' | 'dash' | 'selfArea' | 'targetArea' | 'buff' | 'wall' | 'blink' | 'grab' | 'guardian';
   /** Cone or line (aimed at a target) vs circle around the caster. */
   aimed: boolean;
   /** Projectile / dash speed (units/s) for leading the target; 0 = instant. */
@@ -50,6 +50,8 @@ export interface MoveModel {
   strikeBuff: boolean;
   /** A channel (the caster keeps casting for `duration`). */
   channel: boolean;
+  /** Guardian zone: rescues allies from KOs while it stands. */
+  rescue: boolean;
 }
 
 /**
@@ -58,7 +60,7 @@ export interface MoveModel {
  * an imaginary threat makes every enemy back off and hand over the ball.
  */
 export const attacksPlayers = (m: MoveModel): boolean =>
-  m.hitsPlayers && m.delivery !== 'buff' && m.delivery !== 'grab' && !(m.delivery === 'blink' && m.blinkTo !== 'aim');
+  m.hitsPlayers && m.delivery !== 'buff' && m.delivery !== 'grab' && m.delivery !== 'guardian' && !(m.delivery === 'blink' && m.blinkTo !== 'aim');
 
 /** Keyed by the kit object, so a kit installed at runtime (tests, drafts) gets fresh models. */
 const cache = new WeakMap<KitDef, MoveModel[]>();
@@ -108,6 +110,7 @@ function model(def: MoveDef, slot: number, p: ReturnType<typeof getPokemon>): Mo
     hold: 0,
     strikeBuff: false,
     channel: false,
+    rescue: false,
   };
   switch (main.type) {
     case 'projectile':
@@ -162,6 +165,12 @@ function model(def: MoveDef, slot: number, p: ReturnType<typeof getPokemon>): Mo
       break;
     case 'throw':
       m.delivery = 'grab';
+      break;
+    case 'guardian':
+      m.delivery = 'guardian';
+      m.aimed = main.at === 'target';
+      m.radius = main.radius;
+      m.rescue = main.rescueHealPct > 0;
       break;
   }
   // A dash followed by an area (e.g. a slam) lands where the dash ends.

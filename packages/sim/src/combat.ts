@@ -4,7 +4,7 @@ import { addXp } from './progression';
 import { releaseBall } from './ball';
 import { boostOnHit, boostOnKo, boostPreventKo } from './boosts';
 import { itemKnockbackDealt, itemOnHit } from './items';
-import { buffDamageReduction, buffKnockbackResist, buffKnockbackTaken, refreshBody } from './moves';
+import { buffDamageReduction, buffKnockbackResist, buffKnockbackTaken, guardianRescue, refreshBody } from './moves';
 import { inGoalArc } from './stage';
 import type { Vec2 } from './vec';
 import { isTargetable, type Player, type World } from './world';
@@ -131,6 +131,7 @@ export function gainEnergy(p: Player, amount: number): void {
 
 /** Remove a player from the field (knocked past an edge). */
 export function knockOut(world: World, p: Player): void {
+  if (guardianRescue(world, p)) return; // Atlas-style guardian (beats Sturdy, as in OS)
   if (boostPreventKo(world, p)) return; // Sturdy
   p.koTicks = ticks(world.match.overtime ? gameplay.respawn.overtimeTime : gameplay.respawn.time);
   p.knockTicks = 0;

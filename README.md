@@ -5,7 +5,7 @@ Smash the ball through the enemy's barriers, score once their gate opens, and kn
 
 - 📋 Plan & roadmap: [docs/PLAN.md](docs/PLAN.md)
 - 🎮 Design bible (Omega Strikers breakdown → Pokémon version): [docs/design/GAME_BREAKDOWN.md](docs/design/GAME_BREAKDOWN.md)
-- Status: **M3 Kits done**. Data-driven move system; Pikachu, Snorlax (now Bronzong), Lucario and Togekiss have full kits (Q/E/R). Next: M4 (smarter bots, 3v3, gamepad polish)
+- Status: **M3 Kits done**. Data-driven move system; Pikachu (now Zeraora), Snorlax (now Bronzong), Lucario and Togekiss (since removed) have full kits (Q/E/R). Next: M4 (smarter bots, 3v3, gamepad polish)
 
 ## Getting started
 
@@ -19,7 +19,7 @@ npm run check        # typecheck + lint + tests
 npm run build        # production build → packages/client/dist
 npm run import-sprites   # re-import roster sprites from ./SpriteCollab-master and regenerate CREDITS.md
 npm run record -- --lineup a,b,c/d,e,f   # record a CPU vs CPU match to recordings/*.mp4 + a balance report (needs npm run build + vite preview on :4173, and Edge; add --meter to bake in the F3 menu)
-npm run sim -- --lineup pikachu,lucario,bronzong/togekiss,lucario,bronzong --games 200 --swap   # headless bot-vs-bot batch: win rates (95 % CI) + per-Pokémon telemetry → reports/*.json (--brains v2,v1 to pit bot brains)
+npm run sim -- --lineup zeraora,lucario,bronzong/hoopa,lucario,bronzong --games 200 --swap   # headless bot-vs-bot batch: win rates (95 % CI) + per-Pokémon telemetry → reports/*.json (--brains v2,v1 to pit bot brains)
 npm run balance                              # balance report: 600 random-comp 3v3s → per-role T0–F tiers, 3v3 matchup matrix, impact score, per-move stats → reports/balance-*.html; updates the F3 Tiers tab snapshot
 npm run balance -- --set lucario.close-combat.damage*=0.8   # what-if tuning (no JSON edits), compared with the last baseline run
 npm run playstyle -- --variant "name:rules.respawn.time=8;all.*.knockback*=1.25"   # fight/KO pace, crowding, passing for rule variants on the same seeds
@@ -29,7 +29,7 @@ npm run kits                                 # static kit report: reach, area, t
 
 **3v3 is the only mode.** The game opens on a **match setup** screen: your Pokémon and role (forward or goalie), your two CPU teammates, the three CPU enemies (or Random), CPU skill, and Play / Watch CPU vs CPU / Practice. `?quick=1` skips it.
 
-Spectate a CPU 3v3 live: `http://localhost:5173/?cpu=pikachu,lucario,bronzong/togekiss,lucario,bronzong` (last of each team is the goalie). Bot skill: `&diff=easy|normal|hard` (default normal vs you, hard when spectating); `&brain=v1` for the old bot. With F3 open each bot's job and action shows under its nameplate. Practice sandbox with an enemy dummy: `?practice=1`. Add `&meter=1` to open the debug menu on start.
+Spectate a CPU 3v3 live: `http://localhost:5173/?cpu=zeraora,lucario,bronzong/hoopa,lucario,bronzong` (last of each team is the goalie). Bot skill: `&diff=easy|normal|hard` (default normal vs you, hard when spectating); `&brain=v1` for the old bot. With F3 open each bot's job and action shows under its nameplate. Practice sandbox with an enemy dummy: `?practice=1`. Add `&meter=1` to open the debug menu on start.
 
 **F3 debug menu** (modelled on Omega Strikers' own Practice mode, Core Stats and match stats):
 - **Meter**: live scoreboard (goals, assists, KOs, saves, shots, redirects, damage, DPS, possession, ball progress, MVP score) and Core Stats; per-move casts, landed %, damage and idle-ready time.

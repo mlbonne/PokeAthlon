@@ -5,10 +5,10 @@ import { resolveRoomLineup, SEAT_ROLES } from '../src/online';
 describe('online room lineup (M7.3)', () => {
   it('fills CPU picks without duplicates in a team and gives every seat a valid item', () => {
     const picks = [
-      { pokemon: 'pikachu', item: 'auto' },
+      { pokemon: 'zeraora', item: 'auto' },
       { pokemon: 'auto', item: 'auto' },
       { pokemon: 'auto', item: 'auto' },
-      { pokemon: 'pikachu', item: 'auto' },
+      { pokemon: 'zeraora', item: 'auto' },
       { pokemon: 'auto', item: 'auto' },
       { pokemon: 'auto', item: 'auto' },
     ];
@@ -24,7 +24,7 @@ describe('online room lineup (M7.3)', () => {
         expect(itemsFor(SEAT_ROLES[i]!).some((it) => it.id === s.item)).toBe(true);
         expect(s.role === 'goalie').toBe(SEAT_ROLES[i] === 'goalie');
       });
-      expect(l[0]!.pokemonId).toBe('pikachu');
+      expect(l[0]!.pokemonId).toBe('zeraora');
     }
   });
 

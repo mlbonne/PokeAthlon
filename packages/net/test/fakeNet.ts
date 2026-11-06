@@ -2,7 +2,7 @@ import { createWorld, getBrain, quantizeInput, Button, withDefaultItems, type Pl
 import { RollbackSession, type SeatKind } from '../src/index';
 
 export const LINEUP = withDefaultItems(
-  ['pikachu', 'lucario', 'bronzong', 'greninja', 'blastoise', 'machamp'].map((id, i) => ({ pokemonId: id, team: (i < 3 ? 0 : 1) as 0 | 1 })),
+  ['zeraora', 'lucario', 'bronzong', 'greninja', 'blastoise', 'machamp'].map((id, i) => ({ pokemonId: id, team: (i < 3 ? 0 : 1) as 0 | 1 })),
 );
 export const newMatch = (): World => createWorld(LINEUP.map((s) => ({ ...s })), { mode: 'match', seed: 11, boosts: true });
 export const BOT = getBrain('v2-normal');

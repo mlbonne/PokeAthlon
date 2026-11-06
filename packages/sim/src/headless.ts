@@ -65,13 +65,13 @@ export function withDefaultItems(lineup: PlayerSpawn[]): PlayerSpawn[] {
 }
 
 /**
- * Parse a lineup like `pikachu,lucario,bronzong/togekiss,lucario,bronzong` (team 0 / team 1).
+ * Parse a lineup like `zeraora,lucario,bronzong/hoopa,lucario,bronzong` (team 0 / team 1).
  * In 3v3 the third Pokémon of each team is the goalie; 1v1 and 2v2 are all forwards.
  */
 export function parseLineup(spec: string): PlayerSpawn[] {
   const teams = spec.split(/[/:]/).map((t) => t.split(',').map((s) => s.trim()).filter(Boolean));
   if (teams.length !== 2 || !teams[0]!.length || teams[0]!.length !== teams[1]!.length) {
-    throw new Error(`Lineup must be two equal teams like "pikachu/lucario" or "a,b,c/d,e,f", got "${spec}"`);
+    throw new Error(`Lineup must be two equal teams like "zeraora/lucario" or "a,b,c/d,e,f", got "${spec}"`);
   }
   return teams.flatMap((ids, team) =>
     ids.map((pokemonId, i) =>

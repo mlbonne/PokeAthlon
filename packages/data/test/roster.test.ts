@@ -9,7 +9,7 @@ describe('roster', () => {
   });
 
   it('looks up by id', () => {
-    expect(getPokemon('pikachu').dex).toBe('0025');
+    expect(getPokemon('zeraora').dex).toBe('0807');
     expect(() => getPokemon('missingno')).toThrow();
   });
 });

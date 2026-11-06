@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { gameplay } from '@pokeathlon/data';
+import { gameplay, getPokemon } from '@pokeathlon/data';
 import { addXp, applyHit, Button, quantizeInput, step, ticks, TICK_RATE, type World } from '../src/index';
 import { idle, run, sandbox, types } from './helpers';
 
 const K = gameplay.knock;
 const EVADE = quantizeInput(0, 0, 0, 0, Button.Evade);
 
-/** Pikachu (team 0) at `a`, Lucario (team 1) at `b`. Ball parked out of the way. */
+/** Zeraora (team 0) at `a`, Lucario (team 1) at `b`. Ball parked out of the way. */
 function duel(a = { x: -200, y: 0 }, b = { x: 200, y: 0 }): World {
   return sandbox(
     [
-      { pokemonId: 'pikachu', team: 0, pos: a },
+      { pokemonId: 'zeraora', team: 0, pos: a },
       { pokemonId: 'lucario', team: 1, pos: b },
     ],
     { x: 0, y: -800 },
@@ -142,7 +142,7 @@ describe('Energy: Evade and Energy Burst', () => {
   it('full meter → Energy Burst: knocks nearby enemies, freezes and grabs the ball, boosts the next hit', () => {
     const w = sandbox(
       [
-        { pokemonId: 'pikachu', team: 0, pos: { x: -200, y: 0 } },
+        { pokemonId: 'zeraora', team: 0, pos: { x: -200, y: 0 } },
         { pokemonId: 'lucario', team: 1, pos: { x: 0, y: 0 } },
       ],
       { x: -200, y: 150 },
@@ -162,7 +162,7 @@ describe('Energy: Evade and Energy Burst', () => {
     step(w, [quantizeInput(0, 1, 0, 1, Button.Strike), idle]);
     const hit = w.events.find((e) => e.type === 'ballHit');
     expect(hit && hit.type === 'ballHit' && hit.boosted).toBe(true);
-    expect(hit && hit.type === 'ballHit' && hit.speed).toBeCloseTo((1230 + 1.25 * 95) * 1.5, 6);
+    expect(hit && hit.type === 'ballHit' && hit.speed).toBeCloseTo((1230 + 1.25 * getPokemon('zeraora').stats.power) * 1.5, 6);
   });
 });
 
@@ -187,7 +187,7 @@ describe('orbs and levels', () => {
 
   it('levelling up raises max Stagger by growth / 9 per level', () => {
     const w = duel();
-    const p = w.players[0]!; // Pikachu: 1150 + 250 growth
+    const p = w.players[0]!; // Zeraora: 1150 + 250 growth
     addXp(w, p, gameplay.xp.levelThresholds[1]!);
     expect(p.level).toBe(2);
     expect(p.maxStagger).toBeCloseTo(1150 + 250 / 9, 6);
