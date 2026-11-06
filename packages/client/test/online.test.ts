@@ -33,7 +33,7 @@ describe('online room lineup (M7.3)', () => {
     const goalieItem = itemsFor('goalie')[0]!.id;
     const picks = Array.from({ length: 6 }, () => ({ pokemon: 'auto', item: 'auto' }));
     picks[0] = { pokemon: 'lucario', item: fwd };
-    picks[1] = { pokemon: 'snorlax', item: goalieItem }; // a forward seat
+    picks[1] = { pokemon: 'bronzong', item: goalieItem }; // a forward seat
     const l = resolveRoomLineup(picks, 'hard', 3);
     expect(l[0]!.item).toBe(fwd);
     expect(itemsFor('forward').some((it) => it.id === l[1]!.item)).toBe(true);

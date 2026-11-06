@@ -83,8 +83,8 @@ const cpuLineup = (() => {
 })();
 const RECORD = params.get('record') === '1';
 const urlDiff = (params.get('diff') ?? '') as MatchConfig['diff'] | '';
-/** Default 3v3: you (Pikachu, forward) with Lucario and Snorlax vs Togekiss, Lucario, Snorlax. */
-const defaultLineup = (): MatchConfig['lineup'] => parseLineup('pikachu,lucario,snorlax/togekiss,lucario,snorlax');
+/** Default 3v3: you (Pikachu, forward) with Lucario and Bronzong vs Togekiss, Lucario, Bronzong. */
+const defaultLineup = (): MatchConfig['lineup'] => parseLineup('pikachu,lucario,bronzong/togekiss,lucario,bronzong');
 /** Practice sandbox: you and one enemy dummy (OS practice mode). */
 const practiceLineup = (): MatchConfig['lineup'] => [
   { pokemonId: 'pikachu', team: 0 },

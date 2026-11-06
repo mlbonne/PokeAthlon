@@ -36,7 +36,7 @@ function give(w: World, who: number, id: string): void {
   step(w, w.players.map(() => idle)); // stepBoosts + refreshBody
 }
 const pick = (i: number): PlayerInput => ({ ...quantizeInput(0, 0), pick: i });
-const lineup = () => parseLineup('pikachu,lucario,snorlax/togekiss,machamp,blastoise');
+const lineup = () => parseLineup('pikachu,lucario,bronzong/togekiss,machamp,blastoise');
 
 describe('boost data', () => {
   it('19 boosts with unique ids; draft settings', () => {
@@ -103,7 +103,7 @@ describe('draft', () => {
 
 describe('boost effects', () => {
   it('Bulk Up: +300 max Stagger and +1.3 Power per 100 max Stagger', () => {
-    const w = world([{ pokemonId: 'snorlax', team: 0, pos: { x: -400, y: 0 } }]);
+    const w = world([{ pokemonId: 'bronzong', team: 0, pos: { x: -400, y: 0 } }]);
     const p = w.players[0]!;
     const s0 = p.maxStagger;
     const p0 = p.power;
@@ -182,7 +182,7 @@ describe('boost effects', () => {
     const shot = (ids: string[]) => {
       const w = world([
         { pokemonId: 'lucario', team: 0, pos: { x: -400, y: 0 } },
-        { pokemonId: 'snorlax', team: 1, pos: { x: -100, y: 0 } },
+        { pokemonId: 'bronzong', team: 1, pos: { x: -100, y: 0 } },
       ]);
       for (const id of ids) give(w, 0, id);
       const evs: SimEvent[] = [];
@@ -218,7 +218,7 @@ describe('boost effects', () => {
   it('Leftovers heals on hit and hurts the target; Poison Touch burns', () => {
     const w = world([
       { pokemonId: 'lucario', team: 0, pos: { x: -400, y: 0 } },
-      { pokemonId: 'snorlax', team: 1, pos: { x: 0, y: 0 } },
+      { pokemonId: 'bronzong', team: 1, pos: { x: 0, y: 0 } },
     ]);
     give(w, 0, 'leftovers');
     give(w, 0, 'poison-touch');

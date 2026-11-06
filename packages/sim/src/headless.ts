@@ -65,7 +65,7 @@ export function withDefaultItems(lineup: PlayerSpawn[]): PlayerSpawn[] {
 }
 
 /**
- * Parse a lineup like `pikachu,lucario,snorlax/togekiss,lucario,snorlax` (team 0 / team 1).
+ * Parse a lineup like `pikachu,lucario,bronzong/togekiss,lucario,bronzong` (team 0 / team 1).
  * In 3v3 the third Pokémon of each team is the goalie; 1v1 and 2v2 are all forwards.
  */
 export function parseLineup(spec: string): PlayerSpawn[] {

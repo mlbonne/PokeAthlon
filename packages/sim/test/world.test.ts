@@ -72,7 +72,7 @@ describe('determinism', () => {
       const w = createWorld(
         [
           { pokemonId: 'pikachu', team: 0 },
-          { pokemonId: 'snorlax', team: 1 },
+          { pokemonId: 'bronzong', team: 1 },
         ],
         { mode: 'match' },
       );

@@ -62,7 +62,7 @@ describe('casting rules', () => {
   });
 
   it('Pokémon without a kit simply have no moves', () => {
-    const w = sandbox([{ pokemonId: 'alakazam', team: 0, pos: { x: 0, y: 0 } }]);
+    const w = sandbox([{ pokemonId: 'hoopa', team: 0, pos: { x: 0, y: 0 } }]);
     w.players[0]!.moves = movesFor('missingno');
     expect(w.players[0]!.moves).toHaveLength(0);
     expect(types(cast(w, 0, Button.Move1))).not.toContain('cast');
@@ -113,9 +113,9 @@ describe('Pikachu (Speedy Skirmisher)', () => {
   });
 });
 
-describe('Snorlax (Stalwart Protector)', () => {
-  it('Rollout winds up 0.5 s, then rolls a decelerating body that stops short of the range', () => {
-    const w = duel('snorlax', { x: -700, y: 0 }, 'machamp', { x: 700, y: 700 });
+describe('Bronzong (Stalwart Protector)', () => {
+  it('Gyro Ball winds up 0.5 s, then rolls a decelerating body that stops short of the range', () => {
+    const w = duel('bronzong', { x: -700, y: 0 }, 'machamp', { x: 700, y: 700 });
     cast(w, 0, Button.Move1);
     expect(w.projectiles).toHaveLength(0);
     run(w, ticks(0.5), [idle, idle]);
@@ -130,8 +130,8 @@ describe('Snorlax (Stalwart Protector)', () => {
     expect(last).toBeGreaterThan(600);
   });
 
-  it('Body Slam hops in and stuns nearby enemies and the ball', () => {
-    const w = duel('snorlax', { x: -400, y: 0 }, 'machamp', { x: 100, y: 0 }, { x: 80, y: -120 });
+  it('Heavy Slam hops in and stuns nearby enemies and the ball', () => {
+    const w = duel('bronzong', { x: -400, y: 0 }, 'machamp', { x: 100, y: 0 }, { x: 80, y: -120 });
     cast(w, 0, Button.Move2);
     const evs = run(w, ticks(0.35) + 2, [idle, idle]);
     expect(types(evs)).toContain('area');
@@ -142,7 +142,7 @@ describe('Snorlax (Stalwart Protector)', () => {
   });
 
   it('Block raises 3 walls that the ball bounces off and players can’t cross, then expire', () => {
-    const w = duel('snorlax', { x: -800, y: 0 }, 'machamp', { x: 700, y: 700 }, { x: -300, y: 0 });
+    const w = duel('bronzong', { x: -800, y: 0 }, 'machamp', { x: 700, y: 700 }, { x: -300, y: 0 });
     cast(w, 0, Button.Signature);
     expect(w.creations).toHaveLength(3);
     w.ball.pos = { x: 0, y: 0 };
@@ -225,6 +225,50 @@ describe('Togekiss (Empowering Enchanter)', () => {
   });
 });
 
+describe('Hoopa (Manipulating Mastermind)', () => {
+  const holeHits = (evs: ReturnType<typeof run>) =>
+    evs.filter((e): e is Extract<typeof e, { type: 'hit' }> => e.type === 'hit' && e.source === 'hyperspace-hole' && e.target === 1);
+
+  it('Hyperspace Hole: the portal chips the enemy, then Hoopa comes out beside them and bursts', () => {
+    const w = duel('hoopa', { x: -400, y: 0 }, 'machamp', { x: 200, y: 0 });
+    const evs = [...cast(w, 0, Button.Move2)];
+    evs.push(...run(w, 30, [idle, idle]));
+    const first = holeHits(evs);
+    expect(first).toHaveLength(1);
+    expect(first[0]!.light).toBe(true);
+    expect(w.players[0]!.pos.x).toBeLessThan(-300); // not there yet: 0.35 s to come out
+    expect(evs.find((e) => e.type === 'telegraph')).toBeTruthy(); // the exit is shown
+    evs.push(...run(w, 30, [idle, idle]));
+    const blink = evs.find((e) => e.type === 'blink');
+    expect(blink).toBeTruthy();
+    expect(w.players[0]!.pos.x).toBeGreaterThan(0); // came out at the portal
+    const all = holeHits(evs);
+    expect(all).toHaveLength(2);
+    expect(all[1]!.knockback).toBeGreaterThan(0);
+  });
+
+  it('evading before Hoopa comes out dodges the burst', () => {
+    const w = duel('hoopa', { x: -400, y: 0 }, 'machamp', { x: 200, y: 0 });
+    w.players[1]!.energy = gameplay.evade.cost;
+    const evs = [...cast(w, 0, Button.Move2)];
+    evs.push(...run(w, 30, [idle, idle]));
+    expect(holeHits(evs)).toHaveLength(1);
+    evs.push(...run(w, 1, [idle, quantizeInput(0, 0, 0, 0, Button.Evade, 0)]));
+    expect(evs.find((e) => e.type === 'evade')).toBeTruthy();
+    evs.push(...run(w, 30, [idle, idle]));
+    expect(evs.find((e) => e.type === 'blink')).toBeTruthy(); // Hoopa still travels
+    expect(holeHits(evs)).toHaveLength(1); // but the burst misses
+  });
+
+  it('a portal that hits nothing still takes Hoopa to where it stopped', () => {
+    const w = duel('hoopa', { x: -400, y: 0 }, 'machamp', { x: 600, y: 600 });
+    cast(w, 0, Button.Move2);
+    run(w, 60, [idle, idle]);
+    expect(w.players[0]!.pos.x).toBeGreaterThan(300);
+    expect(w.players[0]!.koTicks).toBe(0);
+  });
+});
+
 describe('interactions', () => {
   it('a knockback interrupts a dash', () => {
     const w = duel('lucario', { x: -400, y: 0 }, 'machamp', { x: 600, y: 600 });
@@ -242,7 +286,7 @@ describe('interactions', () => {
   });
 
   it('projectiles, walls and dashes are cleared between rounds', () => {
-    const w = duel('snorlax', { x: -800, y: 0 });
+    const w = duel('bronzong', { x: -800, y: 0 });
     cast(w, 0, Button.Signature);
     expect(w.creations.length).toBe(3);
     w.match.lastScoringTeam = 0;

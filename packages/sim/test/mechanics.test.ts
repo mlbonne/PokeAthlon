@@ -22,7 +22,7 @@ import { idle, run, sandbox, types } from './helpers';
  * installed on the four Pokémon that don't have real kits yet.
  */
 const FIXTURE = fixture as Record<string, unknown>;
-const TEST_IDS = ['alakazam', 'greninja', 'blastoise', 'machamp'];
+const TEST_IDS = ['hoopa', 'greninja', 'blastoise', 'machamp'];
 beforeAll(() => {
   for (const id of TEST_IDS) registerKit(id, FIXTURE[id]);
 });
@@ -117,7 +117,7 @@ describe('ball grab and throw', () => {
   const setup = () =>
     world(
       [
-        { pokemonId: 'alakazam', team: 0, pos: { x: -300, y: 0 } },
+        { pokemonId: 'hoopa', team: 0, pos: { x: -300, y: 0 } },
         { pokemonId: 'pikachu', team: 1, pos: { x: 400, y: 300 } },
       ],
       { x: -150, y: 0 },
@@ -157,7 +157,7 @@ describe('ball grab and throw', () => {
   });
 
   it('whiffs when the ball is out of reach', () => {
-    const w = world([{ pokemonId: 'alakazam', team: 0, pos: { x: -300, y: 0 } }], { x: 300, y: 0 });
+    const w = world([{ pokemonId: 'hoopa', team: 0, pos: { x: -300, y: 0 } }], { x: 300, y: 0 });
     expect(tick(w, 0, press(Button.Move1)).find((e) => e.type === 'grab')).toMatchObject({ caught: false });
     expect(w.ball.heldBy).toBe(-1);
   });
@@ -166,7 +166,7 @@ describe('ball grab and throw', () => {
 describe('teleport / swap', () => {
   it('swaps places with the ally nearest the aim', () => {
     const w = world([
-      { pokemonId: 'alakazam', team: 0, pos: { x: -400, y: 0 } },
+      { pokemonId: 'hoopa', team: 0, pos: { x: -400, y: 0 } },
       { pokemonId: 'pikachu', team: 0, pos: { x: 200, y: 100 } },
       { pokemonId: 'pikachu', team: 0, pos: { x: -400, y: 600 } },
     ]);
@@ -188,7 +188,7 @@ describe('teleport / swap', () => {
 describe('delayed area, telegraph and banish', () => {
   it('telegraphs, then banishes: untargetable, frozen, back in place', () => {
     const w = world([
-      { pokemonId: 'alakazam', team: 0, pos: { x: -400, y: 0 } },
+      { pokemonId: 'hoopa', team: 0, pos: { x: -400, y: 0 } },
       { pokemonId: 'pikachu', team: 1, pos: { x: 100, y: 0 } },
     ]);
     const evs = tick(w, 0, press(Button.Signature, { x: 1, y: 0 }, 500));
@@ -228,7 +228,7 @@ describe('Strike-modifier passive', () => {
   it('stacks on move hits; the next Strike fires it and spends the stacks', () => {
     const w = world([
       { pokemonId: 'greninja', team: 0, pos: { x: -400, y: 0 } },
-      { pokemonId: 'snorlax', team: 1, pos: { x: -150, y: 0 } },
+      { pokemonId: 'bronzong', team: 1, pos: { x: -150, y: 0 } },
     ]);
     const g = w.players[0]!;
     tick(w, 0, press(Button.Move1));
@@ -284,7 +284,7 @@ describe('channel', () => {
   it('pulses for its duration, blocks Strike, and a knock ends it', () => {
     const w = world([
       { pokemonId: 'blastoise', team: 0, pos: { x: -400, y: 0 } },
-      { pokemonId: 'snorlax', team: 1, pos: { x: 0, y: 0 } },
+      { pokemonId: 'bronzong', team: 1, pos: { x: 0, y: 0 } },
     ]);
     const evs = [...tick(w, 0, press(Button.Signature))];
     for (let i = 0; i < 100; i++) evs.push(...tick(w, 0, press(Button.Strike)));
@@ -295,7 +295,7 @@ describe('channel', () => {
 
     const w2 = world([
       { pokemonId: 'blastoise', team: 0, pos: { x: -400, y: 0 } },
-      { pokemonId: 'snorlax', team: 1, pos: { x: 0, y: 0 } },
+      { pokemonId: 'bronzong', team: 1, pos: { x: 0, y: 0 } },
     ]);
     tick(w2, 0, press(Button.Signature));
     run(w2, 3, [idle, idle]);
@@ -339,7 +339,7 @@ describe('transform buff', () => {
 
 describe('bots and determinism with every mechanic', () => {
   it('a 3v3 between the test kits replays exactly and the bots use the new moves', () => {
-    const lineup = 'greninja,machamp,blastoise/alakazam,greninja,blastoise';
+    const lineup = 'greninja,machamp,blastoise/hoopa,greninja,blastoise';
     const a = runHeadless(parseLineup(lineup), { seed: 7, until: 'match', maxMinutes: 2, brains: ['v2-hard', 'v2-hard'] });
     const b = runHeadless(parseLineup(lineup), { seed: 7, until: 'match', maxMinutes: 2, brains: ['v2-hard', 'v2-hard'] });
     expect(a.hash).toBe(b.hash);

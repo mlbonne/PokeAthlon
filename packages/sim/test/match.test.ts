@@ -40,7 +40,7 @@ function attackWorld(ball = { x: 0, y: 0 }): World {
   return sandbox(
     [
       { pokemonId: 'pikachu', team: 0, pos: { x: -900, y: -800 } },
-      { pokemonId: 'snorlax', team: 1, pos: { x: -900, y: 800 } },
+      { pokemonId: 'bronzong', team: 1, pos: { x: -900, y: 800 } },
     ],
     ball,
   );
@@ -180,7 +180,7 @@ describe('match flow', () => {
       [
         { pokemonId: 'pikachu', team: 0, slot: 0 },
         { pokemonId: 'greninja', team: 0, slot: 1 },
-        { pokemonId: 'snorlax', team: 1, role: 'goalie' },
+        { pokemonId: 'bronzong', team: 1, role: 'goalie' },
       ],
       { mode: 'match' },
     );

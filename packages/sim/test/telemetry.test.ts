@@ -44,7 +44,7 @@ describe('telemetry', () => {
     const w = sandbox(
       [
         { pokemonId: 'lucario', team: 0, pos: { x: 0, y: 0 } },
-        { pokemonId: 'snorlax', team: 1, pos: { x: 400, y: 0 } },
+        { pokemonId: 'bronzong', team: 1, pos: { x: 400, y: 0 } },
       ],
       { x: 0, y: -850 },
     );
@@ -85,7 +85,7 @@ describe('headless runner', () => {
   });
 
   it('telemetry totals agree with the match stats', () => {
-    const r = runHeadless(parseLineup('pikachu,lucario,snorlax/togekiss,lucario,snorlax'), { seed: 1, until: 'set' });
+    const r = runHeadless(parseLineup('pikachu,lucario,bronzong/togekiss,lucario,bronzong'), { seed: 1, until: 'set' });
     const ps = r.telemetry.players;
     const dealt = ps.reduce((s, p) => s + p.damageDealt, 0);
     const taken = ps.reduce((s, p) => s + p.damageTaken, 0);
@@ -123,7 +123,7 @@ describe('analyzer vs sim', () => {
     const inside = sandbox(
       [
         { pokemonId: 'lucario', team: 0, pos: { x: 0, y: 0 } },
-        { pokemonId: 'snorlax', team: 1, pos: { x: sphere.reach + hurt - 10, y: 0 } },
+        { pokemonId: 'bronzong', team: 1, pos: { x: sphere.reach + hurt - 10, y: 0 } },
       ],
       { x: 0, y: -850 },
     );
@@ -134,7 +134,7 @@ describe('analyzer vs sim', () => {
     const outside = sandbox(
       [
         { pokemonId: 'lucario', team: 0, pos: { x: 0, y: 0 } },
-        { pokemonId: 'snorlax', team: 1, pos: { x: sphere.reach + hurt + 60, y: 0 } },
+        { pokemonId: 'bronzong', team: 1, pos: { x: sphere.reach + hurt + 60, y: 0 } },
       ],
       { x: 0, y: -850 },
     );

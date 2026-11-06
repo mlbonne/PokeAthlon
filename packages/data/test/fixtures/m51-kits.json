@@ -1,6 +1,6 @@
 {
   "$comment": "Test kits that use every M5.1 move-system feature. Not real kits: tests install them with registerKit().",
-  "alakazam": {
+  "hoopa": {
     "moves": [
       {
         "id": "t-grab",

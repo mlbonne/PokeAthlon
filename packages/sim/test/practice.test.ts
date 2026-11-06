@@ -83,9 +83,9 @@ describe('practice controls', () => {
 
   it('spawns, swaps and destroys the enemy, keeping ids, telemetry and RNG in step', () => {
     const w = duel();
-    practiceSpawnEnemy(w, 'snorlax');
-    expect(w.players.map((p) => p.pokemonId)).toEqual(['pikachu', 'snorlax']);
-    expect(w.telemetry.players.map((t) => t.pokemon)).toEqual(['pikachu', 'snorlax']);
+    practiceSpawnEnemy(w, 'bronzong');
+    expect(w.players.map((p) => p.pokemonId)).toEqual(['pikachu', 'bronzong']);
+    expect(w.telemetry.players.map((t) => t.pokemon)).toEqual(['pikachu', 'bronzong']);
     expect(w.ai.rng).toHaveLength(2);
     practiceDestroyTeam(w, 1);
     expect(w.players).toHaveLength(1);

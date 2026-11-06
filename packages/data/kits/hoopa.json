@@ -1,0 +1,86 @@
+{
+  "$comment": "Manipulating Mastermind (OS Rune model; was Alakazam until 2026-11, wiki 2026-11) with GAME_BREAKDOWN §13's Pokémon twist. Psychic = our ball grab (no OS equivalent: short hold, slowed, any hit drops it; throw ≤ 1.2× Strike). Hyperspace Hole (2026-11 rework, replaces Teleport = Shadow Swap): a portal projectile that chips the first enemy (LIGHT hit), then Hoopa blinks to where it stopped and bursts 0.35 s later (the old pillar's core KB, ~80 % of its damage); evading in that window dodges the burst. Future Sight = Rune's Banish (40 s, 1.75 s banish, 270+130 % dmg) delivered as a telegraphed delayed area. Player knockback = OS × 1.875; power % → powerRatio.",
+  "pokemon": "hoopa",
+  "moves": [
+    {
+      "id": "psychic",
+      "name": "Psychic",
+      "slot": "primary",
+      "cooldown": 10,
+      "anim": "Charge",
+      "desc": "Grab the ball from up to 300 away and hold it for 0.6 s (slowed; any hit drops it). Press again to throw it. If you don't, it's tossed forward.",
+      "bot": "ballShot",
+      "actions": [{ "type": "grab", "fx": { "color": "#c77dff" }, "radius": 300, "hold": 0.6, "slowPct": 30, "throw": { "base": 1000, "powerRatio": 1.0 } }],
+      "recast": { "window": 0.6, "actions": [{ "type": "throw", "fx": { "color": "#c77dff" }, "ball": { "base": 1350, "powerRatio": 1.6 } }] }
+    },
+    {
+      "id": "hyperspace-hole",
+      "name": "Hyperspace Hole",
+      "slot": "secondary",
+      "cooldown": 11,
+      "anim": "Rotate",
+      "desc": "Fling a portal that chips the first enemy it touches. Where it stops, you come out 0.35 s later with a burst. Evade to dodge the burst.",
+      "bot": "engage",
+      "actions": [
+        {
+          "type": "projectile",
+          "fx": { "color": "#c77dff" },
+          "speed": 1700,
+          "range": 800,
+          "radius": 55,
+          "hit": {
+            "ball": { "base": 700, "powerRatio": 1.0 },
+            "player": { "base": 120, "powerRatio": 0.6 },
+            "damage": { "base": 90, "powerRatio": 0.45 },
+            "light": true
+          },
+          "onEnd": [
+            { "type": "blink", "fx": { "color": "#c77dff" }, "delay": 0.35, "to": "mark", "distance": 900 },
+            {
+              "type": "area",
+              "fx": { "color": "#9d4edd" },
+              "delay": 0.35,
+              "telegraph": true,
+              "shape": "circle",
+              "at": "target",
+              "radius": 170,
+              "hit": {
+                "ball": { "base": 1290, "powerRatio": 1.85 },
+                "player": { "base": 375, "powerRatio": 1.875 },
+                "damage": { "base": 160, "powerRatio": 0.8 },
+                "direction": "radial"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "future-sight",
+      "name": "Future Sight",
+      "slot": "special",
+      "cooldown": 40,
+      "range": 750,
+      "anim": "Charge",
+      "desc": "Mark an area. After 1 s it erupts, banishing enemies inside for 1.75 s and blasting the ball.",
+      "bot": "engage",
+      "actions": [
+        {
+          "type": "area",
+          "fx": { "color": "#7b2cbf" },
+          "shape": "circle",
+          "at": "target",
+          "radius": 190,
+          "delay": 1.0,
+          "telegraph": true,
+          "hit": {
+            "ball": { "base": 1290, "powerRatio": 1.85 },
+            "damage": { "base": 270, "powerRatio": 1.3 },
+            "banish": 1.75,
+            "direction": "radial"
+          }
+        }
+      ]
+    }
+  ]
+}

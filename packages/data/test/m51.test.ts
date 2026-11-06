@@ -4,7 +4,7 @@ import { analyzeRoster } from '../src/analyze';
 import { chargeScale, getKit, parseKit, registerKit, scaleAction, type MoveAction } from '../src/index';
 
 const FIXTURE = JSON.parse(readFileSync(new URL('./fixtures/m51-kits.json', import.meta.url), 'utf8')) as Record<string, unknown>;
-const TEST_IDS = ['alakazam', 'greninja', 'blastoise', 'machamp'];
+const TEST_IDS = ['hoopa', 'greninja', 'blastoise', 'machamp'];
 
 describe('M5.1 move-system schema', () => {
   afterAll(() => {
@@ -44,14 +44,14 @@ describe('M5.1 move-system schema', () => {
   it('the analyzer reports charge, recast, grab, banish, channel, sweet spot, side, transform and passive', () => {
     for (const id of TEST_IDS) registerKit(id, FIXTURE[id]);
     const f = Object.fromEntries(analyzeRoster().map((x) => [x.id, x]));
-    const [grab, swap, banish] = f.alakazam!.moves;
+    const [grab, swap, banish] = f.hoopa!.moves;
     expect(grab!.ballControl).toBe(0.6);
     expect(grab!.recastWindow).toBe(0.6);
     expect(grab!.ballPower).toBe(1600); // the recast throw
     expect(swap!.notes).toContain('swap with ally');
     expect(banish!.banish).toBe(1.5);
     expect(banish!.notes).toContain('telegraphed');
-    expect(f.alakazam!.control).toBeGreaterThan(0);
+    expect(f.hoopa!.control).toBeGreaterThan(0);
 
     const [slash, sneak, cannon] = f.greninja!.moves;
     expect(slash!.knockback).toBe(400); // sweet spot, best case

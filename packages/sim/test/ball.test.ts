@@ -36,8 +36,8 @@ describe('strike', () => {
     expect(miss.events.map((e) => e.type)).toEqual(['strike']);
   });
 
-  it('Very Large strikers (Snorlax) get the OS Large Strike: diameter 285', () => {
-    const w = sandbox([{ pokemonId: 'snorlax', team: 0, pos: { x: -189, y: 0 } }], { x: 0, y: 0 });
+  it('Very Large strikers (Bronzong) get the OS Large Strike: diameter 285', () => {
+    const w = sandbox([{ pokemonId: 'bronzong', team: 0, pos: { x: -189, y: 0 } }], { x: 0, y: 0 });
     expect(w.players[0]!.strikeRadius).toBe(142.5);
     step(w, [STRIKE(1, 0)]);
     expect(w.events.some((e) => e.type === 'ballHit')).toBe(true);
@@ -115,7 +115,7 @@ describe('ball physics', () => {
     const w = sandbox(
       [
         { pokemonId: 'pikachu', team: 0, pos: { x: -130, y: -600 } },
-        { pokemonId: 'snorlax', team: 1, pos: { x: 500, y: -600 } },
+        { pokemonId: 'bronzong', team: 1, pos: { x: 500, y: -600 } },
       ],
       { x: 0, y: -600 },
     );
@@ -200,9 +200,9 @@ describe('OS Core rules', () => {
 describe('ball containment', () => {
   it('a wall created on top of the ball near a corner cannot push it out of the arena', async () => {
     const { pointInPolygon, practiceDisableBarriers } = await import('../src/index');
-    const w = sandbox([{ pokemonId: 'snorlax', team: 1, pos: { x: 700, y: 650 } }], { x: 1025, y: 797 });
+    const w = sandbox([{ pokemonId: 'bronzong', team: 1, pos: { x: 700, y: 650 } }], { x: 1025, y: 797 });
     practiceDisableBarriers(w);
-    // Snorlax's Block (3 walls, 330 out) aimed at the ball in the corner — the M4.4 escape case.
+    // Bronzong's Block (3 walls, 330 out) aimed at the ball in the corner — the M4.4 escape case.
     step(w, [quantizeInput(0, 0, 0.9, 0.42, Button.Signature)]);
     w.players[0]!.level = 2;
     w.players[0]!.moves[2]!.cooldown = 0;

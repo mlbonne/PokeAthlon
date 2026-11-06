@@ -1,7 +1,7 @@
 /**
  * Record a CPU vs CPU match to an MP4 (H.264), plus a JSON balance report.
  *
- *   npm run record -- [--lineup pikachu,lucario,snorlax/togekiss,lucario,snorlax] [--until goal|set|match] [--fps 30] [--meter] [--url http://localhost:4173] [--out recordings]
+ *   npm run record -- [--lineup pikachu,lucario,bronzong/togekiss,lucario,bronzong] [--until goal|set|match] [--fps 30] [--meter] [--url http://localhost:4173] [--out recordings]
  *
  * --meter  bake the F3 debug menu (Meter tab, hitbox / reach / ball-path overlay) into the video.
  *
@@ -25,7 +25,7 @@ const arg = (name: string, def: string) => {
   return i > -1 && process.argv[i + 1] ? process.argv[i + 1]! : def;
 };
 /** 3v3 is the only mode: `a,b,c/d,e,f`, last of each team is the goalie. */
-const LINEUP = arg('lineup', 'pikachu,lucario,snorlax/togekiss,lucario,snorlax');
+const LINEUP = arg('lineup', 'pikachu,lucario,bronzong/togekiss,lucario,bronzong');
 const [A, B] = LINEUP.split('/').map((t) => t.replace(/,/g, '+')) as [string, string];
 const FPS = Number(arg('fps', '30'));
 const URL_BASE = arg('url', 'http://localhost:4173');
