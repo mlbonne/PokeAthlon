@@ -33,10 +33,10 @@ describe('full match (bots)', () => {
       [
         { pokemonId: 'pikachu', team: 0, slot: 0 },
         { pokemonId: 'lucario', team: 0, slot: 1 },
-        { pokemonId: 'snorlax', team: 0, role: 'goalie' },
+        { pokemonId: 'bronzong', team: 0, role: 'goalie' },
         { pokemonId: 'togekiss', team: 1, slot: 0 },
         { pokemonId: 'lucario', team: 1, slot: 1 },
-        { pokemonId: 'snorlax', team: 1, role: 'goalie' },
+        { pokemonId: 'bronzong', team: 1, role: 'goalie' },
       ],
       30,
     );

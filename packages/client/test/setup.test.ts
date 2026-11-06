@@ -5,8 +5,8 @@ import { cpuBan, cpuPick, pickable, roleStrength, seededRand } from '../src/cpuD
 import { AUTO, buildConfig, resolvePicks, type Saved } from '../src/setup';
 
 const base: Saved = {
-  blue: ['pikachu', 'lucario', 'snorlax'],
-  red: ['togekiss', '?', 'snorlax'],
+  blue: ['pikachu', 'lucario', 'bronzong'],
+  red: ['togekiss', '?', 'bronzong'],
   items: [AUTO, AUTO, AUTO],
   role: 'forward',
   diff: 'normal',
@@ -70,9 +70,9 @@ describe('CPU picks', () => {
   });
 
   it('bans: nobody can field a banned Pokémon', () => {
-    const s: Saved = { ...base, blue: ['pikachu', AUTO, AUTO], red: [AUTO, AUTO, AUTO], bans: true, ban: 'snorlax', diff: 'hard' };
+    const s: Saved = { ...base, blue: ['pikachu', AUTO, AUTO], red: [AUTO, AUTO, AUTO], bans: true, ban: 'bronzong', diff: 'hard' };
     const r = resolvePicks(s);
-    expect(r.redBan).toBe(cpuBan('hard', ['snorlax'], seededRand(1)));
+    expect(r.redBan).toBe(cpuBan('hard', ['bronzong'], seededRand(1)));
     for (const id of [...r.blue, ...r.red]) expect([s.ban, r.redBan]).not.toContain(id);
   });
 });

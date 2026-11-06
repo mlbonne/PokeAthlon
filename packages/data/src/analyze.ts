@@ -349,11 +349,33 @@ function actionStats(raw: MoveAction, def: MoveDef, p: PokemonDef, offset = 0): 
   return base;
 }
 
+/**
+ * A projectile's follow-up (Hyperspace Hole): its actions start when the projectile stops, best case
+ * at full range; a `target` area lands there and a `mark` blink travels there.
+ */
+function onEndParts(def: MoveDef, p: PokemonDef): ActionStats[] {
+  return def.actions.flatMap((a) => {
+    if (a.type !== 'projectile' || !a.onEnd) return [];
+    const range = projectileRange(a);
+    const at = { ...def, range };
+    const offset = a.delay + projectileFlightTime(a, range);
+    return a.onEnd.map((f) => {
+      const s = actionStats(f, at, p, offset);
+      if (f.type === 'blink' && f.to === 'mark') {
+        s.mobility = range;
+        s.reach = range;
+        s.notes = s.notes.map((n) => (n === 'blink back' ? 'blink to the projectile' : n));
+      }
+      return s;
+    });
+  });
+}
+
 export function analyzeMove(def: MoveDef, p: PokemonDef): MoveStats {
   const first = def.actions.map((a) => actionStats(a, def, p));
   // Recast actions count as part of the move, after the first cast has played out.
   const after = Math.max(...first.map((a) => a.end)) - def.castTime - (def.charge?.time ?? 0);
-  const parts = [...first, ...(def.recast?.actions ?? []).map((a) => actionStats(a, def, p, after))];
+  const parts = [...first, ...(def.recast?.actions ?? []).map((a) => actionStats(a, def, p, after)), ...onEndParts(def, p)];
   const notes = parts.flatMap((a) => a.notes);
   if (def.charge) notes.unshift(`charge ${def.charge.time} s (min ${Math.round(def.charge.min * 100)} %)`);
   if (def.recast) notes.push(`recast ${def.recast.window} s`);

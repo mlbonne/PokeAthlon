@@ -28,7 +28,7 @@
       "impact": -0.33
     },
     {
-      "pokemon": "alakazam",
+      "pokemon": "hoopa",
       "forward": {
         "wins": 55,
         "games": 190
@@ -52,7 +52,7 @@
       "impact": 2.75
     },
     {
-      "pokemon": "snorlax",
+      "pokemon": "bronzong",
       "forward": {
         "wins": 131,
         "games": 197

@@ -3,7 +3,7 @@ import { hashWorldDeep, quantizeInput, Button, type PlayerSpawn } from '@pokeath
 import { NetClient, type Socket } from '@pokeathlon/net';
 import { startServer, type Started } from '../src/index';
 
-const LINEUP: PlayerSpawn[] = ['pikachu', 'lucario', 'snorlax', 'greninja', 'blastoise', 'machamp'].map((id, i) => ({ pokemonId: id, team: (i < 3 ? 0 : 1) as 0 | 1 }));
+const LINEUP: PlayerSpawn[] = ['pikachu', 'lucario', 'bronzong', 'greninja', 'blastoise', 'machamp'].map((id, i) => ({ pokemonId: id, team: (i < 3 ? 0 : 1) as 0 | 1 }));
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function until(cond: () => boolean, ms = 4000): Promise<void> {
   const end = Date.now() + ms;

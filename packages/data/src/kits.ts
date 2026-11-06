@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import alakazam from '../kits/alakazam.json' with { type: 'json' };
 import blastoise from '../kits/blastoise.json' with { type: 'json' };
+import bronzong from '../kits/bronzong.json' with { type: 'json' };
 import greninja from '../kits/greninja.json' with { type: 'json' };
+import hoopa from '../kits/hoopa.json' with { type: 'json' };
 import lucario from '../kits/lucario.json' with { type: 'json' };
 import machamp from '../kits/machamp.json' with { type: 'json' };
 import pikachu from '../kits/pikachu.json' with { type: 'json' };
-import snorlax from '../kits/snorlax.json' with { type: 'json' };
 import togekiss from '../kits/togekiss.json' with { type: 'json' };
 
 /**
@@ -65,24 +65,6 @@ const SweetSpot = z.object({
   to: frac.default(1),
   /** Cones only: the band is also limited to this central angle. */
   angleDeg: pos.optional(),
-  hit: MoveHit,
-});
-
-export const ProjectileAction = z.object({
-  type: z.literal('projectile'),
-  ...common,
-  count: z.number().int().min(1).default(1),
-  /** Seconds between shots when count > 1. */
-  interval: nonneg.default(0),
-  /** Total fan angle (degrees) across `count` shots fired at once (interval 0). */
-  spreadDeg: nonneg.default(0),
-  speed: pos,
-  /** Speed lost per second (decelerating projectiles stop early). */
-  decel: nonneg.default(0),
-  range: pos,
-  radius: pos,
-  pierce: z.boolean().default(false),
-  hitsBall: z.boolean().default(true),
   hit: MoveHit,
 });
 
@@ -202,6 +184,31 @@ export const BlinkAction = z.object({
   hit: MoveHit.optional(),
 });
 
+export const ProjectileAction = z.object({
+  type: z.literal('projectile'),
+  ...common,
+  count: z.number().int().min(1).default(1),
+  /** Seconds between shots when count > 1. */
+  interval: nonneg.default(0),
+  /** Total fan angle (degrees) across `count` shots fired at once (interval 0). */
+  spreadDeg: nonneg.default(0),
+  speed: pos,
+  /** Speed lost per second (decelerating projectiles stop early). */
+  decel: nonneg.default(0),
+  range: pos,
+  radius: pos,
+  pierce: z.boolean().default(false),
+  hitsBall: z.boolean().default(true),
+  hit: MoveHit,
+  /**
+   * Follow-up when the projectile stops (hits someone, a wall, or its range): these actions are
+   * scheduled from that moment with the stop point as both the aim target and the mark, so a
+   * `blink` to `mark` teleports the caster to it and an `area` at `target` lands there (Hoopa's
+   * Hyperspace Hole). Delays count from the stop.
+   */
+  onEnd: z.array(z.discriminatedUnion('type', [AreaAction, BlinkAction])).optional(),
+});
+
 /**
  * Ball grab (M5.1): if the ball is within `radius`, hold it in front of the caster for `hold`
  * seconds (the only "hold" in the game). The caster is slowed; any hit on them drops it.
@@ -311,7 +318,7 @@ export function parseKit(json: unknown): KitDef {
 }
 
 export const kits: Record<string, KitDef> = Object.fromEntries(
-  [pikachu, snorlax, lucario, togekiss, greninja, machamp, alakazam, blastoise].map((k) => {
+  [pikachu, bronzong, lucario, togekiss, greninja, machamp, hoopa, blastoise].map((k) => {
     const kit = parseKit(k);
     return [kit.pokemon, kit];
   }),

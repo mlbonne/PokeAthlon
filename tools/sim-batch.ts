@@ -150,7 +150,7 @@ async function main(): Promise<void> {
   if (flag('ladder')) return ladder();
   const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-  const lineupSpec = arg('lineup', 'pikachu,lucario,snorlax/togekiss,lucario,snorlax');
+  const lineupSpec = arg('lineup', 'pikachu,lucario,bronzong/togekiss,lucario,bronzong');
   const [lineupA, lineupB] = lineupSpec.split(/[/:]/) as [string, string];
   parseLineup(lineupSpec); // validate early
   const games = Number(arg('games', '100'));

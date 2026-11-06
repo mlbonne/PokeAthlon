@@ -16,7 +16,7 @@ import {
 } from '../src/index';
 import { sandbox } from './helpers';
 
-const trio = parseLineup('pikachu,lucario,snorlax/togekiss,lucario,snorlax');
+const trio = parseLineup('pikachu,lucario,bronzong/togekiss,lucario,bronzong');
 
 describe('bot brain v2', () => {
   it('is deterministic: same seed, same match', () => {
@@ -65,7 +65,7 @@ describe('bot brain v2', () => {
   });
 
   it('every kit gets a move model, and bots use their moves', () => {
-    for (const id of ['pikachu', 'lucario', 'snorlax', 'togekiss']) expect(moveModels(id)).toHaveLength(3);
+    for (const id of ['pikachu', 'lucario', 'bronzong', 'togekiss']) expect(moveModels(id)).toHaveLength(3);
     const r = runHeadless(trio, { seed: 4, until: 'set' });
     const casts = r.telemetry.players.reduce((s, p) => s + Object.entries(p.moves).filter(([k]) => k !== 'strike').reduce((a, [, m]) => a + m.casts, 0), 0);
     expect(casts).toBeGreaterThan(20);

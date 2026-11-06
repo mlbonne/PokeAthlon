@@ -26,12 +26,11 @@ The bracketed tags are the license labels recorded per contribution in SpriteCol
 - Portraits:
   - Emmuffin (https://twitter.com/Ernmuffin) [CC_BY-NC_4]
 
-### Alakazam (#0065)
+### Hoopa (#0720)
 - Sprites:
-  - CHUNSOFT (https://www.spike-chunsoft.com/) [Unspecified]
+  - programmedsleepstate [PMDCollab_1]
 - Portraits:
-  - CHUNSOFT (https://www.spike-chunsoft.com/) [Unspecified]
-  - Gust (https://twitter.com/Estelaris__) [PMDCollab_1]
+  - programmedsleepstate [CC_BY-NC_4]
 
 ### Togekiss (#0468)
 - Sprites:
@@ -40,13 +39,11 @@ The bracketed tags are the license labels recorded per contribution in SpriteCol
   - CHUNSOFT (https://www.spike-chunsoft.com/) [Unspecified]
   - Unknown contributor [PMDCollab_1]
 
-### Snorlax (#0143)
+### Bronzong (#0437)
 - Sprites:
   - CHUNSOFT (https://www.spike-chunsoft.com/) [Unspecified]
 - Portraits:
   - CHUNSOFT (https://www.spike-chunsoft.com/) [Unspecified]
-  - NOLASMOR [PMDCollab_2]
-  - Emboarger [CC_BY-NC_4]
 
 ### Blastoise (#0009)
 - Sprites:

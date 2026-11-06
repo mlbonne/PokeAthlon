@@ -95,12 +95,14 @@ All of these have Walk, Idle, Attack, Hurt, Charge and Swing animations, plus Sh
 |---|---|---|---|
 | 0025 | **Pikachu** | Striker | Quick Attack (dash that hits the ball) / Thunder Shock (skillshot, short stun) / Volt Tackle (long piercing charge) |
 | 0658 | **Greninja** | Striker | Water Shuriken (3 small ball nudges) / Shadow Sneak (blink behind target) / Hydro Cannon |
-| 0065 | **Alakazam** | Passer | Psychic (grab and redirect the ball) / Teleport (swap places with an ally) / Future Sight (delayed AoE) |
+| 0720 | **Hoopa** | Passer | Psychic (grab and redirect the ball) / Hyperspace Hole (portal shot; Hoopa comes out where it stops with a burst, evade to dodge it) / Future Sight (delayed AoE). Replaced Alakazam (2026-11-06) |
 | 0468 | **Togekiss** | Passer | Air Slash (lob pass) / Follow Me (pulls enemies' aggro) / Wish (team shield) |
-| 0143 | **Snorlax** | Wall | Block (wall segment) / Body Slam (AoE knockback) / Rest (heals stagger, becomes immovable) |
+| 0437 | **Bronzong** | Wall | Gyro Ball (slowing roll) / Heavy Slam (leap, AoE stun) / Light Screen (arc of walls). Took over Snorlax's kit (2026-11-06) |
 | 0009 | **Blastoise** | Wall | Withdraw (shell shield) / Rapid Spin (spin that deflects) / Hydro Pump (pushback beam) |
 | 0448 | **Lucario** | Brawler | Aura Sphere (homing knockback) / Close Combat (combo) / Extreme Speed |
 | 0068 | **Machamp** | Brawler | Cross Chop / Seismic Toss (grab and throw) / Dynamic Punch (big knockback, confuse) |
+
+**Planned:** Snorlax comes back as a new kit modelled on OS **Asher**: a heavy physical hitter that dashes in and punishes, playable as goalie or brawler.
 
 Backups with full sprite sets: Gengar, Garchomp, Dragonite, Gardevoir, Charizard, Blaziken, Gyarados, Politoed, Sylveon, Raichu.
 

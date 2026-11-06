@@ -121,6 +121,8 @@ export interface Projectile {
   hit: MoveHit;
   hitIds: number[];
   ballHit: boolean;
+  /** Follow-up actions when it stops (Hyperspace Hole), or null. */
+  onEnd: MoveAction[] | null;
 }
 
 /** A creation wall: a capsule (segment + radius) that blocks players, the ball and projectiles. */
@@ -413,6 +415,7 @@ function fire(world: World, p: Player, pa: PendingAction): void {
           hit: a.hit,
           hitIds: [],
           ballHit: false,
+          onEnd: a.onEnd ? [...a.onEnd] : null,
         });
       }
       break;
@@ -791,7 +794,13 @@ export function stepProjectiles(world: World): void {
     }
     pr.traveled += travel;
     pr.speed = Math.max(0, pr.speed - pr.decel * DT);
-    if (dead || pr.traveled >= pr.range || pr.speed <= 0) world.projectiles.splice(i, 1);
+    if (dead || pr.traveled >= pr.range || pr.speed <= 0) {
+      world.projectiles.splice(i, 1);
+      if (pr.onEnd) {
+        const end = { ...pr.pos };
+        schedule(world, owner, pr.moveId, pr.onEnd, { dir: { ...pr.dir }, target: end, aimDist: 0 }, { power: 1, range: 1 }, end);
+      }
+    }
   }
 }
 

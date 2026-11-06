@@ -25,7 +25,7 @@ describe('item data', () => {
     expect(items).toHaveLength(9);
     expect(itemsFor('forward')).toHaveLength(5);
     expect(itemsFor('goalie')).toHaveLength(4);
-    for (const id of ['pikachu', 'greninja', 'alakazam', 'togekiss', 'snorlax', 'blastoise', 'lucario', 'machamp']) {
+    for (const id of ['pikachu', 'greninja', 'hoopa', 'togekiss', 'bronzong', 'blastoise', 'lucario', 'machamp']) {
       const a = getPokemon(id).archetype;
       expect(defaultItem(a, 'forward').slot).toBe('forward');
       expect(defaultItem(a, 'goalie').slot).toBe('goalie');
@@ -83,7 +83,7 @@ describe('forward items', () => {
 
     const w2 = world([
       { pokemonId: 'greninja', team: 0, pos: { x: -300, y: 0 }, item: 'poison-barb' },
-      { pokemonId: 'snorlax', team: 1, pos: { x: 0, y: 0 } },
+      { pokemonId: 'bronzong', team: 1, pos: { x: 0, y: 0 } },
     ]);
     const g = w2.players[0]!;
     const o = w2.players[1]!;
@@ -109,7 +109,7 @@ describe('forward items', () => {
 
 describe('goalie items', () => {
   it('Rocky Helmet: +30 % size, +20 power, −15 % damage, only on your own half', () => {
-    const w = world([{ pokemonId: 'snorlax', team: 0, role: 'goalie', pos: { x: -600, y: 0 }, item: 'rocky-helmet' }]);
+    const w = world([{ pokemonId: 'bronzong', team: 0, role: 'goalie', pos: { x: -600, y: 0 }, item: 'rocky-helmet' }]);
     const p = w.players[0]!;
     p.pos = { x: ownX(w), y: 0 };
     run(w, 1, [idle]);

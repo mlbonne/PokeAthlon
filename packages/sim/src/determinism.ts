@@ -9,7 +9,7 @@ import { createWorld, step } from './world';
  * output of `npm run determinism` with the browser page `determinism.html`.
  */
 export function determinismProbe(ticks = 3600 * 3, every = 600): string[] {
-  const lineup = ['pikachu', 'lucario', 'snorlax', 'greninja', 'blastoise', 'machamp'].map((id, i) => ({ pokemonId: id, team: (i < 3 ? 0 : 1) as 0 | 1 }));
+  const lineup = ['pikachu', 'lucario', 'bronzong', 'greninja', 'blastoise', 'machamp'].map((id, i) => ({ pokemonId: id, team: (i < 3 ? 0 : 1) as 0 | 1 }));
   const w = createWorld(withDefaultItems(lineup), { mode: 'match', seed: 2026, boosts: true });
   const brain = getBrain('v2-hard');
   const out: string[] = [];

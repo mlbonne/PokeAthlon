@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createWorld, getBrain, hashWorldDeep, restoreWorld, snapshotWorld, step, type World } from '../src/index';
 
-const LINEUP = ['pikachu', 'lucario', 'snorlax', 'greninja', 'blastoise', 'machamp'].map((id, i) => ({ pokemonId: id, team: (i < 3 ? 0 : 1) as 0 | 1 }));
+const LINEUP = ['pikachu', 'lucario', 'bronzong', 'greninja', 'blastoise', 'machamp'].map((id, i) => ({ pokemonId: id, team: (i < 3 ? 0 : 1) as 0 | 1 }));
 const brain = getBrain('v2');
 const tickBots = (w: World) => step(w, w.players.map((p) => brain(w, p.id)));
 

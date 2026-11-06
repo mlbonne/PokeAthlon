@@ -1,0 +1,85 @@
+{
+  "$comment": "Stalwart Protector (OS Dubu model). Numbers start from Dubu's Rollout / Somerassault / Tofu Fortress. Was Snorlax's kit until 2026-11 (Gyro Ball = Rollout, Heavy Slam = Body Slam, Light Screen = Block).",
+  "pokemon": "bronzong",
+  "moves": [
+    {
+      "id": "gyro-ball",
+      "name": "Gyro Ball",
+      "slot": "primary",
+      "cooldown": 10,
+      "castTime": 0.5,
+      "anim": "Rotate",
+      "desc": "Wind up, then spin off a slowing steel top that breaks on the first enemy.",
+      "bot": "ballShot",
+      "actions": [
+        {
+          "type": "projectile",
+          "fx": { "color": "#6b8fa3" },
+          "speed": 1500,
+          "decel": 1500,
+          "range": 900,
+          "radius": 70,
+          "hit": {
+            "ball": { "base": 1320, "powerRatio": 1.7 },
+            "player": { "base": 318, "powerRatio": 1.462 },
+            "damage": { "base": 170, "powerRatio": 0.78 },
+            "stun": 0.3
+          }
+        }
+      ]
+    },
+    {
+      "id": "heavy-slam",
+      "name": "Heavy Slam",
+      "slot": "secondary",
+      "cooldown": 20,
+      "anim": "Hop",
+      "desc": "Leap forward and slam down with all your weight, stunning nearby enemies and the ball.",
+      "bot": "engage",
+      "actions": [
+        { "type": "dash", "fx": { "color": "#7d8a99" }, "distance": 420, "time": 0.35 },
+        {
+          "type": "area",
+          "fx": { "color": "#7d8a99" },
+          "delay": 0.35,
+          "shape": "circle",
+          "radius": 220,
+          "hit": {
+            "player": { "base": 375, "powerRatio": 1.875 },
+            "damage": { "base": 200, "powerRatio": 1.0 },
+            "stun": 0.5,
+            "ballStun": 0.25,
+            "direction": "radial"
+          }
+        }
+      ]
+    },
+    {
+      "id": "light-screen",
+      "name": "Light Screen",
+      "slot": "special",
+      "cooldown": 40,
+      "anim": "Attack",
+      "desc": "Raise an arc of 3 light screens that hit enemies and block everything for 2.5 s.",
+      "bot": "defend",
+      "actions": [
+        {
+          "type": "wall",
+          "fx": { "color": "#f5e663" },
+          "count": 3,
+          "spreadDeg": 60,
+          "distance": 330,
+          "length": 170,
+          "thickness": 50,
+          "duration": 2.5,
+          "hit": {
+            "ball": { "base": 1340, "powerRatio": 1.79 },
+            "player": { "base": 338, "powerRatio": 1.669 },
+            "damage": { "base": 180, "powerRatio": 0.89 },
+            "direction": "radial"
+          }
+        }
+      ]
+    }
+  ]
+}
