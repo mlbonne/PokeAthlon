@@ -118,6 +118,25 @@ Viridian Pitch gets its Speed Gate and the wilds theme in 6.5's first half.
 ### 6.10 Wrap-up
 Final measurements per stage, a docs update, and a tag `v0.7.0-m6`.
 
+## Stage editor (planned)
+
+> Your request (2026-11-06): build a stage editor so you can make your own stages. The stages after the Stadium
+> are on hold until then; you may end up building some of them yourself in the editor.
+
+A stage is already pure data (frame + terrain JSON + `theme`), so the editor is a tool that writes that JSON.
+- **Needs first:** step 6.1 (obstacles and hazards in the terrain schema), so there is something to place beyond spawns and barriers.
+- **Where:** an editor page in the client (top-down view of the arena, plus the 3D match view as a preview).
+- **What it edits:**
+  - spawns, Core spawn, orbs;
+  - barriers;
+  - obstacles (walls, columns);
+  - hazards with their numbers;
+  - theme (Stadium or plain for now);
+  - name.
+- **Readability rules:** the editor flags anything that breaks them (an obstacle in a goal mouth, a spawn outside the arena, an asymmetric layout).
+- **Testing a stage:** a "test play" button starts a bot match on it.
+- **Output:** export or import a `.json` file you can drop into `packages/data/stages/`.
+
 ## Open questions for you
 1. Are these 5 pairings (area → OS gimmick) the ones you want? Swapping a gimmick is cheap until 6.5.
 2. Stage names: keep Pokémon place names (Cinnabar, Ecruteak, Ilex) or make up our own?
