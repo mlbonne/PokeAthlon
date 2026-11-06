@@ -55,16 +55,30 @@ describe('rollback session (M7.1)', () => {
     expect(a!.session.stats.stalls).toBeGreaterThan(0);
   });
 
-  it('a seat handed to a bot mid-match stays in sync on every machine', () => {
+  it('a player who drops out is replaced by a bot, everywhere at the same tick', () => {
     const net = makeNet([0, 2, 4], { latency: 3, jitter: 2, seed: 3 });
     for (let f = 0; f < 600; f++) net.tick();
-    // Seat 2 drops: the others agree it's a bot from a tick past its last input.
-    const from = Math.max(...net.clients.map((c) => c.session.world.tick)) + 1;
-    for (const c of net.clients) if (c.seat !== 2) c.session.setBot(2, from);
-    const rest = net.clients.filter((c) => c.seat !== 2);
-    for (let f = 0; f < 900; f++) net.tick(new Set([2]));
-    const after = rest.map((c) => new Map([...c.hashes].filter(([t]) => t > from + 20)));
-    expect(agree(after.map((hashes) => ({ hashes })))).toBeGreaterThan(3);
+    const from = net.drop(2);
+    for (let f = 0; f < 900; f++) net.tick();
+    const rest = net.clients.filter((c) => !c.gone);
+    const after = rest.map((c) => ({ hashes: new Map([...c.hashes].filter(([t]) => t > from)) }));
+    expect(agree(after)).toBeGreaterThan(5);
+  });
+
+  it('a player can rejoin their seat and everyone stays in sync', () => {
+    const net = makeNet([0, 3], { latency: 4, jitter: 2, seed: 8 });
+    for (let f = 0; f < 500; f++) net.tick();
+    const botFrom = net.drop(3);
+    for (let f = 0; f < 400; f++) net.tick();
+    const { client, from } = net.rejoin(3, botFrom);
+    expect(client.session.world.tick).toBeGreaterThan(800);
+    for (let f = 0; f < 900; f++) net.tick();
+    const live = net.clients.filter((c) => !c.gone);
+    expect(live).toHaveLength(2);
+    const after = live.map((c) => ({ hashes: new Map([...c.hashes].filter(([t]) => t > from)) }));
+    expect(agree(after)).toBeGreaterThan(5);
+    // The rejoined player's inputs really drive the seat again.
+    expect(client.session.seats[3]).toBe('local');
   });
 });
 

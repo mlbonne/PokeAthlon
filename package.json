@@ -27,7 +27,8 @@
     "balance": "tsx tools/balance.ts",
     "playstyle": "tsx tools/playstyle.ts",
     "kits": "tsx tools/kits.ts",
-    "determinism": "tsx tools/determinism.ts"
+    "determinism": "tsx tools/determinism.ts",
+    "server": "tsx packages/server/src/main.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

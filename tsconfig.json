@@ -4,6 +4,7 @@
     { "path": "packages/data" },
     { "path": "packages/sim" },
     { "path": "packages/net" },
+    { "path": "packages/server" },
     { "path": "packages/client" },
     { "path": "tools" }
   ]

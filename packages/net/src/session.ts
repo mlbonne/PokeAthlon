@@ -93,10 +93,10 @@ export class RollbackSession {
   private readonly send: ((tick: number, input: PlayerInput) => void) | undefined;
   private readonly onHash: ((tick: number, hash: string) => void) | undefined;
   private readonly hashEvery: number;
-  /** Known inputs per seat, indexed by tick. Seats that are bots from tick T have no entries from T on. */
+  /** Known inputs per seat, indexed by tick (bot ticks hold a placeholder). */
   private readonly inputs: PlayerInput[][];
-  /** Tick from which a seat is played by a bot (Infinity = never). */
-  private readonly botFrom: number[];
+  /** Per seat: who plays it from which tick on, in tick order. */
+  private readonly control: { from: number; bot: boolean }[][];
   /** Inputs actually used for each simulated, not yet confirmed tick (to detect wrong guesses). */
   private readonly used = new Map<number, PlayerInput[]>();
   /** State before stepping tick t, for ticks we may still roll back to (plus pending hash ticks). */
@@ -119,7 +119,7 @@ export class RollbackSession {
     this.send = o.send;
     this.onHash = o.onHash;
     this.hashEvery = o.hashEvery ?? 120;
-    this.botFrom = o.seats.map((s) => (s === 'bot' ? 0 : Infinity));
+    this.control = o.seats.map((s) => [{ from: 0, bot: s === 'bot' }]);
     // Ticks before the first possible input are neutral for every human seat, on every machine.
     const start = this.world.tick;
     this.inputs = o.seats.map(() => []);
@@ -127,10 +127,10 @@ export class RollbackSession {
     this.nextLocal = start + this.inputDelay;
   }
 
-  /** Number of ticks for which every human seat's input is known (the confirmed prefix). */
+  /** Number of ticks for which every seat's input is known (the confirmed prefix). */
   get confirmed(): number {
     let c = Infinity;
-    for (let s = 0; s < this.seats.length; s++) if (this.seats[s] !== 'bot') c = Math.min(c, Math.min(this.known(s), this.botFrom[s]!));
+    for (let s = 0; s < this.seats.length; s++) c = Math.min(c, this.known(s));
     return c === Infinity ? this.world.tick + this.maxRollback + 1 : c;
   }
 
@@ -139,14 +139,24 @@ export class RollbackSession {
     return this.world.tick - Math.min(this.confirmed, this.world.tick);
   }
 
-  /** Inputs of seat `s` are known for ticks below this. */
-  private known(s: number): number {
-    return this.inputs[s]!.length;
+  /** Inputs of seat `s` are known for ticks below this (Infinity: a bot from here on). */
+  known(s: number): number {
+    const last = this.control[s]!.at(-1)!;
+    const len = this.inputs[s]!.length;
+    return last.bot && len >= last.from ? Infinity : len;
+  }
+
+  private isBot(s: number, t: number): boolean {
+    const c = this.control[s]!;
+    for (let i = c.length - 1; i >= 0; i--) if (c[i]!.from <= t) return c[i]!.bot;
+    return false;
   }
 
   /** A remote seat's input for `tick` arrived. Inputs per seat must arrive in tick order. */
   receive(seat: number, tick: number, input: PlayerInput): void {
     const list = this.inputs[seat]!;
+    const last = this.control[seat]!.at(-1)!;
+    if (last.bot && tick >= last.from) return; // the seat was handed to a bot: late inputs don't count
     if (tick !== list.length) {
       if (tick < list.length) return; // duplicate
       throw new Error(`net: seat ${seat} input for tick ${tick} arrived before tick ${list.length}`);
@@ -161,15 +171,30 @@ export class RollbackSession {
    * get the same tick; inputs the seat sent for later ticks are ignored.
    */
   setBot(seat: number, fromTick: number): void {
-    this.botFrom[seat] = fromTick;
-    this.seats[seat] = 'bot';
-    this.inputs[seat]!.length = Math.min(this.inputs[seat]!.length, fromTick);
+    this.control[seat]!.push({ from: fromTick, bot: true });
+    this.seats[seat] = seat === this.local ? 'local' : 'bot';
+    const list = this.inputs[seat]!;
+    if (list.length > fromTick) list.length = fromTick;
     if (fromTick < this.world.tick) this.rollbackFrom = Math.min(this.rollbackFrom, fromTick);
+  }
+
+  /**
+   * Seat `seat` is played by a human again from `fromTick` (a player rejoined). The tick must be
+   * far enough ahead that no machine has simulated it yet. On the rejoining machine the seat is
+   * `local` and its first input is for `fromTick`.
+   */
+  setHuman(seat: number, fromTick: number): void {
+    if (fromTick < this.world.tick) throw new Error(`net: seat ${seat} rejoins at tick ${fromTick}, already simulated ${this.world.tick}`);
+    this.control[seat]!.push({ from: fromTick, bot: false });
+    if (seat !== this.local) this.seats[seat] = 'remote';
+    const list = this.inputs[seat]!;
+    while (list.length < fromTick) list.push(NEUTRAL_INPUT);
+    if (seat === this.local) this.nextLocal = fromTick;
   }
 
   /** The input seat `s` uses at tick `t`: known, bot, or a guess. */
   private inputFor(s: number, t: number): PlayerInput {
-    if (t >= this.botFrom[s]!) return this.bot(this.world, s);
+    if (this.isBot(s, t)) return this.bot(this.world, s);
     const list = this.inputs[s]!;
     if (t < list.length) return list[t]!;
     return list.length > 0 ? list[list.length - 1]! : NEUTRAL_INPUT;
@@ -224,7 +249,8 @@ export class RollbackSession {
       this.stats.stalls++;
       return { stepped: 0, resimulated, events };
     }
-    if (this.local >= 0 && this.nextLocal < this.botFrom[this.local]!) {
+    // Your input for tick now + delay (a rejoining player only once the match has caught up).
+    if (this.local >= 0 && !this.isBot(this.local, this.nextLocal) && this.nextLocal <= this.world.tick + this.inputDelay) {
       const tick = this.nextLocal++;
       this.inputs[this.local]![tick] = localInput;
       this.send?.(tick, localInput);
@@ -237,8 +263,10 @@ export class RollbackSession {
     if (!this.onHash) return;
     const c = Math.min(this.confirmed, this.world.tick);
     for (let t = this.lastHashed + this.hashEvery; t <= c; t += this.hashEvery) {
-      const snap = this.snaps.get(t);
-      if (snap) this.onHash(t, hashWorldDeep(snap as World));
+      // The state before tick t: the live world if that's where we are, else its snapshot.
+      const state = t === this.world.tick ? this.world : (this.snaps.get(t) as World | undefined);
+      if (!state) break;
+      this.onHash(t, hashWorldDeep(state));
       this.lastHashed = t;
     }
   }
