@@ -241,6 +241,29 @@ export const GuardianAction = z.object({
 });
 
 /**
+ * Ring (OS Atlas's Cosmic Expanse, data-mined HV_Halo): a ring on the ground around the caster. It
+ * grows from `startPct` to `radius` in `grow` seconds, hitting everything inside with `hit` (players
+ * and the ball, once each). If it hits no enemy it vanishes `grace` seconds later. If it hits an
+ * enemy it stays and shrinks to `minRadius` over `shrink` seconds: anything that enters it (the
+ * ball or an enemy) is bounced out with `followHit`, and enemies still inside take `followHit`
+ * every `repeatEvery`. It stays where it was cast; the caster moves and casts freely.
+ */
+export const RingAction = z.object({
+  type: z.literal('ring'),
+  ...common,
+  radius: pos,
+  startPct: frac.default(0.5),
+  grow: nonneg.default(0.15),
+  grace: nonneg.default(0.35),
+  shrink: pos.default(1.9),
+  minRadius: nonneg.default(60),
+  repeatEvery: pos.default(0.25),
+  hitsBall: z.boolean().default(true),
+  hit: MoveHit,
+  followHit: MoveHit,
+});
+
+/**
  * Ball grab (M5.1): if the ball is within `radius`, hold it in front of the caster for `hold`
  * seconds (the only "hold" in the game). The caster is slowed; any hit on them drops it.
  * At the end it is dropped, or thrown with `throw` if set. A `throw` action (usually a recast) throws it early.
@@ -273,6 +296,7 @@ export const MoveAction = z.discriminatedUnion('type', [
   GrabAction,
   ThrowAction,
   GuardianAction,
+  RingAction,
 ]);
 export type MoveAction = z.infer<typeof MoveAction>;
 
@@ -422,6 +446,8 @@ export function scaleAction(a: MoveAction, power: number, range: number, duratio
       return { ...a, ball: scaleScaling(a.ball, power) };
     case 'guardian':
       return { ...a, radius: a.radius * range, duration: a.duration * duration };
+    case 'ring':
+      return { ...a, radius: a.radius * range, shrink: a.shrink * duration, hit: scaleHit(a.hit, power), followHit: scaleHit(a.followHit, power) };
   }
 }
 

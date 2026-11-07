@@ -87,10 +87,13 @@ So this pass fixes those, not the size table.
 
 ## Still open
 
-- **Blastoise in goal (~70 % in all three runs).**
+- **Blastoise in goal (~70 % in all four runs).**
   - Neither the weaker rescue nor a longer cooldown moved it, so it isn't Aqua Ring.
-  - Next suspects: Whirlpool's two-hit clear near goal, and Surf's long pierce.
-- **Bronzong:** 54–62 % forward across runs with the same numbers. It probably needs one more small cut.
+  - It isn't Whirlpool either. After this pass, Whirlpool was rebuilt to match OS's Cosmic Expanse (data-mined `HV_Halo`): a ring that stays on the ground and bounces out what enters it.
+    - The old version was a burst plus one delayed hit.
+    - The rebuild left Blastoise at 49 % forward / 68.5 % goalie in a 600-game check.
+  - Next suspect: Surf's long pierce (a goalie's clear through every attacker).
+- **Bronzong:** 54–63 % forward across four runs (62–63 % in the last two). It needs one more small cut.
 - **Greninja and Machamp in goal (33 % and 43 %):** forward-only kits with no defensive tool. Some of that is intended: OS has bad-goalie strikers too.
 - **Zeraora (~41 %):** still the weakest forward.
   - Agility gives it nothing in bot play (0 hits, as expected for a haste).

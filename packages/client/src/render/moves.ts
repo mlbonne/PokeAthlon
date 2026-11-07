@@ -32,6 +32,8 @@ export class MoveViews {
   private readonly projectiles = new Map<number, THREE.Group>();
   private readonly walls = new Map<number, THREE.Mesh>();
   private readonly guardians = new Map<number, THREE.Group>();
+  /** Rings on the ground (Whirlpool): a unit ring scaled to the sim radius every frame. */
+  private readonly rings = new Map<number, THREE.Group>();
   /** Tracking target areas (Future Sight): a warning disc that follows its enemy. */
   private readonly trackers = new Map<string, THREE.Group>();
   private readonly auras: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>[] = [];
@@ -163,6 +165,38 @@ export class MoveViews {
       if (!liveG.has(id)) {
         this.object.remove(grp);
         this.guardians.delete(id);
+      }
+    }
+
+    // Rings: a bright band with a faint fill, scaled to the current radius.
+    const liveR = new Set<number>();
+    for (const r of world.rings) {
+      liveR.add(r.id);
+      let grp = this.rings.get(r.id);
+      if (!grp) {
+        grp = new THREE.Group();
+        const color = new THREE.Color(r.color);
+        const fill = new THREE.Mesh(
+          new THREE.CircleGeometry(1, 48),
+          new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.12, depthWrite: false }),
+        );
+        const band = new THREE.Mesh(
+          new THREE.RingGeometry(0.86, 1, 48),
+          new THREE.MeshBasicMaterial({ color: color.clone().lerp(new THREE.Color(0xffffff), 0.35), transparent: true, opacity: 0.85, depthWrite: false }),
+        );
+        fill.rotation.x = band.rotation.x = -Math.PI / 2;
+        grp.add(fill, band);
+        grp.position.set(toThreeX(r.pos.x), 0.045, toThreeZ(r.pos.y));
+        this.rings.set(r.id, grp);
+        this.object.add(grp);
+      }
+      const s = r.radius * W;
+      grp.scale.set(s, 1, s);
+    }
+    for (const [id, grp] of this.rings) {
+      if (!liveR.has(id)) {
+        this.object.remove(grp);
+        this.rings.delete(id);
       }
     }
 

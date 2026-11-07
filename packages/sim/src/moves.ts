@@ -130,6 +130,38 @@ export interface Projectile {
   onEnd: MoveAction[] | null;
 }
 
+/** A ring on the ground (OS Atlas's Cosmic Expanse): grows, and if it hit an enemy, shrinks while bouncing out what enters. */
+export interface Ring {
+  id: number;
+  owner: number;
+  team: 0 | 1;
+  moveId: string;
+  color: string;
+  pos: Vec2;
+  /** Current radius. */
+  radius: number;
+  startRadius: number;
+  fullRadius: number;
+  minRadius: number;
+  /** Ticks since it was cast. */
+  age: number;
+  growTicks: number;
+  graceTicks: number;
+  shrinkTicks: number;
+  repeatTicks: number;
+  /** Tick (age) it latched onto an enemy and started shrinking, or -1; its radius then. */
+  latchedAt: number;
+  latchedRadius: number;
+  hitsBall: boolean;
+  hit: MoveHit;
+  followHit: MoveHit;
+  /** Entities already given the first hit (player ids; -1 = the ball). */
+  firstHit: number[];
+  /** Entities inside last tick (player ids; -1 = the ball): only new arrivals are bounced. */
+  inside: number[];
+  done: boolean;
+}
+
 /** A guardian zone (OS Atlas's Celestial Intervention): heals allies inside, rescues allies from KOs. */
 export interface Guardian {
   id: number;
@@ -588,6 +620,38 @@ function fire(world: World, p: Player, pa: PendingAction): void {
       world.events.push({ type: 'grab', playerId: p.id, moveId: pa.moveId, caught });
       break;
     }
+    case 'ring': {
+      const start = a.radius * a.startPct;
+      const r: Ring = {
+        id: world.nextEntityId++,
+        owner: p.id,
+        team: p.team,
+        moveId: pa.moveId,
+        color: a.fx.color,
+        pos: { ...p.pos },
+        radius: start,
+        startRadius: start,
+        fullRadius: a.radius,
+        minRadius: Math.min(a.minRadius, a.radius),
+        age: 0,
+        growTicks: Math.max(1, ticks(a.grow)),
+        graceTicks: ticks(a.grace),
+        shrinkTicks: Math.max(1, ticks(a.shrink)),
+        repeatTicks: Math.max(1, ticks(a.repeatEvery)),
+        latchedAt: -1,
+        latchedRadius: start,
+        hitsBall: a.hitsBall,
+        hit: a.hit,
+        followHit: a.followHit,
+        firstHit: [],
+        inside: [],
+        done: false,
+      };
+      world.rings.push(r);
+      world.events.push({ type: 'ring', playerId: p.id, moveId: pa.moveId, pos: { ...r.pos }, radius: a.radius, color: a.fx.color });
+      ringHits(world, r);
+      break;
+    }
     case 'guardian': {
       const pos = a.at === 'target' ? clampInside(world, p.pos, pa.target) : { ...p.pos };
       const total = ticks(a.duration);
@@ -949,6 +1013,71 @@ export function stepCreations(world: World): void {
     stepGuardian(world, g);
     if (--g.ticks <= 0) world.guardians.splice(i, 1);
   }
+  for (let i = world.rings.length - 1; i >= 0; i--) {
+    const r = world.rings[i]!;
+    stepRing(world, r);
+    if (r.done) world.rings.splice(i, 1);
+  }
+}
+
+/** One tick of a ring: size, then hits. */
+function stepRing(world: World, r: Ring): void {
+  r.age++;
+  if (r.latchedAt < 0) {
+    if (r.age >= r.growTicks + r.graceTicks) {
+      r.done = true;
+      return;
+    }
+    r.radius = r.startRadius + (r.fullRadius - r.startRadius) * Math.min(1, r.age / r.growTicks);
+  } else {
+    // Shrinks from the size it had when it latched.
+    const t = (r.age - r.latchedAt) / r.shrinkTicks;
+    if (t >= 1) {
+      r.done = true;
+      return;
+    }
+    const from = r.latchedRadius;
+    r.radius = from + (r.minRadius - from) * t;
+  }
+  ringHits(world, r);
+}
+
+/** Hits for this tick: first hits while it hasn't latched, bounces for new arrivals once it has. */
+function ringHits(world: World, r: Ring): void {
+  const owner = world.players[r.owner];
+  if (!owner) return;
+  const now: number[] = [];
+  const latched = r.latchedAt >= 0;
+  const repeat = latched && (r.age - r.latchedAt) % r.repeatTicks === 0 && r.age > r.latchedAt;
+  for (const o of world.players) {
+    if (o.team === r.team || !isTargetable(o)) continue;
+    if (dist2(o.pos, r.pos) > (r.radius + o.hurtRadius) ** 2) continue;
+    now.push(o.id);
+    const arrived = !r.inside.includes(o.id);
+    if (!latched) {
+      if (r.firstHit.includes(o.id)) continue;
+      r.firstHit.push(o.id);
+      hitPlayer(world, owner, o, r.hit, owner.facing, r.pos, r.moveId);
+    } else if (arrived || repeat) {
+      hitPlayer(world, owner, o, r.followHit, owner.facing, r.pos, r.moveId);
+    }
+  }
+  // Latches as soon as it has hit an enemy.
+  if (!latched && r.firstHit.length > 0) {
+    r.latchedAt = r.age;
+    r.latchedRadius = r.radius;
+  }
+  const b = world.ball;
+  if (r.hitsBall && !b.scored && dist2(b.pos, r.pos) <= (r.radius + b.radius) ** 2) {
+    now.push(-1);
+    if (!latched && !r.firstHit.includes(-1)) {
+      r.firstHit.push(-1);
+      hitBallWith(world, owner, r.hit, owner.facing, r.pos, r.moveId);
+    } else if (latched && !r.inside.includes(-1)) {
+      hitBallWith(world, owner, r.followHit, owner.facing, r.pos, r.moveId); // bounces off it
+    }
+  }
+  r.inside = now;
 }
 
 /** One tick of a guardian: a heal pulse every `interval` (Elusive allies count too). */
@@ -1049,6 +1178,7 @@ export function resetMoveState(world: World): void {
   world.projectiles = [];
   world.creations = [];
   world.guardians = [];
+  world.rings = [];
   world.pending = [];
   for (const p of world.players) {
     p.cast = null;

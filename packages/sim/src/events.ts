@@ -74,6 +74,7 @@ export type SimEvent =
   | { type: 'release'; playerId: number; thrown: boolean }
   | { type: 'banish'; playerId: number; by: number }
   | { type: 'guardian'; playerId: number; moveId: string; pos: Vec2; radius: number; time: number; color: string }
+  | { type: 'ring'; playerId: number; moveId: string; pos: Vec2; radius: number; color: string }
   | { type: 'rescue'; playerId: number; by: number; from: Vec2; to: Vec2 }
   | { type: 'unbanish'; playerId: number; pos: Vec2 }
   | { type: 'guardBreak'; playerId: number }

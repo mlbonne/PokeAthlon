@@ -351,6 +351,16 @@ function actionStats(raw: MoveAction, def: MoveDef, p: PokemonDef, offset = 0): 
       base.hitsBall = true;
       break;
     }
+    case 'ring': {
+      base.reach = a.radius;
+      base.end = start + a.grow + a.shrink;
+      base.hitArea = Math.PI * a.radius * a.radius;
+      base.sweptArea = base.hitArea;
+      base.hits = 1;
+      base.hitsBall = a.hitsBall && !!a.hit.ball;
+      base.notes.push(`ring: stays ${a.shrink} s if it hits an enemy, bounces out what enters`);
+      break;
+    }
     case 'guardian': {
       const pulses = 1 + Math.floor(a.duration / a.interval + 1e-9);
       base.reach = (a.at === 'target' ? def.range : 0) + a.radius;

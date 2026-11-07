@@ -170,6 +170,11 @@ function model(def: MoveDef, slot: number, p: ReturnType<typeof getPokemon>): Mo
     case 'throw':
       m.delivery = 'grab';
       break;
+    case 'ring':
+      // Bots use it like a burst around themselves (its later bounces are a bonus).
+      m.delivery = 'selfArea';
+      m.radius = main.radius;
+      break;
     case 'guardian':
       m.delivery = 'guardian';
       m.aimed = main.at === 'target';
