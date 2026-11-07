@@ -101,20 +101,22 @@ All of these have Walk, Idle, Attack, Hurt, Charge and Swing animations, plus Sh
 | 0059/0001 | **Hisuian Arcanine** | Wall (OS Asher) | Rock Slide (blast + rock wall, stronger on your half) / Flare Blitz (guarded charge) / Flamethrower (channelled push). Blastoise's old kit, added 2026-11-06 |
 | 0448 | **Lucario** | Brawler | Aura Sphere (homing knockback) / Close Combat (combo) / Extreme Speed |
 | 0025 | **Pikachu** | Striker (OS Octavia) | Electroweb (piercing wave: full hit + 35 % slow on the first enemy, LIGHT hits on the rest) / Charge (+33 % speed, any hit resets it) / Thunder (1 s wind-up, then 5 pulses around Pikachu as it moves). Added 2026-11-07 |
+| 0724/0001 | **Hisuian Decidueye** | Striker (OS Rasmus) | Leaf Blade (line with a strong tip, LIGHT closer in) / Trailblaze (haste, recast = LIGHT spin) / Spirit Shackle (arrow that pulls the first enemy, then spins at the end of its range). Added 2026-11-07 |
+| 0038/0001 | **Alolan Ninetales** | Sniper (OS Estelle) | Ice Beam (long line) / Ice Shard (blink + homing shard) / Blizzard (7-icicle LIGHT fan, one hit per enemy). Added 2026-11-07 |
 | 0068 | **Machamp** | Brawler | Cross Chop / Seismic Toss (grab and throw) / Dynamic Punch (big knockback, confuse) |
 
 Togekiss was removed on 2026-11-06 (its kit is in git history: `packages/data/kits/togekiss.json` before that date).
 
-Snorlax is out for now. Hisuian Arcanine (Asher) and Blastoise (Atlas) shipped on 2026-11-06, Pikachu (Octavia) on 2026-11-07.
+Snorlax is out for now. Hisuian Arcanine (Asher) and Blastoise (Atlas) shipped on 2026-11-06; Pikachu (Octavia), Hisuian Decidueye (Rasmus) and Alolan Ninetales (Estelle) on 2026-11-07.
+
+**Roles** (roster `bestRole`, 2026-11-07): Blastoise is a strong goalie; Greninja and Machamp are brawlers that never keep goal (CPU picks and balance runs respect it). See `docs/design/balance-pass-4.md`.
 
 **Planned roster** (each modelled on one OS striker; see GAME_BREAKDOWN §5 for the OS kits). All have sprite sets in SpriteCollab; the regional and Mega forms are form folders (Alolan Ninetales `0038/0001`, Hisuian Decidueye `0724/0001`, Mega Mewtwo Y `0150/0002`), `import-sprites` supports them (roster `dex` like `0059/0001`).
 
 | Pokémon | OS model | Notes |
 |---|---|---|
-| Alolan Ninetales | Estelle (Tempo Sniper) | |
 | Inteleon | Drek'ar (Nimble Blaster) | |
 | Goodra | Juno (Clever Summoner) | |
-| Hisuian Decidueye | Rasmus (Whip Fighter) | |
 | Porygon-Z | Ai.Mi (Magical Playmaker) | |
 | Mega Mewtwo Y | Era (Empowering Enchanter) | |
 | Dragapult | Luna (Chaotic Rocketeer) | |

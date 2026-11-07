@@ -14,13 +14,24 @@
       "actions": [
         {
           "type": "area",
-          "fx": { "color": "#e63946" },
+          "fx": {
+            "color": "#e63946"
+          },
           "shape": "circle",
           "radius": 300,
           "hit": {
-            "ball": { "base": 907, "powerRatio": 1.267 },
-            "player": { "base": 124, "powerRatio": 0.619 },
-            "damage": { "base": 66, "powerRatio": 0.33 },
+            "ball": {
+              "base": 907,
+              "powerRatio": 1.267
+            },
+            "player": {
+              "base": 124,
+              "powerRatio": 0.619
+            },
+            "damage": {
+              "base": 66,
+              "powerRatio": 0.33
+            },
             "light": true,
             "direction": "radial"
           },
@@ -28,9 +39,18 @@
             "from": 0.6,
             "to": 1,
             "hit": {
-              "ball": { "base": 1360, "powerRatio": 1.9 },
-              "player": { "base": 375, "powerRatio": 1.875 },
-              "damage": { "base": 200, "powerRatio": 1.0 },
+              "ball": {
+                "base": 1360,
+                "powerRatio": 1.9
+              },
+              "player": {
+                "base": 375,
+                "powerRatio": 1.875
+              },
+              "damage": {
+                "base": 200,
+                "powerRatio": 1.0
+              },
               "direction": "radial"
             }
           }
@@ -49,14 +69,25 @@
       "actions": [
         {
           "type": "dash",
-          "fx": { "color": "#f4a261" },
+          "fx": {
+            "color": "#f4a261"
+          },
           "distance": 600,
           "time": 0.35,
           "castWhileDashing": true,
           "hit": {
-            "ball": { "base": 1360, "powerRatio": 1.9 },
-            "player": { "base": 300, "powerRatio": 1.594 },
-            "damage": { "base": 160, "powerRatio": 0.85 }
+            "ball": {
+              "base": 1360,
+              "powerRatio": 1.9
+            },
+            "player": {
+              "base": 300,
+              "powerRatio": 1.594
+            },
+            "damage": {
+              "base": 160,
+              "powerRatio": 0.85
+            }
           }
         }
       ]
@@ -72,14 +103,22 @@
       "actions": [
         {
           "type": "buff",
-          "fx": { "color": "#e63946" },
+          "fx": {
+            "color": "#e63946"
+          },
           "target": "self",
           "duration": 3.5,
           "sizePct": 40,
           "knockbackTakenPct": 25,
           "strikeHit": {
-            "player": { "base": 225, "powerRatio": 1.125 },
-            "damage": { "base": 60, "powerRatio": 0.35 }
+            "player": {
+              "base": 191.25,
+              "powerRatio": 0.9562
+            },
+            "damage": {
+              "base": 60,
+              "powerRatio": 0.35
+            }
           }
         }
       ]

@@ -1,12 +1,12 @@
 {
-  "$comment": "Ramping Speedster (OS Octavia model, wiki 2026-11: Sonic Boom / Flow State / Bass Drop). Electroweb = Sonic Boom: a piercing wave, NORMAL hit + 35 % slow for 1 s on the first enemy, LIGHT 50 % hits + 0.25 s slow on the rest. Charge = Flow State: +25 % speed (OS 33 %, cut in balance pass 2) for 2.5 s, any hit (Strike and the ball included) resets it, cooldown starts when it ends. Thunder = Bass Drop: 1 s wind-up, then 5 pulses 0.25 s apart around Pikachu (475 diameter), which moves freely meanwhile; only the first pulse hits the ball (OS: the Core takes Bass Drop's momentum once). Player knockback = OS × 1.875; power % → powerRatio. Speed, range and wave size aren't on the wiki: our guesses. Balance pass 2: Electroweb cooldown 9 → 10 s, range 750, player knockback −15 %.",
+  "$comment": "Ramping Speedster (OS Octavia model, wiki 2026-11: Sonic Boom / Flow State / Bass Drop). Electroweb = Sonic Boom: a piercing wave, NORMAL hit + 35 % slow for 1 s on the first enemy, LIGHT 50 % hits + 0.25 s slow on the rest. Charge = Flow State: +25 % speed (OS 33 %, cut in balance pass 2) for 2.5 s, any hit (Strike and the ball included) resets it, cooldown starts when it ends. Thunder = Bass Drop: 1 s wind-up, then 5 pulses 0.25 s apart around Pikachu (475 diameter), which moves freely meanwhile; only the first pulse hits the ball (OS: the Core takes Bass Drop's momentum once). Player knockback = OS × 1.875; power % → powerRatio. Speed, range and wave size aren't on the wiki: our guesses. Balance pass 2: Electroweb cooldown 9 → 10 s, range 750, player knockback −15 %. Pass 4 (2026-11-07): Electroweb 11 s, Charge +20 %.",
   "pokemon": "pikachu",
   "moves": [
     {
       "id": "electroweb",
       "name": "Electroweb",
       "slot": "primary",
-      "cooldown": 10,
+      "cooldown": 11,
       "castTime": 0.25,
       "anim": "Shoot",
       "desc": "Launch a crackling web that passes through enemies. The first one hit is slowed 35 % for 1 s; the rest take LIGHT hits.",
@@ -67,7 +67,7 @@
       "slot": "secondary",
       "cooldown": 17,
       "anim": "Charge",
-      "desc": "+25 % speed for 2.5 s. Every hit you land (Strikes on the ball too) resets the timer. The cooldown starts when it runs out.",
+      "desc": "+20 % speed for 2.5 s. Every hit you land (Strikes on the ball too) resets the timer. The cooldown starts when it runs out.",
       "bot": "chase",
       "actions": [
         {
@@ -77,7 +77,7 @@
           },
           "target": "self",
           "duration": 2.5,
-          "speedPct": 25,
+          "speedPct": 20,
           "refreshOnHit": true,
           "cooldownAfter": true
         }
