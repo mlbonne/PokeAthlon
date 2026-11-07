@@ -208,6 +208,9 @@ body {
 .plate.team0 .nm {
   color: #b9cfff;
 }
+.plate.ally .nm {
+  color: var(--name-ally, #b9cfff);
+}
 .plate.team1 .nm {
   color: #ffc2c7;
 }
@@ -1428,8 +1431,8 @@ div.slotcard.cpu-ban {
   margin: 0 auto 3px;
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
-  border-top: 11px solid #ff2a3d;
-  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 4px rgba(255, 42, 61, 0.6));
+  border-top: 11px solid var(--me-arrow, #ff2a3d);
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 3px rgba(0, 0, 0, 0.5));
   animation: me-bob 0.9s ease-in-out infinite alternate;
 }
 @keyframes me-bob {
@@ -1440,7 +1443,7 @@ div.slotcard.cpu-ban {
 
 /* Opponents' names: bright red (your side reads by its white ground aura). */
 .plate.enemy .nm {
-  color: #ff3b4a;
+  color: var(--name-enemy, #ff3b4a);
   font-weight: 700;
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 0 6px rgba(0, 0, 0, 0.6);
 }

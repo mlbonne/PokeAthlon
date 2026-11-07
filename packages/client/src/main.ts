@@ -25,7 +25,7 @@ import { ResultsScreen } from './results';
 import { SetupScreen, type MatchConfig } from './setup';
 import { OnlineScreen } from './online';
 import { LobbyScreen } from './lobby';
-import { itemFor, recordMatch } from './profile';
+import { applyDisplay, itemFor, recordMatch } from './profile';
 import { DebugMenu } from './debug/menu';
 import type { FrameRecorder } from './recorder';
 import { Hud, nameOf, TEAM_NAMES } from './hud';
@@ -296,6 +296,16 @@ const lobby = new LobbyScreen(document.body, {
     onlineScreen.show();
   },
 });
+applyDisplay(lobby.p.display);
+/** Trainer names per player: room members online (by seat), else you and "CPU" for bots. */
+function trainerNames(world: World): string[] {
+  const names = world.players.map(() => 'CPU');
+  const room = net ? onlineScreen.room : null;
+  if (room) {
+    for (const m of room.members) if (m.seat !== null && m.seat < names.length) names[m.seat] = m.name;
+  } else if (!SPECTATE) names[ME] = lobby.p.name;
+  return names;
+}
 function saveLobbyProfile(): void {
   try {
     localStorage.setItem('pokeathlon.profile', JSON.stringify(lobby.p));
@@ -718,7 +728,11 @@ function render(dt: number, now: number, alpha: number): void {
     s.update(dt, facingRow(p.facing.x, p.facing.y), speed > 20 ? Math.max(0.6, speed / 300) : 1);
     const blink = p.immuneTicks > 0 && Math.floor(now / 90) % 2 === 0;
     s.setOpacity(p.elusiveTicks > 0 ? 0.45 : blink ? 0.35 : 1);
-    view.auras[i]?.update(dt);
+    const aura = view.auras[i];
+    if (aura) {
+      aura.object.visible = lobby.p.display.auras;
+      aura.update(dt, lobby.p.display.auraOpacity);
+    }
     if (i === ME) {
       view.aim.object.visible = p.koTicks === 0 && !SPECTATE;
       view.aim.update(dt, toThreeX(x), toThreeZ(y), lastInput.aimX, -lastInput.aimY, p.strikeCooldown / STRIKE_COOLDOWN_TICKS);
@@ -770,6 +784,8 @@ function render(dt: number, now: number, alpha: number): void {
   for (const s of sprites) s.faceCamera(camera);
   stadium?.update(dt, world, camera);
 
+  view.hud.names = lobby.p.display.names;
+  view.hud.trainers = trainerNames(world);
   view.hud.update(dt, world, project, menu.visible ? (id) => botLabel(world, id) : null);
   view.overlay.update(world, menu.focusId);
   menu.update(dt, fps);

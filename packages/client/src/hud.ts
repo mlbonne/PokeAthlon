@@ -18,6 +18,10 @@ export class Hud {
   private readonly chips: HTMLElement[] = [];
   private bannerUntil = 0;
   private now = 0;
+  /** Nameplate text: Pokémon, trainer (from `trainers`) or both. Set by the game from Settings. */
+  names: 'pokemon' | 'trainer' | 'both' = 'pokemon';
+  /** Trainer name per player id (you, room players, "CPU"). */
+  trainers: string[] = [];
 
   /** @param me the human player's id (highlighted), −1 when spectating. */
   constructor(root: HTMLElement, world: World, me = -1) {
@@ -40,7 +44,7 @@ export class Hud {
     }
     const myTeam = world.players[me]?.team ?? 0;
     for (const p of world.players) {
-      const plate = el('div', `plate team${p.team}${p.id === me ? ' me' : ''}${p.team !== myTeam ? ' enemy' : ''}`);
+      const plate = el('div', `plate team${p.team}${p.id === me ? ' me' : ''}${p.team !== myTeam ? ' enemy' : ' ally'}`);
       plate.innerHTML =
         (p.id === me ? `<div class="me-arrow" aria-label="You"></div>` : '') +
         `<div class="plate-top"><span class="lv"></span><span class="nm"></span></div>` +
@@ -116,7 +120,9 @@ export class Hud {
       plate.classList.toggle('ko', out);
       plate.classList.toggle('staggered', p.staggered);
       plate.querySelector<HTMLElement>('.lv')!.textContent = `Lv${p.level}`;
-      plate.querySelector<HTMLElement>('.nm')!.textContent = out ? `${nameOf(p)} · ${Math.ceil(p.koTicks / TICK_RATE)}s` : nameOf(p);
+      const trainer = this.trainers[p.id] || 'CPU';
+      const label = this.names === 'trainer' ? trainer : this.names === 'both' ? `${trainer} · ${nameOf(p)}` : nameOf(p);
+      plate.querySelector<HTMLElement>('.nm')!.textContent = out ? `${label} · ${Math.ceil(p.koTicks / TICK_RATE)}s` : label;
       plate.querySelector<HTMLElement>('.fill')!.style.width = `${(100 * p.stagger) / p.maxStagger}%`;
       plate.querySelector<HTMLElement>('.ai')!.textContent = aiLabel ? aiLabel(p.id) : '';
 

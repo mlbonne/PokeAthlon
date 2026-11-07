@@ -727,3 +727,49 @@ body.lobby-open #draft,
 body.lobby-open #results {
   display: none !important;
 }
+
+/* Settings: match display preview */
+.settings input[type='range'] {
+  width: 200px;
+}
+.settings input[type='color'] {
+  width: 46px;
+  height: 30px;
+  padding: 0 2px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--glass-line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.preview-plates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: flex-end;
+  margin: 10px 0;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: linear-gradient(#3f8f3a, #2f7a2c);
+}
+.plate-prev {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
+}
+.plate-prev.ally .nm {
+  color: var(--name-ally);
+}
+.plate-prev.enemy .nm {
+  color: var(--name-enemy);
+}
+.plate-prev .me-arrow {
+  width: 0;
+  height: 0;
+  margin-bottom: 3px;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 11px solid var(--me-arrow);
+}

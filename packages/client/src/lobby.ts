@@ -3,7 +3,7 @@ import { getItem, getKit, getPokemon, itemsFor, type SpriteManifest } from '@pok
 import { analyzeRoster, simTier, tierSnapshot, type FighterStats } from '@pokeathlon/data/analyze';
 import { pickable } from './cpuDraft';
 import { navigateButtons } from './nav';
-import { itemFor, levelOf, loadProfile, saveProfile, totals, type LobbyMode, type LobbyRole, type Profile } from './profile';
+import { applyDisplay, DEFAULT_DISPLAY, itemFor, levelOf, loadProfile, saveProfile, totals, type LobbyMode, type LobbyRole, type Profile } from './profile';
 
 /**
  * Main menu (design.md): a Pokémon UNITE-style lobby with Omega Strikers' menu items. Your main
@@ -71,6 +71,7 @@ export class LobbyScreen {
     this.hero = new HeroSprite(this.el.querySelector('canvas')!);
     this.el.addEventListener('click', (e) => this.onClick(e));
     this.el.addEventListener('change', (e) => this.onChange(e));
+    this.el.addEventListener('input', (e) => this.onChange(e));
     root.append(this.el);
   }
 
@@ -239,11 +240,26 @@ export class LobbyScreen {
 
   private settingsPage(): string {
     const p = this.p;
+    const d = p.display;
     const tog = (key: string, value: string, label: string, on: boolean) => `<button class="tog ${on ? 'on' : ''}" data-set="${key}:${value}">${label}</button>`;
     return `<section><h2>Profile</h2><label class="field">Trainer name <input name="name" maxlength="16" value="${esc(p.name)}"></label></section>
       <section><h2>Matches vs CPU</h2>
         <div class="group"><span>CPU skill</span>${(['easy', 'normal', 'hard'] as const).map((d) => tog('diff', d, d[0]!.toUpperCase() + d.slice(1), p.diff === d)).join('')}</div>
         <div class="group"><span>Bans (custom match)</span>${tog('bans', 'off', 'Off', !p.bans)}${tog('bans', 'on', 'On', p.bans)}</div></section>
+      <section><h2>Match display</h2>
+        <div class="group"><span>Team auras</span>${tog('auras', 'on', 'On', d.auras)}${tog('auras', 'off', 'Off', !d.auras)}</div>
+        <div class="group"><span>Aura opacity</span><input type="range" name="auraOpacity" min="10" max="100" step="5" value="${Math.round(d.auraOpacity * 100)}" ${d.auras ? '' : 'disabled'}><output>${Math.round(d.auraOpacity * 100)} %</output></div>
+        <div class="group"><span>Names above players</span>${tog('names', 'pokemon', 'Pokémon', d.names === 'pokemon')}${tog('names', 'trainer', 'Trainer', d.names === 'trainer')}${tog('names', 'both', 'Both', d.names === 'both')}</div>
+        <div class="group"><span>Your team's names</span><input type="color" name="allyColor" value="${d.allyColor}"></div>
+        <div class="group"><span>Opponents' names</span><input type="color" name="enemyColor" value="${d.enemyColor}"></div>
+        <div class="group"><span>Your arrow</span><input type="color" name="arrowColor" value="${d.arrowColor}"></div>
+        <div class="preview-plates">
+          <div class="plate-prev ally"><span class="nm">${esc(this.previewName(p.name, getPokemon(p.main).name))}</span><i class="me-arrow"></i></div>
+          <div class="plate-prev ally"><span class="nm">${esc(this.previewName('CPU', 'Lucario'))}</span></div>
+          <div class="plate-prev enemy"><span class="nm">${esc(this.previewName('CPU', getPokemon(p.main).name))}</span></div>
+        </div>
+        <button data-act="display-reset">Reset match display</button>
+        <p class="hint">Trainer names: yours, the players' names in online rooms, and "CPU" for bots.</p></section>
       <section><h2>Controls</h2><ul class="controls">
         <li><b>Move</b> WASD · left stick</li><li><b>Aim</b> mouse · right stick</li><li><b>Strike</b> left click · A / RT</li>
         <li><b>Primary</b> right-click · X</li><li><b>Secondary</b> Space · Y</li><li><b>Special</b> R, F or side mouse button · LT</li>
@@ -282,6 +298,12 @@ export class LobbyScreen {
       const [k, v] = d.set.split(':') as [string, string];
       if (k === 'diff') p.diff = v as Profile['diff'];
       if (k === 'bans') p.bans = v === 'on';
+      if (k === 'auras') p.display.auras = v === 'on';
+      if (k === 'names') p.display.names = v as Profile['display']['names'];
+    }
+    if (d.act === 'display-reset') {
+      p.display = { ...DEFAULT_DISPLAY };
+      applyDisplay(p.display);
     }
     if (d.act === 'reset') {
       if (!confirm('Reset your trainer level and all records? This cannot be undone.')) return;
@@ -297,9 +319,28 @@ export class LobbyScreen {
     this.el.querySelector<HTMLElement>(focus)?.focus();
   }
 
+  private previewName(trainer: string, mon: string): string {
+    const n = this.p.display.names;
+    return n === 'trainer' ? trainer : n === 'both' ? `${trainer} · ${mon}` : mon;
+  }
+
   private onChange(e: Event): void {
     const t = e.target as HTMLInputElement;
-    if (t.name !== 'name') return;
+    const d = this.p.display;
+    if (t.name === 'auraOpacity') {
+      d.auraOpacity = Math.min(1, Math.max(0.1, Number(t.value) / 100));
+      const out = t.nextElementSibling;
+      if (out) out.textContent = `${Math.round(d.auraOpacity * 100)} %`;
+    }
+    if (t.name === 'allyColor' || t.name === 'enemyColor' || t.name === 'arrowColor') {
+      d[t.name] = t.value;
+      applyDisplay(d);
+    }
+    if (t.name === 'auraOpacity' || t.name.endsWith('Color')) {
+      saveProfile(this.p);
+      return;
+    }
+    if (t.name !== 'name' || e.type !== 'change') return;
     this.p.name = t.value.trim().slice(0, 16) || 'Trainer';
     saveProfile(this.p);
     // Online rooms use the same name.

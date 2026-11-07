@@ -4,6 +4,29 @@ import { roster } from '@pokeathlon/data';
 export type LobbyRole = 'forward' | 'flex' | 'goalie';
 export type LobbyMode = 'quick' | 'custom' | 'practice' | 'watch' | 'online';
 
+/** How matches look (lobby Settings → Match display). */
+export interface DisplayPrefs {
+  /** White ground aura under your team. */
+  auras: boolean;
+  /** Aura opacity, 0.1–1. */
+  auraOpacity: number;
+  /** Nameplates: the Pokémon's name, the trainer's (you, room players, "CPU"), or both. */
+  names: 'pokemon' | 'trainer' | 'both';
+  /** Name colours for your team and the opponents, and your arrow's colour. */
+  allyColor: string;
+  enemyColor: string;
+  arrowColor: string;
+}
+
+export const DEFAULT_DISPLAY: DisplayPrefs = {
+  auras: true,
+  auraOpacity: 0.4,
+  names: 'pokemon',
+  allyColor: '#b9cfff',
+  enemyColor: '#ff3b4a',
+  arrowColor: '#ff2a3d',
+};
+
 export interface MonRecord {
   games: number;
   wins: number;
@@ -26,6 +49,7 @@ export interface Profile {
   /** Preferred held item per Pokémon and role ('auto' = recommended). */
   loadout: Record<string, { forward: string; goalie: string }>;
   records: Record<string, MonRecord>;
+  display: DisplayPrefs;
 }
 
 const STORE = 'pokeathlon.profile';
@@ -40,13 +64,14 @@ const DEFAULTS: Profile = {
   xp: 0,
   loadout: {},
   records: {},
+  display: { ...DEFAULT_DISPLAY },
 };
 
 export function loadProfile(): Profile {
   let p: Profile = structuredClone(DEFAULTS);
   try {
     const s = JSON.parse(localStorage.getItem(STORE) ?? 'null') as Partial<Profile> | null;
-    if (s) p = { ...p, ...s, loadout: { ...s.loadout }, records: { ...s.records } };
+    if (s) p = { ...p, ...s, loadout: { ...s.loadout }, records: { ...s.records }, display: { ...DEFAULT_DISPLAY, ...s.display } };
   } catch {
     /* storage blocked or corrupt: defaults */
   }
@@ -98,4 +123,13 @@ export function totals(p: Profile): MonRecord {
   const t: MonRecord = { games: 0, wins: 0, goals: 0, kos: 0, forward: 0, goalie: 0 };
   for (const r of Object.values(p.records)) for (const k of Object.keys(t) as (keyof MonRecord)[]) t[k] += r[k];
   return t;
+}
+
+const HEX = /^#[0-9a-f]{6}$/i;
+/** Push the display colours to CSS variables (nameplates and the arrow read them). */
+export function applyDisplay(d: DisplayPrefs): void {
+  const root = document.documentElement.style;
+  root.setProperty('--name-ally', HEX.test(d.allyColor) ? d.allyColor : DEFAULT_DISPLAY.allyColor);
+  root.setProperty('--name-enemy', HEX.test(d.enemyColor) ? d.enemyColor : DEFAULT_DISPLAY.enemyColor);
+  root.setProperty('--me-arrow', HEX.test(d.arrowColor) ? d.arrowColor : DEFAULT_DISPLAY.arrowColor);
 }
