@@ -25,6 +25,8 @@ import { DraftScreen } from './draftScreen';
 import { ResultsScreen } from './results';
 import { SetupScreen, type MatchConfig } from './setup';
 import { OnlineScreen } from './online';
+import { LobbyScreen } from './lobby';
+import { itemFor, recordMatch } from './profile';
 import { DebugMenu } from './debug/menu';
 import type { FrameRecorder } from './recorder';
 import { Hud, nameOf, TEAM_NAMES } from './hud';
@@ -201,6 +203,8 @@ function startMatch(online: World | null = null): void {
     $portrait.src = `portraits/${dexOf(myPokemon)}/Normal.png`;
   } else showCard(roster.find((r) => r.id === myPokemon)!);
   results.reset(world, SPECTATE ? -1 : ME);
+  myMatch.goals = myMatch.kos = 0;
+  myMatch.recorded = false;
 }
 
 function makeSprites(world: World, group: THREE.Group): PmdSprite[] {
@@ -247,7 +251,44 @@ const setup = new SetupScreen(
     setup.hide();
     onlineScreen.show();
   },
+  () => {
+    setup.hide();
+    lobby.show();
+  },
+  (diff, bans) => {
+    lobby.p.diff = diff;
+    lobby.p.bans = bans;
+    saveLobbyProfile();
+  },
 );
+
+// ---------- Lobby (main menu, design.md) ----------
+const lobby = new LobbyScreen(document.body, {
+  go: (mode, p, role) => {
+    if (mode === 'online') {
+      lobby.hide();
+      onlineScreen.show();
+      return;
+    }
+    setup.preset({ main: p.main, role, item: itemFor(p, p.main, role), diff: p.diff, bans: mode === 'custom' && p.bans });
+    lobby.hide();
+    if (mode === 'custom') setup.show();
+    else setup.launch(mode === 'quick' ? 'play' : mode === 'practice' ? 'practice' : 'spectate');
+  },
+  online: () => {
+    lobby.hide();
+    onlineScreen.show();
+  },
+});
+function saveLobbyProfile(): void {
+  try {
+    localStorage.setItem('pokeathlon.profile', JSON.stringify(lobby.p));
+  } catch {
+    /* ignore */
+  }
+}
+/** Your goals and KOs in the current match (for the lobby's records). */
+const myMatch = { goals: 0, kos: 0, recorded: false };
 
 // ---------- Online (M7) ----------
 /** The room connection while an online match runs (null = offline). */
@@ -267,7 +308,7 @@ const onlineScreen = new OnlineScreen(document.body, {
     results.hide();
     hudRoot.querySelector('.net-status')?.remove();
   },
-  back: () => setup.show(),
+  back: () => lobby.show(),
   toast,
 });
 /** Back to offline play: leave the room. */
@@ -377,6 +418,7 @@ function onEvent(e: SimEvent): void {
     case 'goal': {
       const scorer = world.players[e.scorer];
       const who = e.ownGoal ? 'Own goal!' : scorer ? `${nameOf(scorer)} scores!` : '';
+      if (!e.ownGoal && e.scorer === ME && !SPECTATE) myMatch.goals++;
       hud.showBanner(`GOAL!<small>${TEAM_NAMES[e.team]} · ${who}</small>`, 2.6, `t${e.team}`);
       effects.ring(toThreeX(e.pos.x), toThreeZ(e.pos.y), teamColor(e.team), 7, 0.7);
       effects.shake(0.4);
@@ -389,7 +431,13 @@ function onEvent(e: SimEvent): void {
       if (world.match.phase !== 'matchOver') hud.showBanner(`${TEAM_NAMES[e.team]} wins the set!<small>Sets ${e.sets[0]} – ${e.sets[1]}</small>`, 3.5, `t${e.team}`);
       break;
     case 'matchWon':
-      // The results screen (M5.9) takes over.
+      // The results screen (M5.9) takes over. Real matches you played count for your records.
+      if (!SPECTATE && !PRACTICE && !myMatch.recorded) {
+        myMatch.recorded = true;
+        const me = world.players[ME]!;
+        const xp = recordMatch(lobby.p, { mon: me.pokemonId, role: me.role, won: e.team === me.team, goals: myMatch.goals, kos: myMatch.kos });
+        toast(`+${xp} trainer XP`);
+      }
       break;
     case 'hit':
       effects.ring(toThreeX(e.pos.x), toThreeZ(e.pos.y), 0xffffff, 1.4, 0.2);
@@ -402,6 +450,7 @@ function onEvent(e: SimEvent): void {
       break;
     }
     case 'ko': {
+      if (e.by === ME && e.playerId !== ME && !SPECTATE) myMatch.kos++;
       const s = at(e.pos, 1);
       hud.pop('Blasted off!', s.x, s.y, 'ko');
       effects.ring(toThreeX(e.pos.x), toThreeZ(e.pos.y), 0xff4d5e, 3, 0.5);
@@ -536,7 +585,7 @@ resize();
 applyConfig(config);
 startMatch();
 if (params.get('online') === '1' || onlineScreen.net) onlineScreen.show();
-else if (!urlConfig && !RECORD) setup.show();
+else if (!urlConfig && !RECORD) lobby.show();
 if (params.get('meter') === '1') {
   menu.toggle();
   view.overlay.object.visible = true;
@@ -563,7 +612,7 @@ function frame(now: number): void {
       menu.toggle();
       view.overlay.object.visible = menu.visible;
     }
-    if (a === 'restart' && !setup.visible && !net) startMatch();
+    if (a === 'restart' && !setup.visible && !lobby.visible && !net) startMatch();
     if (a === 'menu') {
       // Online the match never pauses: Esc opens the room screen over it.
       if (net) {
@@ -571,11 +620,23 @@ function frame(now: number): void {
         else onlineScreen.show();
       } else if (onlineScreen.visible) {
         onlineScreen.hide();
-        setup.show();
-      } else if (setup.visible) setup.hide();
-      else setup.show();
+        lobby.show();
+      } else if (setup.visible) {
+        setup.hide();
+        lobby.show();
+      } else if (lobby.visible) {
+        if (!lobby.back()) lobby.hide();
+      } else lobby.show();
     }
-    if (a.startsWith('nav-') && onlineScreen.visible) onlineScreen.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
+    if (a === 'nav-back' && lobby.visible) lobby.back();
+    if (a === 'nav-back' && setup.visible) {
+      setup.hide();
+      lobby.show();
+    }
+    if (a.startsWith('nav-') && a !== 'nav-back' && lobby.visible) lobby.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
+    else if (a === 'nav-back') {
+      /* handled above */
+    } else if (a.startsWith('nav-') && onlineScreen.visible) onlineScreen.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
     else if (a.startsWith('nav-') && setup.visible) setup.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
     else if (a.startsWith('nav-') && results.visible && results.el.classList.contains('final')) results.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
     else if (a.startsWith('nav-') && draft.visible) draft.navigate(a.slice(4) as 'up' | 'down' | 'left' | 'right' | 'press');
@@ -585,7 +646,7 @@ function frame(now: number): void {
 
   // Fixed-step simulation (paused while a menu is open, except online where the match goes on).
   const online = !!net?.session;
-  acc += online ? dt : setup.visible || onlineScreen.visible ? 0 : dt;
+  acc += online ? dt : setup.visible || onlineScreen.visible || lobby.visible ? 0 : dt;
   let steps = 0;
   while (acc >= DT && steps < 5) {
     // Online pacing: usually 1 tick, now and then 0 when ahead of the others, more to catch up.
