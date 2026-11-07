@@ -27,6 +27,11 @@ export class InputSource {
   /** Last device the player touched (switches on-screen button prompts). */
   device: 'keyboard' | 'pad' = 'keyboard';
   private padPrev: boolean[] = [];
+  /** Hold-to-aim: move buttons held last poll, and quick taps seen between polls (pressed and released). */
+  private prevHeld = [false, false, false];
+  private tapped = [false, false, false];
+  /** The move slot being aimed (held, not yet cast), or −1. */
+  aiming = -1;
 
   constructor(target: Window, canvas: HTMLCanvasElement) {
     target.addEventListener('keydown', (e) => {
@@ -38,6 +43,8 @@ export class InputSource {
         return;
       }
       this.keys.add(e.code);
+      if (e.code === 'Space') this.tapped[1] = true;
+      if (e.code === 'KeyR' || e.code === 'KeyF') this.tapped[2] = true;
       if (e.code === 'F3') {
         this.pendingActions.push('debug');
         e.preventDefault();
@@ -66,6 +73,8 @@ export class InputSource {
       if (e.button === 0) this.mouseDown = true;
       if (e.button === 2) this.mouseRight = true;
       if (e.button === 3 || e.button === 4) this.mouseSide = true;
+      if (e.button === 2) this.tapped[0] = true;
+      if (e.button === 3 || e.button === 4) this.tapped[2] = true;
       this.mouseActive = true;
     });
     target.addEventListener('pointerup', (e) => {
@@ -120,7 +129,12 @@ export class InputSource {
   /**
    * @param mouseAim world-space vector from the player to the mouse's ground point (or null)
    */
-  poll(mouseAim: { x: number; y: number } | null): PlayerInput {
+  /**
+   * @param aim hold-to-aim: when `holdToAim`, a move button only reaches the game when it is
+   * released (one tick), so the player aims while holding (the client shows a preview). Slots in
+   * `passThrough` (charge moves: hold to charge) keep the held button as before.
+   */
+  poll(mouseAim: { x: number; y: number } | null, aim: { holdToAim: boolean; passThrough: ReadonlySet<number> } = { holdToAim: false, passThrough: new Set() }): PlayerInput {
     let x = (this.down('KeyD', 'ArrowRight') ? 1 : 0) - (this.down('KeyA', 'ArrowLeft') ? 1 : 0);
     let y = (this.down('KeyW', 'ArrowUp') ? 1 : 0) - (this.down('KeyS', 'ArrowDown') ? 1 : 0);
     let ax = 0;
@@ -129,9 +143,7 @@ export class InputSource {
     // Keyboard + mouse (OS-style): LMB Strike · RMB Primary · Space Secondary · R / F / side mouse
     // button Special · Shift / Q Evade (Burst when the meter is full).
     if (this.mouseDown) buttons |= Button.Strike;
-    if (this.mouseRight) buttons |= Button.Move1;
-    if (this.down('Space')) buttons |= Button.Move2;
-    if (this.mouseSide || this.down('KeyR', 'KeyF')) buttons |= Button.Signature;
+    const held = [this.mouseRight, this.down('Space'), this.mouseSide || this.down('KeyR', 'KeyF')];
     if (this.down('ShiftLeft', 'ShiftRight', 'KeyQ')) buttons |= Button.Evade;
 
     const pad = navigator.getGamepads?.().find((g) => g?.connected);
@@ -158,9 +170,25 @@ export class InputSource {
       const trig = (i: number) => (pad.buttons[i]?.value ?? 0) > 0.4 || !!pad.buttons[i]?.pressed;
       if (pad.buttons[0]?.pressed || pad.buttons[5]?.pressed || trig(7)) buttons |= Button.Strike;
       if ([1, 4].some((i) => pad.buttons[i]?.pressed)) buttons |= Button.Evade;
-      if (pad.buttons[2]?.pressed) buttons |= Button.Move1;
-      if (pad.buttons[3]?.pressed) buttons |= Button.Move2;
-      if (trig(6)) buttons |= Button.Signature;
+      if (pad.buttons[2]?.pressed) held[0] = true;
+      if (pad.buttons[3]?.pressed) held[1] = true;
+      if (trig(6)) held[2] = true;
+    }
+
+    // Moves: cast on press (classic) or, with hold-to-aim, on release.
+    const bits = [Button.Move1, Button.Move2, Button.Signature];
+    this.aiming = -1;
+    for (let s = 0; s < 3; s++) {
+      const h = held[s]!;
+      const was = this.prevHeld[s]!;
+      if (!aim.holdToAim || aim.passThrough.has(s)) {
+        if (h || this.tapped[s]) buttons |= bits[s]!;
+      } else {
+        if (h) this.aiming = s;
+        if (!h && (was || this.tapped[s])) buttons |= bits[s]!;
+      }
+      this.prevHeld[s] = h;
+      this.tapped[s] = false;
     }
 
     let aimDist = 0;

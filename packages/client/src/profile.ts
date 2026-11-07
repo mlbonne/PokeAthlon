@@ -17,6 +17,8 @@ export interface DisplayPrefs {
   allyColor: string;
   enemyColor: string;
   arrowColor: string;
+  /** Hold a move key to aim (with a preview), cast on release. Off = cast on press. */
+  holdToAim: boolean;
 }
 
 export const DEFAULT_DISPLAY: DisplayPrefs = {
@@ -26,6 +28,7 @@ export const DEFAULT_DISPLAY: DisplayPrefs = {
   allyColor: '#b9cfff',
   enemyColor: '#ff3b4a',
   arrowColor: '#ff2a3d',
+  holdToAim: true,
 };
 
 export interface MonRecord {

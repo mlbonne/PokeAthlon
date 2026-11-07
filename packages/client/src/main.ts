@@ -40,6 +40,7 @@ import { MoveViews } from './render/moves';
 import { Structures } from './render/structures';
 import { AURA_ALLY, TeamAura } from './render/teamAura';
 import { FxDirector } from './render/fx';
+import { AimPreview, pokemonColor } from './render/aimPreview';
 import { audio, MatchSounds } from './audio';
 import { isStadium, stadiumLighting, StadiumView } from './render/stadium';
 import { toThreeX, toThreeZ, WORLD_TO_THREE } from './render/units';
@@ -68,6 +69,10 @@ const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 400);
 /** Move animations (PMD effect sheets, docs/design/vfx-plan.md). */
 const moveFx = new FxDirector(camera);
 scene.add(moveFx.object);
+/** Move shapes on the ground: your hold-to-aim preview, and everyone's cast aura (in the Pokémon's colour). */
+const aimPreview = new AimPreview();
+scene.add(aimPreview.object);
+const colorOfPlayer = (p: { pokemonId: string }) => pokemonColor(roster.find((r) => r.id === p.pokemonId)?.types ?? []);
 void moveFx.load();
 /** Sound effects (docs/design/sfx-plan.md): pan from the screen position, quieter off-screen. */
 const matchSounds = new MatchSounds(
@@ -253,6 +258,7 @@ function startMatch(online: World | null = null): void {
   results.reset(world, SPECTATE ? -1 : ME);
   moveFx.reset();
   matchSounds.reset();
+  aimPreview.reset();
   myMatch.goals = myMatch.kos = 0;
   myMatch.recorded = false;
 }
@@ -458,6 +464,7 @@ function onEvent(e: SimEvent): void {
   const { world, effects, hud, sprites } = view;
   view.moves.onEvent(e);
   moveFx.onEvent(e, world);
+  aimPreview.onEvent(e, world, colorOfPlayer);
   matchSounds.onEvent(e, world);
   stadium?.onEvent(e);
   const at = (p: Vec2, h = 1.2) => project(p.x, p.y, h);
@@ -750,7 +757,9 @@ function frame(now: number): void {
     for (let k = 0; k < n; k++) {
       const me = view.world.players[ME]!;
       const m = mouseWorld(input);
-      lastInput = onlineScreen.visible ? NEUTRAL_INPUT : input.poll(m ? { x: m.x - me.pos.x, y: m.y - me.pos.y } : null);
+      // Hold-to-aim: charge moves keep hold-to-charge; everything else casts on release.
+      const passThrough = new Set(me.moves.flatMap((mv, i) => (mv.def.charge ? [i] : [])));
+      lastInput = onlineScreen.visible ? NEUTRAL_INPUT : input.poll(m ? { x: m.x - me.pos.x, y: m.y - me.pos.y } : null, { holdToAim: lobby.p.display.holdToAim, passThrough });
       simStep(lastInput);
     }
     acc -= DT;
@@ -834,6 +843,18 @@ function render(dt: number, now: number, alpha: number): void {
   view.structures.update(dt, world);
   view.moves.update(dt, world);
   moveFx.update(dt, world);
+  aimPreview.update(dt);
+  {
+    // Hold-to-aim preview for you: the held move's shape along your current aim.
+    const me = SPECTATE ? undefined : world.players[ME];
+    const m = mouseWorld(input);
+    const ax = lastInput.aimX;
+    const ay = lastInput.aimY;
+    const l = Math.hypot(ax, ay);
+    const dir = l > 0 ? { x: ax / l, y: ay / l } : (me?.facing ?? { x: 1, y: 0 });
+    const point = me && m && input.lastAimSource === 'mouse' ? m : me ? { x: me.pos.x + dir.x * 600, y: me.pos.y + dir.y * 600 } : null;
+    aimPreview.updatePreview(me, lobby.visible || setup.visible ? -1 : input.aiming, dir, point, me ? colorOfPlayer(me) : '#ffffff');
+  }
   matchSounds.update(world);
   if (!SPECTATE) view.bar.update(world.players[ME]!, input.device);
   view.effects.update(dt);

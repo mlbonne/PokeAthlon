@@ -229,6 +229,8 @@ export const ProjectileAction = z.object({
    * An untargetable (elusive) target keeps it circling; nothing in range = it flies straight.
    */
   homing: z.object({ radius: pos, turnDeg: pos.default(720), ball: z.boolean().default(true) }).optional(),
+  /** Hover at the end of its range for this long (still hitting) before vanishing (OS Kai's Barrage fireballs). */
+  linger: nonneg.default(0),
   /** Volley (OS Estelle's Crystal Thorns): the shots of one cast hit each target at most once between them. */
   volleyOnce: z.boolean().default(false),
 });

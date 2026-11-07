@@ -53,10 +53,10 @@ describe('casting rules', () => {
   it('moves cast on press, go on cooldown, and specials need level 2', () => {
     const w = sandbox([{ pokemonId: 'zeraora', team: 0, pos: { x: -500, y: 0 } }], { x: 0, y: -850 });
     expect(types(cast(w, 0, Button.Signature))).not.toContain('cast'); // Lv 1: locked
-    expect(types(cast(w, 0, Button.Move1))).toContain('cast');
-    expect(w.players[0]!.moves[0]!.cooldown).toBeGreaterThan(0);
+    expect(types(cast(w, 0, Button.Move2))).toContain('cast'); // Agility: no wind-up
+    expect(w.players[0]!.moves[1]!.cooldown).toBeGreaterThan(0);
     run(w, 5, [idle]);
-    expect(types(cast(w, 0, Button.Move1))).not.toContain('cast'); // on cooldown
+    expect(types(cast(w, 0, Button.Move2))).not.toContain('cast'); // on cooldown
     addXp(w, w.players[0]!, gameplay.xp.levelThresholds[1]!);
     expect(types(cast(w, 0, Button.Signature))).toContain('cast');
   });
@@ -70,15 +70,15 @@ describe('casting rules', () => {
 });
 
 describe('Zeraora (Speedy Skirmisher)', () => {
-  it('Discharge fires 4 bolts over time; a bolt nudges the ball with a LIGHT hit', () => {
+  it('Discharge fires 5 bolts over time (OS Kai Barrage); a bolt nudges the ball with a LIGHT hit', () => {
     const w = duel('zeraora', { x: -500, y: 0 }, 'machamp', { x: 600, y: 600 }, { x: -200, y: 0 });
     cast(w, 0, Button.Move1);
     const ids = new Set(w.projectiles.map((p) => p.id));
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 70; i++) {
       step(w, [idle, idle]);
       for (const p of w.projectiles) ids.add(p.id);
     }
-    expect(ids.size).toBe(4);
+    expect(ids.size).toBe(5);
     expect(w.ball.lastHitBy).toBe(0);
     expect(speedOf(w)).toBeGreaterThan(400);
   });
@@ -86,7 +86,7 @@ describe('Zeraora (Speedy Skirmisher)', () => {
   it('bolts are LIGHT on players: slow, no knockback', () => {
     const w = duel('zeraora', { x: -300, y: 0 }, 'machamp', { x: 100, y: 0 });
     cast(w, 0, Button.Move1);
-    const evs = run(w, 15, [idle, idle]);
+    const evs = run(w, 40, [idle, idle]);
     const hits = evs.filter((e) => e.type === 'hit');
     expect(hits.length).toBeGreaterThan(0);
     expect(hits.every((h) => h.type === 'hit' && h.light && h.knockback === 0)).toBe(true);
@@ -274,5 +274,19 @@ describe('interactions', () => {
     run(w, 2, [idle, idle]);
     expect(w.creations).toHaveLength(0);
     expect(w.players[0]!.moves[2]!.cooldown).toBeGreaterThan(0); // cooldowns persist
+  });
+});
+
+describe('lingering projectiles (OS Kai Barrage)', () => {
+  it('a Discharge bolt hovers at the end of its range before vanishing, and still hits there', () => {
+    const w = sandbox([{ pokemonId: 'zeraora', team: 0, pos: { x: -500, y: 0 } }], { x: 0, y: -850 });
+    cast(w, 0, Button.Move1);
+    let hovered = 0;
+    for (let i = 0; i < 90; i++) {
+      step(w, [idle]);
+      if (w.projectiles.some((p) => p.speed === 0)) hovered++;
+    }
+    expect(hovered).toBeGreaterThanOrEqual(12); // ~0.25 s of hovering per bolt
+    expect(w.projectiles).toHaveLength(0);
   });
 });

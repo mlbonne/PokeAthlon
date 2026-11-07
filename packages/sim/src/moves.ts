@@ -133,6 +133,8 @@ export interface Projectile {
   turn: number;
   /** Volley id (shots of one cast share hits), -1 = none. */
   group: number;
+  /** Ticks it hovers at the end of its range before vanishing (counts down once it gets there). */
+  linger: number;
 }
 
 /** A ring on the ground (OS Atlas's Cosmic Expanse): grows, and if it hit an enemy, shrinks while bouncing out what enters. */
@@ -530,6 +532,7 @@ function fire(world: World, p: Player, pa: PendingAction): void {
           targetId,
           turn: a.homing ? (a.homing.turnDeg * Math.PI) / 180 / TICK_RATE : 0,
           group,
+          linger: ticks(a.linger),
         });
       }
       break;
@@ -971,6 +974,13 @@ export function stepProjectiles(world: World): void {
     }
     pr.traveled += travel;
     pr.speed = Math.max(0, pr.speed - pr.decel * DT);
+    // Lingering shots stop at the end of their range and hover there, still hitting, until it runs out.
+    if (!dead && pr.linger > 0 && (pr.traveled >= pr.range || pr.speed <= 0)) {
+      pr.speed = 0;
+      pr.traveled = pr.range;
+      pr.linger--;
+      continue;
+    }
     if (dead || pr.traveled >= pr.range || pr.speed <= 0) {
       world.projectiles.splice(i, 1);
       if (pr.onEnd) {
