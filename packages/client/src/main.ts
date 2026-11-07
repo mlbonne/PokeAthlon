@@ -96,8 +96,9 @@ const urlDiff = (params.get('diff') ?? '') as MatchConfig['diff'] | '';
 /** Default 3v3: you (Zeraora, forward) with Lucario and Bronzong vs Hoopa, Lucario, Bronzong. */
 const defaultLineup = (): MatchConfig['lineup'] => parseLineup('zeraora,lucario,bronzong/hoopa,lucario,bronzong');
 /** Practice sandbox: you and one enemy dummy (OS practice mode). */
+// ?mon=<id> picks your Pokémon (dev / effects checks).
 const practiceLineup = (): MatchConfig['lineup'] => [
-  { pokemonId: 'zeraora', team: 0 },
+  { pokemonId: params.get('mon') && roster.some((r) => r.id === params.get('mon')) ? params.get('mon')! : 'zeraora', team: 0 },
   { pokemonId: 'lucario', team: 1 },
 ];
 const urlConfig: MatchConfig | null = cpuLineup
@@ -600,6 +601,32 @@ if (import.meta.env.DEV) {
         for (let i = 0; i < n; i++) simStep(mine);
       },
       restart: startMatch,
+      /**
+       * Dev (effects checks): freeze the sim, put you at (-150, 0) and the dummy at `enemy`, then
+       * press `buttons` for `hold` ticks and run `after` more. Effects keep animating at `fxSpeed`.
+       */
+      cast(buttons: number, after: number, opt: { enemy?: Vec2; aim?: [number, number]; hold?: number; fxSpeed?: number; ball?: Vec2 } = {}): unknown {
+        devPause = true;
+        devFxSpeed = opt.fxSpeed ?? 0.25;
+        const w = view.world;
+        const [ax, ay] = opt.aim ?? [127, 0];
+        const me = w.players[ME]!;
+        me.level = 3;
+        for (const m of me.moves) m.cooldown = 0;
+        me.pos = { x: -150, y: 0 };
+        me.vel = { x: 0, y: 0 };
+        const en = w.players.find((p) => p.team !== me.team);
+        if (en) {
+          en.pos = { ...(opt.enemy ?? { x: 100, y: 0 }) };
+          en.vel = { x: 0, y: 0 };
+        }
+        w.ball.pos = { ...(opt.ball ?? { x: 0, y: -650 }) };
+        w.ball.vel = { x: 0, y: 0 };
+        const inp = (b: number): PlayerInput => ({ ...NEUTRAL_INPUT, aimX: ax, aimY: ay, buttons: b });
+        for (let i = 0; i < (opt.hold ?? 1); i++) simStep(inp(buttons));
+        for (let i = 0; i < after; i++) simStep(inp(0));
+        return { projectiles: w.projectiles.map((p) => p.moveId), players: w.players.map((p) => [p.pokemonId, Math.round(p.pos.x), p.dash?.moveId ?? '', p.buffs.map((b) => b.moveId)]) };
+      },
       /** Dev: freeze the sim (effects keep animating at `fxSpeed`) to inspect moves. */
       pause(on = true, fxSpeed = 1): void {
         devPause = on;

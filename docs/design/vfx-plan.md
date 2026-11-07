@@ -1,6 +1,6 @@
 # Move animations and effects: plan (stage 1 of 3)
 
-Status: built, 2026-11-07 (engine, shared effects, every move). **Change from this plan, at the user's request: no bloom, no glow and no additive flashes. Effects are plain PMD sprites drawn small (`FX_SCALE` 0.6) with normal blending.**
+Status: built, 2026-11-07 (engine, shared effects, every move). **Change from this plan, at the user's request: no bloom, no glow and no additive flashes. Effects are plain PMD sprites drawn small (`FX_SCALE` 0.6) with normal blending. Hydro Cannon uses a bubble and spray trail instead of the `Beam/Beam` strip (removed); area effects scatter small sprites instead of stretching to the radius, except ring shapes and ground marks.**
 
 **Stages:** 1 = visual effects (this document), 2 = sound effects, 3 = music.
 

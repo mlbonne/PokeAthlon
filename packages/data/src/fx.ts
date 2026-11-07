@@ -47,6 +47,7 @@ const Layers = z.array(FxLayer).default([]);
  * - body: while the move's thing exists (projectile, dash, buff, channel, ring, guardian zone, wall, held ball)
  * - end: where that thing ends (projectile stops, wall falls…)
  * - arrive: where a blink lands
+ * - mark: on a delayed area's target until it fires (follows a tracked enemy)
  */
 export const MoveFx = z.object({
   cast: Layers,
@@ -55,6 +56,7 @@ export const MoveFx = z.object({
   body: Layers,
   end: Layers,
   arrive: Layers,
+  mark: Layers,
 });
 export type MoveFx = z.infer<typeof MoveFx>;
 

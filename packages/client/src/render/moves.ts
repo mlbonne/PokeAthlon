@@ -58,7 +58,7 @@ export class MoveViews {
   /** Area moves flash their exact shape on the ground; telegraphs warn before delayed actions; blinks flash both ends. */
   onEvent(e: SimEvent): void {
     // Areas keep a faint footprint under their animation (readability), full strength without one.
-    if (e.type === 'area') this.flash(shapeGeometry(e), e.color, e.pos, 0.35, false, moveFx(e.moveId)?.area.length ? 0.22 : 0.55);
+    if (e.type === 'area') this.flash(shapeGeometry(e), e.color, e.pos, 0.35, false, moveFx(e.moveId) ? 0.16 : 0.55);
     else if (e.type === 'telegraph') this.flash(shapeGeometry(e), e.color, e.pos, Math.max(0.1, e.time), true);
     else if (e.type === 'blink') {
       const ring = { shape: 'circle' as const, dir: { x: 1, y: 0 }, radius: 70, angleDeg: 0, length: 0, width: 0 };
