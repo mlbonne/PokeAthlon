@@ -1437,3 +1437,10 @@ div.slotcard.cpu-ban {
     transform: translateY(-4px);
   }
 }
+
+/* Opponents' names: bright red (your side reads by its white ground aura). */
+.plate.enemy .nm {
+  color: #ff3b4a;
+  font-weight: 700;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 0 6px rgba(0, 0, 0, 0.6);
+}

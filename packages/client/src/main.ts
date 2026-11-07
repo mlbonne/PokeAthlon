@@ -38,7 +38,7 @@ import { Effects } from './render/effects';
 import { facingRow, PmdSprite } from './render/pmdSprite';
 import { MoveViews } from './render/moves';
 import { Structures } from './render/structures';
-import { AURA_ALLY, AURA_ENEMY, TeamAura } from './render/teamAura';
+import { AURA_ALLY, TeamAura } from './render/teamAura';
 import { isStadium, stadiumLighting, StadiumView } from './render/stadium';
 import { toThreeX, toThreeZ, WORLD_TO_THREE } from './render/units';
 
@@ -125,8 +125,8 @@ interface MatchView {
   world: World;
   group: THREE.Group;
   sprites: PmdSprite[];
-  /** Ground auras: white = your team, red = opponents (clear even in mirror matches). */
-  auras: TeamAura[];
+  /** White ground auras under your team (null for opponents), clear even in mirror matches. */
+  auras: (TeamAura | null)[];
   ball: BallView;
   structures: Structures;
   effects: Effects;
@@ -220,11 +220,12 @@ function makeSprites(world: World, group: THREE.Group): PmdSprite[] {
   });
 }
 
-/** One aura per player, attached to its sprite (follows it, hides with it on KO). Spectators see Blue as "your" team. */
-function makeAuras(world: World, sprites: PmdSprite[]): TeamAura[] {
+/** A white aura under each player of your team, attached to its sprite (follows it, hides on KO). Spectators see Blue as "your" team. */
+function makeAuras(world: World, sprites: PmdSprite[]): (TeamAura | null)[] {
   const myTeam = SPECTATE ? 0 : world.players[ME]?.team ?? 0;
   return world.players.map((p, i) => {
-    const a = new TeamAura(p.team === myTeam ? AURA_ALLY : AURA_ENEMY, (p.baseRadius || p.radius || 40) * WORLD_TO_THREE * 1.35);
+    if (p.team !== myTeam) return null;
+    const a = new TeamAura(AURA_ALLY, (p.baseRadius || p.radius || 40) * WORLD_TO_THREE * 1.35);
     sprites[i]!.object.add(a.object);
     return a;
   });
