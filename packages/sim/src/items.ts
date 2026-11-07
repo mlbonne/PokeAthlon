@@ -71,6 +71,8 @@ function itemSpeedBuff(p: Player, pct: number, seconds: number): void {
     powerAdd: 0,
     knockbackTakenPct: 0,
     strikeHit: null,
+    refreshOnHit: false,
+    cooldownAfter: false,
   });
 }
 

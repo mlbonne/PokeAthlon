@@ -22,7 +22,7 @@
           "hit": {
             "ball": { "base": 700, "powerRatio": 0.32 },
             "player": { "base": 112, "powerRatio": 0.468 },
-            "damage": { "base": 60, "powerRatio": 0.25 },
+            "damage": { "base": 75, "powerRatio": 0.3125 },
             "light": true
           }
         }
@@ -42,7 +42,7 @@
       "id": "wild-charge",
       "name": "Wild Charge",
       "slot": "special",
-      "cooldown": 24,
+      "cooldown": 18,
       "castTime": 0.15,
       "anim": "QuickStrike",
       "desc": "Charge forward, blasting enemies and the ball out of your way.",

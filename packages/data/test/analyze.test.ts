@@ -91,7 +91,7 @@ describe('kit analyzer: roster', () => {
   const all = analyzeRoster();
 
   it('covers every Pokémon with a kit, with three moves each', () => {
-    expect(all.map((f) => f.id).sort()).toEqual(['arcanine-hisui', 'blastoise', 'bronzong', 'greninja', 'hoopa', 'lucario', 'machamp', 'zeraora']);
+    expect(all.map((f) => f.id).sort()).toEqual(['arcanine-hisui', 'blastoise', 'bronzong', 'greninja', 'hoopa', 'lucario', 'machamp', 'pikachu', 'zeraora']);
     for (const f of all) expect(f.moves).toHaveLength(3);
   });
 

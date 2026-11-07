@@ -553,8 +553,11 @@ function chooseCast(world: World, p: Player, job: Job, perc: Perception, D: Diff
         for (const o of foes) {
           // Long delays only land on slow or Staggered targets.
           const slow = Math.sqrt(o.vel.x * o.vel.x + o.vel.y * o.vel.y) < 150 || o.staggered || o.stunTicks > 0;
-          if (m.delay > 0.5 && !slow) continue;
-          const q = { x: o.pos.x + o.vel.x * m.delay, y: o.pos.y + o.vel.y * m.delay };
+          // A tracking area follows its target: aim at them, unless they'll outrun it.
+          const speed = Math.sqrt(o.vel.x * o.vel.x + o.vel.y * o.vel.y);
+          if (m.track > 0 ? speed - m.track > m.radius / Math.max(0.1, m.delay) : m.delay > 0.5 && !slow) continue;
+          const lead = m.track > 0 ? 0 : m.delay;
+          const q = { x: o.pos.x + o.vel.x * lead, y: o.pos.y + o.vel.y * lead };
           if (dist(q, p.pos) > m.range + m.radius * 0.6) continue;
           consider({ slot: m.slot, aim: normalize({ x: q.x - p.pos.x, y: q.y - p.pos.y }), dist: Math.max(1, dist(q, p.pos)), value: hitValue(world, m, p, o, q), label: `${m.id}:area` });
         }

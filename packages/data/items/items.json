@@ -146,6 +146,7 @@
     "$comment": "Starting pick per archetype and slot for CPUs (and the setup screen) until the balance snapshot has item win rates.",
     "forward": {
       "speedy-skirmisher": "choice-scarf",
+      "ramping-speedster": "choice-scarf",
       "flashy-swordsman": "poison-barb",
       "manipulating-mastermind": "quick-powder",
       "empowering-enchanter": "shell-bell",
@@ -157,6 +158,7 @@
     },
     "goalie": {
       "speedy-skirmisher": "quick-claw",
+      "ramping-speedster": "quick-claw",
       "flashy-swordsman": "eject-pack",
       "manipulating-mastermind": "zoom-lens",
       "empowering-enchanter": "zoom-lens",

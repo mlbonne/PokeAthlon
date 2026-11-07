@@ -1,5 +1,5 @@
 {
-  "$comment": "Manipulating Mastermind (OS Rune model; was Alakazam until 2026-11, wiki 2026-11) with GAME_BREAKDOWN §13's Pokémon twist. Psychic = our ball grab (no OS equivalent: short hold, slowed, any hit drops it; throw ≤ 1.2× Strike). Hyperspace Hole (2026-11 rework, replaces Teleport = Shadow Swap): a portal projectile that chips the first enemy (LIGHT hit), then Hoopa blinks to where it stopped and bursts 0.35 s later (the old pillar's core KB, ~80 % of its damage); evading in that window dodges the burst. Future Sight = Rune's Banish (40 s, 1.75 s banish, 270+130 % dmg) delivered as a telegraphed delayed area. Player knockback = OS × 1.875; power % → powerRatio.",
+  "$comment": "Manipulating Mastermind (OS Rune model; was Alakazam until 2026-11, wiki 2026-11) with GAME_BREAKDOWN §13's Pokémon twist. Psychic = our ball grab (no OS equivalent: short hold, slowed, any hit drops it; throw ≤ 1.2× Strike). Hyperspace Hole (2026-11 rework, replaces Teleport = Shadow Swap): a portal projectile that chips the first enemy (LIGHT hit), then Hoopa blinks to where it stopped and bursts 0.35 s later (the old pillar's core KB, ~80 % of its damage); evading in that window dodges the burst. Future Sight = Rune's Banish (40 s, 1.75 s banish, 270+130 % dmg) delivered as a delayed area that locks onto an enemy and follows them at 300/s (2026-11 pass 2: a fixed area was walked out of, 0.4 hits a game); Evade dodges it. Player knockback = OS × 1.875; power % → powerRatio.",
   "pokemon": "hoopa",
   "moves": [
     {
@@ -17,7 +17,7 @@
       "id": "hyperspace-hole",
       "name": "Hyperspace Hole",
       "slot": "secondary",
-      "cooldown": 9,
+      "cooldown": 8,
       "anim": "Rotate",
       "desc": "Fling a portal that chips the first enemy it touches. Where it stops, you come out 0.35 s later with a burst. Evade to dodge the burst.",
       "bot": "engage",
@@ -62,7 +62,7 @@
       "cooldown": 40,
       "range": 750,
       "anim": "Charge",
-      "desc": "Mark an area. After 0.75 s it erupts, banishing enemies inside for 1.75 s and blasting the ball.",
+      "desc": "Foresee an enemy near where you aim. The mark follows them, and after 1 s it erupts, banishing enemies inside for 1.75 s and blasting the ball. Evade to dodge it.",
       "bot": "engage",
       "actions": [
         {
@@ -70,9 +70,10 @@
           "fx": { "color": "#7b2cbf" },
           "shape": "circle",
           "at": "target",
-          "radius": 240,
-          "delay": 0.75,
+          "radius": 200,
+          "delay": 1.0,
           "telegraph": true,
+          "track": 300,
           "hit": {
             "ball": { "base": 1290, "powerRatio": 1.85 },
             "damage": { "base": 270, "powerRatio": 1.3 },

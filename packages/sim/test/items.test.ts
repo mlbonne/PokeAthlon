@@ -25,7 +25,7 @@ describe('item data', () => {
     expect(items).toHaveLength(9);
     expect(itemsFor('forward')).toHaveLength(5);
     expect(itemsFor('goalie')).toHaveLength(4);
-    for (const id of ['zeraora', 'greninja', 'hoopa', 'arcanine-hisui', 'bronzong', 'blastoise', 'lucario', 'machamp']) {
+    for (const id of ['zeraora', 'greninja', 'hoopa', 'arcanine-hisui', 'bronzong', 'blastoise', 'lucario', 'machamp', 'pikachu']) {
       const a = getPokemon(id).archetype;
       expect(defaultItem(a, 'forward').slot).toBe('forward');
       expect(defaultItem(a, 'goalie').slot).toBe('goalie');

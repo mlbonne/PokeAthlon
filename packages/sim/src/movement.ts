@@ -36,7 +36,7 @@ export function stepMovement(world: World, p: Player, inp: PlayerInput | undefin
   const raw: Vec2 = !frozen && inp ? { x: inp.moveX / AXIS_MAX, y: inp.moveY / AXIS_MAX } : { x: 0, y: 0 };
   const dir = clampLen(raw, 1);
   const top = effectiveSpeed(p);
-  const speed = top * (p.slowTicks > 0 ? 1 - gameplay.knock.lightSlow : 1) * (1 - actionSlowPct(world, p) / 100);
+  const speed = top * (p.slowTicks > 0 ? 1 - p.slowFrac : 1) * (1 - actionSlowPct(world, p) / 100);
   const target = { x: dir.x * speed, y: dir.y * speed };
   const moving = dir.x !== 0 || dir.y !== 0;
   const rate = top / (moving ? gameplay.movement.accelTime : gameplay.movement.decelTime);

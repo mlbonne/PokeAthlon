@@ -52,6 +52,8 @@ export interface MoveModel {
   channel: boolean;
   /** Guardian zone: rescues allies from KOs while it stands. */
   rescue: boolean;
+  /** Target area that follows its enemy (units/s), 0 = fixed. */
+  track: number;
 }
 
 /**
@@ -111,6 +113,7 @@ function model(def: MoveDef, slot: number, p: ReturnType<typeof getPokemon>): Mo
     strikeBuff: false,
     channel: false,
     rescue: false,
+    track: 0,
   };
   switch (main.type) {
     case 'projectile':
@@ -126,6 +129,7 @@ function model(def: MoveDef, slot: number, p: ReturnType<typeof getPokemon>): Mo
       break;
     case 'area':
       m.delivery = main.at === 'target' ? 'targetArea' : 'selfArea';
+      m.track = main.track;
       m.aimed = main.at === 'target' || main.shape !== 'circle';
       m.radius = main.shape === 'line' ? main.length : main.radius;
       break;

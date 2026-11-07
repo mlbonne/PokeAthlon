@@ -68,6 +68,12 @@ The bracketed tags are the license labels recorded per contribution in SpriteCol
   - Deeshura (https://bsky.app/profile/deeshura.bsky.social) [CC_BY-NC_4]
   - G〜 (https://bsky.app/profile/justtr4sh.pmd.social) [CC_BY-NC_4]
 
+### Pikachu (#0025)
+- Sprites:
+  - CHUNSOFT (https://www.spike-chunsoft.com/) [Unspecified]
+- Portraits:
+  - CHUNSOFT (https://www.spike-chunsoft.com/) [Unspecified]
+
 ### Machamp (#0068)
 - Sprites:
   - CHUNSOFT (https://www.spike-chunsoft.com/) [Unspecified]

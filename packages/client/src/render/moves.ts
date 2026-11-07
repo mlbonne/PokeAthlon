@@ -32,6 +32,8 @@ export class MoveViews {
   private readonly projectiles = new Map<number, THREE.Group>();
   private readonly walls = new Map<number, THREE.Mesh>();
   private readonly guardians = new Map<number, THREE.Group>();
+  /** Tracking target areas (Future Sight): a warning disc that follows its enemy. */
+  private readonly trackers = new Map<string, THREE.Group>();
   private readonly auras: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>[] = [];
   private flashes: Flash[] = [];
   private time = 0;
@@ -161,6 +163,42 @@ export class MoveViews {
       if (!liveG.has(id)) {
         this.object.remove(grp);
         this.guardians.delete(id);
+      }
+    }
+
+    // Tracking areas: a disc that fills in as the eruption nears and follows its target.
+    const liveT = new Set<string>();
+    for (const pa of world.pending) {
+      if (pa.trackId < 0 || pa.action.type !== 'area') continue;
+      const key = `${pa.owner}:${pa.moveId}:${pa.fireTick}`;
+      liveT.add(key);
+      let grp = this.trackers.get(key);
+      const r = pa.action.radius;
+      if (!grp) {
+        grp = new THREE.Group();
+        const color = new THREE.Color(pa.action.fx.color);
+        const disc = new THREE.Mesh(
+          new THREE.CircleGeometry(r * W, 48),
+          new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.1, depthWrite: false }),
+        );
+        const rim = new THREE.Mesh(
+          new THREE.RingGeometry(r * W * 0.9, r * W, 48),
+          new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.85, depthWrite: false }),
+        );
+        disc.rotation.x = rim.rotation.x = -Math.PI / 2;
+        grp.add(disc, rim);
+        grp.userData.total = Math.max(1, pa.fireTick - world.tick);
+        this.trackers.set(key, grp);
+        this.object.add(grp);
+      }
+      grp.position.set(toThreeX(pa.target.x), 0.05, toThreeZ(pa.target.y));
+      const left = Math.max(0, pa.fireTick - world.tick) / (grp.userData.total as number);
+      (grp.children[0] as THREE.Mesh<THREE.CircleGeometry, THREE.MeshBasicMaterial>).material.opacity = 0.1 + 0.35 * (1 - left);
+    }
+    for (const [key, grp] of this.trackers) {
+      if (!liveT.has(key)) {
+        this.object.remove(grp);
+        this.trackers.delete(key);
       }
     }
 

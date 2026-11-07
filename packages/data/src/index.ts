@@ -21,6 +21,7 @@ export const SIZE_TABLE: Record<SizeClass, { radius: number; hurtRadius: number;
 
 export const Archetype = z.enum([
   'speedy-skirmisher',
+  'ramping-speedster',
   'flashy-swordsman',
   'manipulating-mastermind',
   'empowering-enchanter',

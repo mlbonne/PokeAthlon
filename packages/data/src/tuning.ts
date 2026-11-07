@@ -1,4 +1,4 @@
-import { roster } from './index';
+import { roster, type SizeClass } from './index';
 import { gameplay } from './rules';
 import { getKit, type MoveDef } from './kits';
 import { items } from './items';
@@ -30,7 +30,16 @@ const SHORTCUTS: Record<string, string[]> = {
 };
 
 function applyOne(spec: string): string {
-  const m = /^([a-z0-9-]+)\.([A-Za-z0-9.*-]+?)\s*(\*=|\+=|=)\s*(-?[0-9.]+)$/.exec(spec.trim());
+  // Size class: lucario.size=large (a word, not a number).
+  const sz = /^([a-z0-9-]+)\.size\s*=\s*(normal|large|very-large)$/.exec(spec.trim());
+  if (sz) {
+    const [, who, size] = sz as unknown as [string, string, SizeClass];
+    const targets = who === 'all' ? [...roster] : roster.filter((r) => r.id === who);
+    if (!targets.length) throw new Error(`--set: unknown Pokémon "${who}"`);
+    for (const t of targets) t.stats.size = size;
+    return `${who}.size = ${size}`;
+  }
+  const m =/^([a-z0-9-]+)\.([A-Za-z0-9.*-]+?)\s*(\*=|\+=|=)\s*(-?[0-9.]+)$/.exec(spec.trim());
   if (!m) throw new Error(`Bad --set "${spec}". Use e.g. lucario.aura-sphere.cooldown=11 or lucario.power*=0.95`);
   const [, mon, path, op, raw] = m as unknown as [string, string, string, string, string];
   const value = Number(raw);

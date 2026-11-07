@@ -1,7 +1,7 @@
 import { gameplay } from '@pokeathlon/data';
 import { TICK_RATE, ticks } from './constants';
 import { addXp } from './progression';
-import { releaseBall } from './ball';
+import { refreshHitBuffs, releaseBall } from './ball';
 import { boostOnHit, boostOnKo, boostPreventKo } from './boosts';
 import { itemKnockbackDealt, itemOnHit } from './items';
 import { buffDamageReduction, buffKnockbackResist, buffKnockbackTaken, guardianRescue, refreshBody } from './moves';
@@ -28,6 +28,9 @@ export interface HitSpec {
   stun?: number;
   /** Banish seconds (replaces the knockback slide). */
   banish?: number;
+  /** Movement slow (%, seconds); replaces a LIGHT hit's default slow. */
+  slowPct?: number;
+  slowTime?: number;
   /** What caused the hit: a move id, `strike` or `burst` (telemetry). */
   source?: string;
 }
@@ -36,6 +39,12 @@ export interface HitSpec {
  * Apply an OS-style hit to a player. Returns false if the target couldn't be hit
  * (KO'd, elusive or immune).
  */
+/** Slow a player: the stronger slow wins while both run; the longer one sets the time. */
+function applySlow(p: Player, frac: number, t: number): void {
+  p.slowFrac = p.slowTicks > 0 ? Math.max(p.slowFrac, frac) : frac;
+  p.slowTicks = Math.max(p.slowTicks, t);
+}
+
 export function applyHit(world: World, attackerId: number, target: Player, hit: HitSpec): boolean {
   if (!isTargetable(target)) return false;
   const wasStaggered = target.staggered;
@@ -72,7 +81,9 @@ export function applyHit(world: World, attackerId: number, target: Player, hit: 
   // Any real hit makes a grabbing player drop the ball.
   if (world.ball.heldBy === target.id && (damage > 0 || knockback > 0 || hit.stun || hit.banish)) releaseBall(world, null, 0, 'drop');
 
-  if (hit.light) target.slowTicks = Math.max(target.slowTicks, ticks(K.lightSlowTime));
+  if (hit.slowPct !== undefined && hit.slowTime) applySlow(target, hit.slowPct / 100, ticks(hit.slowTime));
+  else if (hit.light) applySlow(target, K.lightSlow, ticks(K.lightSlowTime));
+  if (attacker0) refreshHitBuffs(attacker0);
   if (hit.banish) banish(world, target, attackerId, hit.banish);
   else if (knockback > 0) startKnock(target, hit.dir, knockback);
   if (hit.stun) target.stunTicks = Math.max(target.stunTicks, ticks(hit.stun));
@@ -147,6 +158,7 @@ export function knockOut(world: World, p: Player): void {
   p.vel = { x: 0, y: 0 };
   p.stunTicks = 0;
   p.slowTicks = 0;
+  p.slowFrac = 0;
   p.stats.deaths++;
   let by = -1;
   if (p.lastHitBy >= 0 && world.tick - p.lastHitTick <= TAKEDOWN_WINDOW) {

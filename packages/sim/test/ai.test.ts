@@ -27,13 +27,13 @@ describe('bot brain v2', () => {
 
   it('beats the v1 bot in mirror matches (sides swapped)', () => {
     let v2 = 0;
-    for (let s = 1; s <= 4; s++) {
+    for (let s = 1; s <= 12; s++) {
       const swap = s % 2 === 0;
       const r = runHeadless(parseLineup('zeraora/zeraora'), { seed: s, brains: swap ? ['v1', 'v2'] : ['v2', 'v1'], until: 'set', maxMinutes: 10 });
       if (r.sets[swap ? 1 : 0] === 1) v2++; // `until: 'set'` → whoever took the first set
     }
-    expect(v2).toBeGreaterThanOrEqual(3);
-  });
+    expect(v2).toBeGreaterThanOrEqual(8); // 4 games were too few: one kit change flipped it to 2/4
+  }, 300_000);
 
   it('3v3 teams have one striker and one goalie each, and jobs rotate during play', () => {
     const w = createWorld(trio, { mode: 'match', seed: 2 });

@@ -1,103 +1,115 @@
 {
   "$comment": "Sim tier snapshot, written by `npm run balance` (M4.6). Do not edit by hand.",
-  "generatedAt": "2026-11-06 19:18 UTC",
+  "generatedAt": "2026-11-07 01:44 UTC",
   "difficulty": "balance",
   "entries": [
     {
       "pokemon": "zeraora",
       "forward": {
-        "wins": 89,
-        "games": 209
+        "wins": 76,
+        "games": 182
       },
       "goalie": {
-        "wins": 36,
-        "games": 91
+        "wins": 33,
+        "games": 84
       },
-      "impact": -2.4
+      "impact": -0.67
     },
     {
       "pokemon": "greninja",
       "forward": {
-        "wins": 83,
-        "games": 172
+        "wins": 76,
+        "games": 178
       },
       "goalie": {
-        "wins": 40,
+        "wins": 33,
         "games": 100
       },
-      "impact": -2.74
+      "impact": -5.28
     },
     {
       "pokemon": "hoopa",
       "forward": {
-        "wins": 64,
+        "wins": 90,
         "games": 190
       },
       "goalie": {
-        "wins": 44,
-        "games": 102
+        "wins": 45,
+        "games": 91
       },
-      "impact": -4.49
+      "impact": 0.84
     },
     {
       "pokemon": "bronzong",
       "forward": {
         "wins": 107,
-        "games": 193
+        "games": 172
       },
       "goalie": {
         "wins": 53,
-        "games": 94
+        "games": 91
       },
-      "impact": 4.05
+      "impact": 1.87
     },
     {
       "pokemon": "blastoise",
       "forward": {
-        "wins": 101,
-        "games": 197
+        "wins": 105,
+        "games": 183
       },
       "goalie": {
-        "wins": 69,
+        "wins": 74,
         "games": 108
       },
-      "impact": -1.34
+      "impact": 0.05
     },
     {
       "pokemon": "arcanine-hisui",
       "forward": {
-        "wins": 116,
-        "games": 206
+        "wins": 89,
+        "games": 182
       },
       "goalie": {
-        "wins": 57,
-        "games": 100
+        "wins": 45,
+        "games": 90
       },
-      "impact": 5.43
+      "impact": 3.34
     },
     {
       "pokemon": "lucario",
       "forward": {
-        "wins": 114,
-        "games": 188
+        "wins": 101,
+        "games": 207
       },
       "goalie": {
-        "wins": 49,
-        "games": 90
+        "wins": 38,
+        "games": 89
       },
-      "impact": 4.42
+      "impact": 0.43
+    },
+    {
+      "pokemon": "pikachu",
+      "forward": {
+        "wins": 92,
+        "games": 171
+      },
+      "goalie": {
+        "wins": 61,
+        "games": 108
+      },
+      "impact": 2.16
     },
     {
       "pokemon": "machamp",
       "forward": {
-        "wins": 103,
-        "games": 203
+        "wins": 109,
+        "games": 205
       },
       "goalie": {
-        "wins": 38,
-        "games": 93
+        "wins": 42,
+        "games": 98
       },
-      "impact": -2.62
+      "impact": -2.59
     }
   ]
 }

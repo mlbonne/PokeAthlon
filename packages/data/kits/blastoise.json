@@ -1,5 +1,5 @@
 {
-  "$comment": "Angelic Support (OS Atlas model, wiki 2026-11). Surf = Astral Projection (10 s; decelerating arc barrier, 600 range at 2286/s, hits each enemy once: 1330+175 % core, 170+85 % player KB, 120+60 % dmg). Whirlpool = Cosmic Expanse (20 s; expanding ring of light: 1340+179 % core, 180+89 % KB, 180+89 % dmg; if it hits it lingers and shrinks over ~1 s, later hits 50 % / 75 % on the core; ours: a smaller ring that hits twice more). Aqua Ring = Celestial Intervention (35 s; guardian for 2 s, heals 5 % of max Stagger every 0.25 s, size 450 → radius 225; any ally who would be KO'd is pulled to it with 75 % Stagger, once per ally). Was the Asher kit until 2026-11-06 (now Hisuian Arcanine). Balance pass 2026-11-06 (bots made it 68 % / 85 %): Surf 12 s, radius 65, ×0.8 ball and ×0.85 player KB; Whirlpool one follow-up hit; Aqua Ring 45 s, 4 % per pulse; Stagger growth 425. Player knockback = OS × 1.875; power % → powerRatio.",
+  "$comment": "Angelic Support (OS Atlas model, wiki 2026-11). Surf = Astral Projection (10 s; decelerating arc barrier, 600 range at 2286/s, hits each enemy once: 1330+175 % core, 170+85 % player KB, 120+60 % dmg). Whirlpool = Cosmic Expanse (20 s; expanding ring of light: 1340+179 % core, 180+89 % KB, 180+89 % dmg; if it hits it lingers and shrinks over ~1 s, later hits 50 % / 75 % on the core; ours: a smaller ring that hits twice more). Aqua Ring = Celestial Intervention (35 s; guardian for 2 s, heals 5 % of max Stagger every 0.25 s, size 450 → radius 225; any ally who would be KO'd is pulled to it with 75 % Stagger, once per ally). Was the Asher kit until 2026-11-06 (now Hisuian Arcanine). Balance pass 2026-11-06 (bots made it 68 % / 85 %): Surf 12 s, radius 65, ×0.8 ball and ×0.85 player KB; Whirlpool one follow-up hit; Aqua Ring 45 s, 4 % per pulse; Stagger growth 425. Pass 2 (2026-11-07): Aqua Ring 55 s, rescue at 50 % Stagger, Stagger growth 375. Player knockback = OS × 1.875; power % → powerRatio.",
   "pokemon": "blastoise",
   "moves": [
     {
@@ -69,9 +69,9 @@
       "id": "aqua-ring",
       "name": "Aqua Ring",
       "slot": "special",
-      "cooldown": 45,
+      "cooldown": 55,
       "anim": "Charge",
-      "desc": "Raise a ring of healing water for 2 s: allies inside heal 4 % every 0.25 s. Any ally who would be KO'd meanwhile is pulled into it with 75 % Stagger (once each).",
+      "desc": "Raise a ring of healing water for 2 s: allies inside heal 4 % every 0.25 s. Any ally who would be KO'd meanwhile is pulled into it with 50 % Stagger (once each).",
       "bot": "support",
       "actions": [
         {
@@ -81,7 +81,7 @@
           "duration": 2,
           "interval": 0.25,
           "healPct": 0.04,
-          "rescueHealPct": 0.75
+          "rescueHealPct": 0.5
         }
       ]
     }
