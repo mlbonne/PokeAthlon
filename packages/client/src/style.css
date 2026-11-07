@@ -1420,3 +1420,20 @@ div.slotcard.cpu-ban {
     grid-template-columns: 1fr;
   }
 }
+
+/* You: a small red arrow above your nameplate (always on top, bobbing). */
+.plate .me-arrow {
+  width: 0;
+  height: 0;
+  margin: 0 auto 3px;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 11px solid #ff2a3d;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 4px rgba(255, 42, 61, 0.6));
+  animation: me-bob 0.9s ease-in-out infinite alternate;
+}
+@keyframes me-bob {
+  to {
+    transform: translateY(-4px);
+  }
+}
