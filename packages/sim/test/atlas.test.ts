@@ -33,7 +33,7 @@ describe('Blastoise (Angelic Support)', () => {
     expect(w.projectiles).toHaveLength(0); // slowed to a stop within its range
   });
 
-  it('Whirlpool hits close enemies on the burst and once more as it swirls in', () => {
+  it('Whirlpool: a ring that hits an enemy stays on the ground, shrinks, and bounces the ball out', () => {
     const w = sandbox(
       [
         { pokemonId: 'blastoise', team: 0, pos: { x: -400, y: 0 } },
@@ -42,14 +42,57 @@ describe('Blastoise (Angelic Support)', () => {
       { x: 0, y: -850 },
     );
     const evs = [...cast(w, 0, Button.Move2)];
-    // Hold the enemy in place so the later rings still reach it.
-    for (let i = 0; i < 70; i++) {
-      w.players[1]!.pos = { x: -250, y: 0 };
+    expect(types(evs)).toContain('ring');
+    evs.push(...run(w, 10, [idle, idle]));
+    const first = hitsOn(evs, 1, 'whirlpool');
+    expect(first).toHaveLength(1);
+    const ring = w.rings[0]!;
+    expect(ring).toBeTruthy();
+    expect(ring.latchedAt).toBeGreaterThanOrEqual(0);
+    // Blastoise walks away: the ring stays where it was cast.
+    run(w, 20, [quantizeInput(0, 1, 0, 0, 0, 0), idle]);
+    expect(w.rings[0]!.pos).toEqual({ x: -400, y: 0 });
+    // Roll the ball into it: it bounces back out (away from the centre).
+    w.ball.pos = { x: -400 + ring.radius + 80, y: 0 };
+    w.ball.vel = { x: -600, y: 0 };
+    run(w, 12, [idle, idle]);
+    expect(w.ball.vel.x).toBeGreaterThan(500);
+    // It shrinks and is gone ~1.9 s after it latched.
+    run(w, 120, [idle, idle]);
+    expect(w.rings).toHaveLength(0);
+  });
+
+  it('Whirlpool that hits no enemy vanishes after a moment, and an enemy walking in later is not hit', () => {
+    const w = sandbox(
+      [
+        { pokemonId: 'blastoise', team: 0, pos: { x: -400, y: 0 } },
+        { pokemonId: 'bronzong', team: 1, pos: { x: 400, y: 0 } },
+      ],
+      { x: 0, y: -850 },
+    );
+    cast(w, 0, Button.Move2);
+    run(w, 6, [idle, idle]);
+    expect(w.rings).toHaveLength(1);
+    run(w, 25, [idle, idle]); // 0.1 s growth + 0.35 s grace
+    expect(w.rings).toHaveLength(0);
+  });
+
+  it('enemies still inside a latched ring are hit again every 0.25 s, weaker', () => {
+    const w = sandbox(
+      [
+        { pokemonId: 'blastoise', team: 0, pos: { x: -400, y: 0 } },
+        { pokemonId: 'bronzong', team: 1, pos: { x: -300, y: 0 } },
+      ],
+      { x: 0, y: -850 },
+    );
+    const evs = [...cast(w, 0, Button.Move2)];
+    for (let i = 0; i < 40; i++) {
+      w.players[1]!.pos = { x: -330, y: 0 }; // pinned inside
       evs.push(...run(w, 1, [idle, idle]));
     }
     const hits = hitsOn(evs, 1, 'whirlpool');
-    expect(hits).toHaveLength(2);
-    expect(hits[1]!.damage).toBeLessThan(hits[0]!.damage);
+    expect(hits.length).toBeGreaterThanOrEqual(3);
+    expect(hits[1]!.damage).toBeLessThan(hits[0]!.damage * 0.6);
   });
 
   it('Aqua Ring heals allies inside it on cast and every 0.25 s for 2 s (4 % a pulse)', () => {

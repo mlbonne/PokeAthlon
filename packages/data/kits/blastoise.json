@@ -1,5 +1,5 @@
 {
-  "$comment": "Angelic Support (OS Atlas model, wiki 2026-11). Surf = Astral Projection (10 s; decelerating arc barrier, 600 range at 2286/s, hits each enemy once: 1330+175 % core, 170+85 % player KB, 120+60 % dmg). Whirlpool = Cosmic Expanse (20 s; expanding ring of light: 1340+179 % core, 180+89 % KB, 180+89 % dmg; if it hits it lingers and shrinks over ~1 s, later hits 50 % / 75 % on the core; ours: a smaller ring that hits twice more). Aqua Ring = Celestial Intervention (35 s; guardian for 2 s, heals 5 % of max Stagger every 0.25 s, size 450 → radius 225; any ally who would be KO'd is pulled to it with 75 % Stagger, once per ally). Was the Asher kit until 2026-11-06 (now Hisuian Arcanine). Balance pass 2026-11-06 (bots made it 68 % / 85 %): Surf 12 s, radius 65, ×0.8 ball and ×0.85 player KB; Whirlpool one follow-up hit; Aqua Ring 45 s, 4 % per pulse; Stagger growth 425. Pass 2 (2026-11-07): Aqua Ring 55 s, rescue at 50 % Stagger, Stagger growth 375. Player knockback = OS × 1.875; power % → powerRatio.",
+  "$comment": "Angelic Support (OS Atlas model, wiki 2026-11). Surf = Astral Projection (10 s; decelerating arc barrier, 600 range at 2286/s, hits each enemy once: 1330+175 % core, 170+85 % player KB, 120+60 % dmg). Whirlpool = Cosmic Expanse (20 s; data-mined HV_Halo 2026-11-07: a ring around Atlas that grows from 150 to 300 radius in ~0.1 s hitting everything inside, 1340+179 % core, 180+89 % KB, 180+89 % dmg; with no enemy hit it vanishes 0.35 s later; if it hits one it stays where it was cast and shrinks to 60 over 1.9 s, and the Core or enemies entering it are bounced out at 75 % core / 50 % player KB and dmg, enemies inside re-hit every 0.25 s). Aqua Ring = Celestial Intervention (35 s; guardian for 2 s, heals 5 % of max Stagger every 0.25 s, size 450 → radius 225; any ally who would be KO'd is pulled to it with 75 % Stagger, once per ally). Was the Asher kit until 2026-11-06 (now Hisuian Arcanine). Balance pass 2026-11-06 (bots made it 68 % / 85 %): Surf 12 s, radius 65, ×0.8 ball and ×0.85 player KB; Whirlpool one follow-up hit (replaced by the real ring on 2026-11-07); Aqua Ring 45 s, 4 % per pulse; Stagger growth 425. Pass 2 (2026-11-07): Aqua Ring 55 s, rescue at 50 % Stagger, Stagger growth 375. Player knockback = OS × 1.875; power % → powerRatio.",
   "pokemon": "blastoise",
   "moves": [
     {
@@ -13,16 +13,27 @@
       "actions": [
         {
           "type": "projectile",
-          "fx": { "color": "#4cc9f0" },
+          "fx": {
+            "color": "#4cc9f0"
+          },
           "speed": 2286,
           "decel": 4355,
           "range": 600,
           "radius": 65,
           "pierce": true,
           "hit": {
-            "ball": { "base": 1064, "powerRatio": 1.4 },
-            "player": { "base": 271, "powerRatio": 1.355 },
-            "damage": { "base": 120, "powerRatio": 0.6 }
+            "ball": {
+              "base": 1064,
+              "powerRatio": 1.4
+            },
+            "player": {
+              "base": 271,
+              "powerRatio": 1.355
+            },
+            "damage": {
+              "base": 120,
+              "powerRatio": 0.6
+            }
           }
         }
       ]
@@ -33,33 +44,49 @@
       "slot": "secondary",
       "cooldown": 20,
       "anim": "Rotate",
-      "desc": "A ring of water bursts out around you, then swirls inward, hitting nearby enemies once more.",
+      "desc": "Raise a ring of swirling water around you that bursts outward. If it catches an enemy it stays on the ground and slowly shrinks: the ball and enemies that touch it are bounced back out.",
       "bot": "engage",
       "actions": [
         {
-          "type": "area",
-          "fx": { "color": "#4895ef" },
-          "shape": "circle",
-          "radius": 260,
+          "type": "ring",
+          "fx": {
+            "color": "#4895ef"
+          },
+          "radius": 300,
+          "startPct": 0.5,
+          "grow": 0.1,
+          "grace": 0.35,
+          "shrink": 1.9,
+          "minRadius": 60,
+          "repeatEvery": 0.25,
           "hit": {
-            "ball": { "base": 1340, "powerRatio": 1.79 },
-            "player": { "base": 338, "powerRatio": 1.669 },
-            "damage": { "base": 180, "powerRatio": 0.89 },
+            "ball": {
+              "base": 1340,
+              "powerRatio": 1.79
+            },
+            "player": {
+              "base": 337.5,
+              "powerRatio": 1.669
+            },
+            "damage": {
+              "base": 180,
+              "powerRatio": 0.89
+            },
             "direction": "radial"
-          }
-        },
-        {
-          "type": "area",
-          "fx": { "color": "#90e0ef" },
-          "delay": 0.5,
-          "shape": "circle",
-          "radius": 190,
-          "repeat": 1,
-          "repeatInterval": 0.5,
-          "hit": {
-            "ball": { "base": 1005, "powerRatio": 1.3425 },
-            "player": { "base": 169, "powerRatio": 0.834 },
-            "damage": { "base": 90, "powerRatio": 0.445 },
+          },
+          "followHit": {
+            "ball": {
+              "base": 1005,
+              "powerRatio": 1.3425
+            },
+            "player": {
+              "base": 168.75,
+              "powerRatio": 0.834
+            },
+            "damage": {
+              "base": 90,
+              "powerRatio": 0.445
+            },
             "direction": "radial"
           }
         }
@@ -76,7 +103,9 @@
       "actions": [
         {
           "type": "guardian",
-          "fx": { "color": "#a2d2ff" },
+          "fx": {
+            "color": "#a2d2ff"
+          },
           "radius": 225,
           "duration": 2,
           "interval": 0.25,
