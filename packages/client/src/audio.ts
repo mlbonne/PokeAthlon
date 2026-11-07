@@ -14,7 +14,7 @@ export interface AudioPrefs {
   ui: number;
   mute: boolean;
 }
-export const DEFAULT_AUDIO: AudioPrefs = { master: 0.8, sfx: 0.8, voice: 0.6, ui: 0.6, mute: false };
+export const DEFAULT_AUDIO: AudioPrefs = { master: 0.8, sfx: 0.15, voice: 0.6, ui: 0.6, mute: false };
 
 const BASE = 'sfx/';
 /** Same sound again within this many seconds is skipped (hit storms). */
