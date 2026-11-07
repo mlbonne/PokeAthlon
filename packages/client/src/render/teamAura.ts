@@ -55,8 +55,10 @@ export class TeamAura {
     this.rim.material.color.setHex(color);
   }
 
-  update(dt: number): void {
+  /** @param opacity overall strength from Settings (0.1–1) */
+  update(dt: number, opacity: number): void {
     this.phase += dt * 3;
-    this.rim.material.opacity = 0.75 + 0.2 * Math.sin(this.phase);
+    this.disc.material.opacity = 0.75 * opacity;
+    this.rim.material.opacity = Math.min(1, (0.85 + 0.15 * Math.sin(this.phase)) * opacity);
   }
 }
