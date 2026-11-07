@@ -23,7 +23,10 @@ export const pickable = (): string[] => roster.filter((r) => getKit(r.id)).map((
 
 /** One CPU pick for `role`, avoiding `taken` (own team) and `banned`. */
 export function cpuPick(role: Role, taken: string[], banned: string[], skill: Skill, rand: () => number): string {
-  const pool = pickable().filter((id) => !taken.includes(id) && !banned.includes(id));
+  const free = pickable().filter((id) => !taken.includes(id) && !banned.includes(id));
+  // Brawlers (bestRole 'forward') don't keep goal unless nothing else is left.
+  const fit = role === 'goalie' ? free.filter((id) => getPokemon(id).bestRole !== 'forward') : free;
+  const pool = fit.length ? fit : free;
   if (!pool.length) return pickable()[0]!;
   if (skill === 'easy') return pool[Math.floor(rand() * pool.length)]!;
   const scored = pool.map((id) => ({ id, s: roleStrength(id, role) })).sort((a, b) => b.s - a.s);

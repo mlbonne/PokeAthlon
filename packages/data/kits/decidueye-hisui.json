@@ -1,0 +1,114 @@
+{
+  "$comment": "Whip Fighter (OS Rasmus model; data-mined GA_WhipSmack / GA_Whiplash / HV_Whiplash / GA_Lasso / Proj_Lasso 2026-11-07, wiki for names). Leaf Blade = Pendulum Swing (0.4 s wind-up, 9 s; tip = full hit 1350+185 % core, 185+92.5 % KB, 185+92.5 % dmg; closer = LIGHT, 55 % player / 77.5 % core). Trailblaze = Whiplash (16 s; +35 % speed for 2.25 s, recast within 2.25 s: LIGHT spin 1300+160 % core, 160+80 % KB and dmg). Spirit Shackle = Death Touch (22 s; anchor at 1700/s that pulls the first enemy at 70 % power and keeps flying, ~550 range, then spins as a creation for 2 s: 1395+400 % core, 350+175 % KB, 230+115 % dmg). Player knockback = OS x 1.875; power % -> powerRatio. Balance pass 4 (2026-11-07): the spin repeats 6 times (not 8) at 80 % player knockback (it was 2.4 KOs a game).",
+  "pokemon": "decidueye-hisui",
+  "moves": [
+    {
+      "id": "leaf-blade",
+      "name": "Leaf Blade",
+      "slot": "primary",
+      "cooldown": 9,
+      "castTime": 0.4,
+      "anim": "Swing",
+      "desc": "Wind up, then slash a long arc in front of you. The tip hits hard; closer in, it is a LIGHT hit.",
+      "bot": "engage",
+      "actions": [
+        {
+          "type": "area",
+          "fx": { "color": "#7bd36b" },
+          "shape": "line",
+          "length": 450,
+          "width": 230,
+          "hit": {
+            "ball": { "base": 1046, "powerRatio": 1.434 },
+            "player": { "base": 190.8, "powerRatio": 0.954 },
+            "damage": { "base": 101.75, "powerRatio": 0.509 },
+            "light": true
+          },
+          "sweetSpot": {
+            "from": 0.62,
+            "to": 1,
+            "hit": {
+              "ball": { "base": 1350, "powerRatio": 1.85 },
+              "player": { "base": 346.9, "powerRatio": 1.734 },
+              "damage": { "base": 185, "powerRatio": 0.925 }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "trailblaze",
+      "name": "Trailblaze",
+      "slot": "secondary",
+      "cooldown": 16,
+      "anim": "Charge",
+      "desc": "+35 % speed for 2.25 s. Press again within that time to spin, hitting everything around you (LIGHT).",
+      "bot": "chase",
+      "actions": [{ "type": "buff", "fx": { "color": "#9be07a" }, "target": "self", "duration": 2.25, "speedPct": 35 }],
+      "recast": {
+        "window": 2.25,
+        "actions": [
+          {
+            "type": "area",
+            "fx": { "color": "#9be07a" },
+            "shape": "circle",
+            "radius": 250,
+            "hit": {
+              "ball": { "base": 1300, "powerRatio": 1.6 },
+              "player": { "base": 300, "powerRatio": 1.5 },
+              "damage": { "base": 160, "powerRatio": 0.8 },
+              "light": true,
+              "direction": "radial"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "spirit-shackle",
+      "name": "Spirit Shackle",
+      "slot": "special",
+      "cooldown": 22,
+      "anim": "Shoot",
+      "desc": "Shoot a shadow arrow that pulls the first enemy toward you and flies on. At the end of its range it spins for 1.5 s, blasting away anything that touches it.",
+      "bot": "engage",
+      "actions": [
+        {
+          "type": "projectile",
+          "fx": { "color": "#8a6fb3" },
+          "speed": 1700,
+          "range": 550,
+          "radius": 80,
+          "pierce": true,
+          "hit": {
+            "ball": { "base": 976.5, "powerRatio": 2.8 },
+            "player": { "base": 459.4, "powerRatio": 2.297 },
+            "damage": { "base": 161, "powerRatio": 0.805 },
+            "direction": "pull"
+          },
+          "pierceHit": {
+            "damage": { "base": 80, "powerRatio": 0.4 },
+            "light": true
+          },
+          "onEnd": [
+            {
+              "type": "area",
+              "fx": { "color": "#8a6fb3" },
+              "at": "target",
+              "shape": "circle",
+              "radius": 140,
+              "repeat": 6,
+              "repeatInterval": 0.25,
+              "hit": {
+                "ball": { "base": 1395, "powerRatio": 4.0 },
+                "player": { "base": 524.8, "powerRatio": 2.624 },
+                "damage": { "base": 230, "powerRatio": 1.15 },
+                "direction": "radial"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

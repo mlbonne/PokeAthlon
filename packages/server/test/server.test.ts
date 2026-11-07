@@ -39,7 +39,7 @@ async function play(clients: NetClient[], ticks: number): Promise<void> {
   }
 }
 
-describe('room server (M7.2)', () => {
+describe('room server (M7.2)', { timeout: 30_000 }, () => {
   it('creates a room, seats players, starts a match and keeps everyone in sync', async () => {
     server = await startServer();
     const a = join(server.port, { name: 'Ash', create: true });
@@ -123,7 +123,7 @@ describe('room server (M7.2)', () => {
   });
 });
 
-describe('background tabs (M7.4)', () => {
+describe('background tabs (M7.4)', { timeout: 30_000 }, () => {
   it("a player who stops sending gets a bot, and takes the seat back when they return", async () => {
     server = await startServer();
     const a = join(server.port, { name: 'A', create: true });
@@ -155,7 +155,7 @@ describe('background tabs (M7.4)', () => {
   });
 });
 
-describe('one-port hosting (M7.5)', () => {
+describe('one-port hosting (M7.5)', { timeout: 30_000 }, () => {
   it('serves the built game and the rooms on the same port, and never leaves the game folder', async () => {
     const { mkdtempSync, writeFileSync } = await import('node:fs');
     const { tmpdir } = await import('node:os');

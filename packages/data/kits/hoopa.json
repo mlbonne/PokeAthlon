@@ -17,7 +17,7 @@
       "id": "hyperspace-hole",
       "name": "Hyperspace Hole",
       "slot": "secondary",
-      "cooldown": 8,
+      "cooldown": 7,
       "anim": "Rotate",
       "desc": "Fling a portal that chips the first enemy it touches. Where it stops, you come out 0.35 s later with a burst. Evade to dodge the burst.",
       "bot": "engage",

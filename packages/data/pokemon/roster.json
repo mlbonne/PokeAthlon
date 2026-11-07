@@ -1,14 +1,16 @@
 {
   "$comment": "Starting roster. Stats in OS-like units (see docs/design/GAME_BREAKDOWN.md §13). dex = SpriteCollab folder id.",
   "pokemon": [
-    { "id": "zeraora",   "dex": "0807", "name": "Zeraora",   "archetype": "speedy-skirmisher",       "types": ["electric"],           "stats": { "power": 110, "speed": 465, "stagger": 1150, "staggerGrowth": 250, "size": "normal" } },
-    { "id": "greninja",  "dex": "0658", "name": "Greninja",  "archetype": "flashy-swordsman",        "types": ["water", "dark"],      "stats": { "power": 115, "speed": 460, "stagger": 1100, "staggerGrowth": 250, "size": "normal" } },
-    { "id": "hoopa",     "dex": "0720", "name": "Hoopa",     "archetype": "manipulating-mastermind", "types": ["psychic", "ghost"],   "stats": { "power": 115, "speed": 465, "stagger": 1250, "staggerGrowth": 350, "size": "normal" } },
-    { "id": "bronzong",  "dex": "0437", "name": "Bronzong",  "archetype": "stalwart-protector",      "types": ["steel", "psychic"],   "stats": { "power": 100, "speed": 435, "stagger": 1350, "staggerGrowth": 400, "size": "large" } },
-    { "id": "blastoise", "dex": "0009", "name": "Blastoise", "archetype": "angelic-support",         "types": ["water"],              "stats": { "power": 90,  "speed": 440, "stagger": 1350, "staggerGrowth": 375, "size": "large" } },
+    { "id": "zeraora",   "dex": "0807", "name": "Zeraora",   "archetype": "speedy-skirmisher",       "types": ["electric"],           "stats": { "power": 115, "speed": 465, "stagger": 1150, "staggerGrowth": 250, "size": "normal" } },
+    { "id": "greninja",  "dex": "0658", "name": "Greninja",  "archetype": "flashy-swordsman",        "types": ["water", "dark"],      "stats": { "power": 120, "speed": 460, "stagger": 1100, "staggerGrowth": 250, "size": "normal" }, "bestRole": "forward" },
+    { "id": "hoopa",     "dex": "0720", "name": "Hoopa",     "archetype": "manipulating-mastermind", "types": ["psychic", "ghost"],   "stats": { "power": 120, "speed": 465, "stagger": 1350, "staggerGrowth": 350, "size": "normal" } },
+    { "id": "bronzong",  "dex": "0437", "name": "Bronzong",  "archetype": "stalwart-protector",      "types": ["steel", "psychic"],   "stats": { "power": 95, "speed": 435, "stagger": 1350, "staggerGrowth": 400, "size": "large" } },
+    { "id": "blastoise", "dex": "0009", "name": "Blastoise", "archetype": "angelic-support",         "types": ["water"],              "stats": { "power": 90,  "speed": 440, "stagger": 1350, "staggerGrowth": 375, "size": "large" }, "bestRole": "goalie" },
     { "id": "arcanine-hisui", "dex": "0059/0001", "name": "Hisuian Arcanine", "archetype": "shield-user", "types": ["fire", "rock"], "stats": { "power": 105, "speed": 440, "stagger": 1400, "staggerGrowth": 375, "size": "large" } },
     { "id": "lucario",   "dex": "0448", "name": "Lucario",   "archetype": "flexible-brawler",        "types": ["fighting", "steel"],  "stats": { "power": 105, "speed": 455, "stagger": 1300, "staggerGrowth": 375, "size": "normal" } },
     { "id": "pikachu",   "dex": "0025", "name": "Pikachu",   "archetype": "ramping-speedster",       "types": ["electric"],           "stats": { "power": 80,  "speed": 470, "stagger": 1150, "staggerGrowth": 200, "size": "normal" } },
-    { "id": "machamp",   "dex": "0068", "name": "Machamp",   "archetype": "hulking-beast",           "types": ["fighting"],           "stats": { "power": 110, "speed": 445, "stagger": 1400, "staggerGrowth": 375, "size": "large" } }
+    { "id": "decidueye-hisui", "dex": "0724/0001", "name": "Hisuian Decidueye", "archetype": "whip-fighter", "types": ["grass", "fighting"], "stats": { "power": 100, "speed": 455, "stagger": 1300, "staggerGrowth": 300, "size": "normal" } },
+    { "id": "ninetales-alola", "dex": "0038/0001", "name": "Alolan Ninetales", "archetype": "tempo-sniper", "types": ["ice", "fairy"], "stats": { "power": 105, "speed": 450, "stagger": 1150, "staggerGrowth": 200, "size": "normal" } },
+    { "id": "machamp",   "dex": "0068", "name": "Machamp",   "archetype": "hulking-beast",           "types": ["fighting"],           "stats": { "power": 110, "speed": 445, "stagger": 1400, "staggerGrowth": 375, "size": "large" }, "bestRole": "forward" }
   ]
 }
