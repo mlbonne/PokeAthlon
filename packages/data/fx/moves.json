@@ -1,0 +1,235 @@
+{
+  "$comment": "Move animations (docs/design/vfx-plan.md). Sprites: PMD effect sheets from PMDCollab/RawAsset (assets/fx/pmd/manifest.json); '@' = drawn in code. Keys: move ids; passives are 'passive:<pokemon id>'.",
+  "moves": {
+    "rock-slide": {
+      "cast": [{ "sprite": "Rock_Pieces", "count": 5, "spread": 90, "y": 6, "ticks": 2 }],
+      "area": [{ "sprite": "Rock_Pieces", "plane": "ground", "fit": 1.1, "rotate": true, "ticks": 2, "count": 3, "spread": 120 }],
+      "hit": [{ "sprite": "Rock_Smash", "scale": 0.8, "y": 6 }],
+      "body": [{ "sprite": "Stone_Edge", "scale": 0.55, "loop": true, "ticks": 2, "y": -4 }],
+      "end": [{ "sprite": "Rock_Slide_Front", "scale": 0.5, "ticks": 1 }]
+    },
+    "flare-blitz": {
+      "body": [
+        { "sprite": "Flare_Blitz_Charge_Back", "loop": true, "follow": true, "y": 6 },
+        { "sprite": "Flare_Blitz_Charge_Front", "loop": true, "follow": true, "y": 6 },
+        { "sprite": "Flamethrower_2", "emit": 0.05, "scale": 0.7, "y": 4 }
+      ],
+      "hit": [
+        { "sprite": "Flare_Blitz_Hit_Back", "y": 6 },
+        { "sprite": "Flare_Blitz_Hit_Front", "y": 6 },
+        { "sprite": "@scorch", "plane": "ground", "scale": 1.6, "life": 1.6, "alpha": 0.6 }
+      ]
+    },
+    "flamethrower": {
+      "cast": [{ "sprite": "Flamethrower_2", "scale": 1.2, "y": 8, "follow": true }],
+      "body": [
+        { "sprite": "Flamethrower", "plane": "ground", "rotate": true, "loop": true, "follow": true, "scale": 2.2, "ticks": 2 },
+        { "sprite": "Flamethrower_2", "emit": 0.06, "scale": 1, "y": 8, "spread": 60 }
+      ],
+      "hit": [{ "sprite": "Flamethrower_2", "scale": 0.9, "y": 8 }]
+    },
+    "surf": {
+      "body": [
+        { "sprite": "Aqua_Tail_Wave", "loop": true, "follow": true, "scale": 1.5, "y": 2, "ticks": 3 },
+        { "sprite": "Bubbles_Blue", "emit": 0.05, "scale": 1, "y": 2, "spread": 40 }
+      ],
+      "hit": [{ "sprite": "Brine_Splashes", "scale": 0.8, "y": 4, "ticks": 1 }]
+    },
+    "whirlpool": {
+      "area": [{ "sprite": "Wave_Circle_Blue", "plane": "ground", "fit": 1.0, "ticks": 2 }],
+      "body": [
+        { "sprite": "Fire_Spin_Back", "fit": 1.05, "loop": true, "follow": true, "tint": "#5fb8ff", "ticks": 2 },
+        { "sprite": "Fire_Spin_Front", "fit": 1.05, "loop": true, "follow": true, "tint": "#5fb8ff", "ticks": 2 },
+        { "sprite": "Bubbles_Blue", "emit": 0.12, "scale": 1.2, "spread": 1 }
+      ],
+      "hit": [{ "sprite": "Water_Spout_Splash", "scale": 1.6, "y": 6 }]
+    },
+    "aqua-ring": {
+      "area": [{ "sprite": "Circle_White_Out", "plane": "ground", "fit": 1.0, "tint": "#7fd4ff" }],
+      "body": [
+        { "sprite": "Aqua_Ring", "plane": "ground", "fit": 1.0, "loop": true, "follow": true, "ticks": 3 },
+        { "sprite": "Stat_Green_Ring", "emit": 0.25, "scale": 1.4, "spread": 1 }
+      ],
+      "end": [{ "sprite": "Bubble_Pop_Blue", "count": 6, "spread": 200, "y": 4 }]
+    },
+    "gyro-ball": {
+      "cast": [{ "sprite": "Screen_Sparkle_RSE", "count": 4, "spread": 50, "y": 12, "follow": true, "tint": "#cfe3ff" }],
+      "body": [{ "sprite": "Gyro_Ball", "loop": true, "follow": true, "scale": 1.3, "y": 2, "ticks": 1 }],
+      "hit": [{ "sprite": "Gyro_Ball_Hit", "scale": 0.9, "y": 6, "ticks": 1 }]
+    },
+    "heavy-slam": {
+      "body": [{ "sprite": "Hammer_Arm_Smoke", "emit": 0.08, "scale": 0.6, "y": 0 }],
+      "area": [
+        { "sprite": "Hammer_Arm_Smoke", "fit": 1.2, "ticks": 3 },
+        { "sprite": "@crater", "plane": "ground", "fit": 0.8, "life": 2.0, "alpha": 0.8 },
+        { "sprite": "Rock_Pieces", "count": 6, "spread": 180, "y": 4 }
+      ],
+      "hit": [{ "sprite": "Hit_Neutral", "scale": 0.8, "y": 8 }]
+    },
+    "light-screen": {
+      "cast": [{ "sprite": "Screen_Sparkle_RSE", "count": 8, "spread": 260, "y": 14 }],
+      "body": [{ "sprite": "Screen_RSE_Yellow", "loop": true, "scale": 0.9, "y": 8, "alpha": 0.85, "ticks": 3 }],
+      "hit": [{ "sprite": "Hit_Neutral", "scale": 0.8, "y": 8, "tint": "#fff27a" }],
+      "end": [{ "sprite": "Screen_Sparkle_RSE", "count": 5, "spread": 60, "y": 10 }]
+    },
+    "night-slash": {
+      "area": [
+        { "sprite": "Night_Slash", "rotate": true, "plane": "ground", "fit": 1.3, "ticks": 0.6 },
+        { "sprite": "Slash_RSE", "scale": 1.6, "y": 8, "rotate": true, "tint": "#9b8cff" }
+      ],
+      "hit": [{ "sprite": "Night_Slash_Hit", "scale": 0.8, "y": 8, "ticks": 1 }]
+    },
+    "shadow-sneak": {
+      "cast": [{ "sprite": "Shadow_Sneak_Shadow", "plane": "ground", "scale": 2.4, "life": 0.6, "alpha": 0.8 }],
+      "body": [{ "sprite": "Shadow_Sneak_Shadow", "plane": "ground", "emit": 0.03, "scale": 1.8, "life": 0.35, "alpha": 0.6 }],
+      "arrive": [{ "sprite": "Shadow_Sneak_Shadow", "plane": "ground", "scale": 2.4, "life": 0.5, "alpha": 0.8 }],
+      "hit": [{ "sprite": "Shadow_Sneak_Hit", "scale": 0.9, "y": 8, "ticks": 1 }]
+    },
+    "hydro-cannon": {
+      "cast": [{ "sprite": "Water_Spout_Up", "scale": 0.45, "follow": true, "ticks": 1, "y": 10 }],
+      "body": [
+        { "sprite": "Beam_Beam", "plane": "ground", "tint": "#7ad3ff", "loop": true, "scale": 1.3 },
+        { "sprite": "Hydro_Cannon", "loop": true, "follow": true, "scale": 1.8, "y": 2, "rotate": true },
+        { "sprite": "Bubbles_Blue", "emit": 0.03, "scale": 1, "y": 2, "spread": 30 }
+      ],
+      "hit": [{ "sprite": "Brine_Splashes", "scale": 1.1, "y": 4, "ticks": 1 }]
+    },
+    "passive:greninja": {
+      "cast": [{ "sprite": "Swift_Star", "scale": 2.4, "tint": "#7fe0ff", "follow": true, "life": 0.4, "loop": true, "y": 8 }],
+      "hit": [{ "sprite": "Bubble_Pop_Blue", "scale": 1.6, "y": 8 }]
+    },
+    "psychic": {
+      "cast": [{ "sprite": "Light_Ball_Pink", "scale": 0.5, "follow": true, "y": 10 }],
+      "body": [{ "sprite": "Psycho_Shift_Charge", "loop": true, "follow": true, "scale": 0.9, "ticks": 1 }],
+      "end": [{ "sprite": "Psycho_Shift_Hit", "scale": 1, "ticks": 1 }]
+    },
+    "hyperspace-hole": {
+      "body": [{ "sprite": "Psycho_Cut_Hole", "loop": true, "follow": true, "scale": 1.2, "y": 6, "ticks": 2 }],
+      "hit": [{ "sprite": "Hit_Neutral", "scale": 0.6, "y": 8, "tint": "#d08cff" }],
+      "end": [
+        { "sprite": "Dark_Void_Back", "scale": 1.3, "y": 6, "ticks": 1 },
+        { "sprite": "Dark_Void_Front", "scale": 1.3, "y": 6, "ticks": 1 }
+      ],
+      "arrive": [
+        { "sprite": "Psycho_Boost_Back", "scale": 1.1, "y": 8, "ticks": 1 },
+        { "sprite": "Psycho_Boost_Front", "scale": 1.1, "y": 8, "ticks": 1 }
+      ]
+    },
+    "future-sight": {
+      "cast": [{ "sprite": "Miracle_Eye_Eye", "scale": 1.6, "follow": true, "y": 26, "ticks": 2 }],
+      "area": [
+        { "sprite": "Psycho_Boost_Back", "fit": 1.2, "ticks": 1, "tint": "#ffd98a" },
+        { "sprite": "Psycho_Boost_Front", "fit": 1.2, "ticks": 1, "tint": "#ffd98a" }
+      ],
+      "hit": [{ "sprite": "Dark_Void_Front", "scale": 0.8, "y": 6, "ticks": 1 }]
+    },
+    "aura-sphere": {
+      "cast": [{ "sprite": "Aura_Sphere_Shoot", "rotate": true, "follow": true, "scale": 1.6, "y": 8 }],
+      "body": [
+        { "sprite": "Aura_Sphere_Shot", "rotate": true, "loop": true, "follow": true, "scale": 2.0, "y": 4 },
+        { "sprite": "Circle_Tiny_Yellow", "emit": 0.03, "scale": 1, "y": 4, "tint": "#6fb8ff" }
+      ],
+      "hit": [{ "sprite": "Aura_Sphere", "scale": 3.0, "y": 6 }]
+    },
+    "extreme-speed": {
+      "cast": [{ "sprite": "Puff_White", "scale": 1.6, "y": 2 }],
+      "body": [{ "sprite": "U_Turn_Travel", "emit": 0.025, "scale": 2.2, "y": 6, "alpha": 0.85 }],
+      "hit": [{ "sprite": "Hit_Neutral", "scale": 1, "y": 8 }]
+    },
+    "close-combat": {
+      "area": [{ "sprite": "Close_Combat", "fit": 1.2, "y": 4, "ticks": 1 }],
+      "hit": [
+        { "sprite": "Superpower", "scale": 1.2, "y": 8, "ticks": 1 },
+        { "sprite": "@crater", "plane": "ground", "scale": 1.0, "life": 1.4, "alpha": 0.6 }
+      ]
+    },
+    "cross-chop": {
+      "cast": [{ "sprite": "Focus_Energy", "scale": 3, "follow": true, "count": 3, "spread": 50, "y": 10, "loop": true, "life": 0.6 }],
+      "area": [{ "sprite": "Wave_Circle_White", "plane": "ground", "fit": 1.0, "ticks": 1, "alpha": 0.8 }],
+      "hit": [{ "sprite": "Cross_Chop", "scale": 1.6, "y": 8, "ticks": 2 }]
+    },
+    "submission-rush": {
+      "body": [
+        { "sprite": "Giga_Impact_Back", "loop": true, "follow": true, "y": 6, "ticks": 1 },
+        { "sprite": "Giga_Impact_Front", "loop": true, "follow": true, "y": 6, "ticks": 1 },
+        { "sprite": "Hammer_Arm_Smoke", "emit": 0.07, "scale": 0.5 }
+      ],
+      "hit": [{ "sprite": "Arm_Thrust", "scale": 1.4, "y": 8 }]
+    },
+    "no-guard": {
+      "cast": [{ "sprite": "Rage", "scale": 0.9, "follow": true, "y": 8 }],
+      "body": [{ "sprite": "Stat_Red_Line", "emit": 0.18, "scale": 1.6, "y": 4, "spread": 40 }],
+      "hit": [{ "sprite": "Hit_Super_Effective", "scale": 1, "y": 8 }]
+    },
+    "electroweb": {
+      "body": [
+        { "sprite": "String_Shot_Web", "loop": true, "follow": true, "scale": 2.4, "y": 4, "tint": "#fff176", "ticks": 3 },
+        { "sprite": "Circle_Tiny_Yellow", "emit": 0.04, "y": 4, "spread": 40 }
+      ],
+      "hit": [{ "sprite": "Shock_Wave", "scale": 2.2, "y": 8, "ticks": 3 }]
+    },
+    "charge": {
+      "cast": [{ "sprite": "Charge_Up", "scale": 0.7, "follow": true, "y": 4, "ticks": 2 }],
+      "body": [{ "sprite": "Circle_Tiny_Yellow", "emit": 0.07, "scale": 1.2, "y": 8, "spread": 50 }]
+    },
+    "thunder": {
+      "cast": [{ "sprite": "Charge_Beam_Charge", "scale": 0.8, "follow": true, "y": 30, "ticks": 2 }],
+      "area": [
+        { "sprite": "Beam_Lightning", "scale": 1.4, "ticks": 2 },
+        { "sprite": "Discharge_Hit", "fit": 0.9, "y": 4, "ticks": 1 },
+        { "sprite": "@scorch", "plane": "ground", "fit": 0.6, "life": 1.2, "alpha": 0.45 }
+      ],
+      "hit": [{ "sprite": "Shock_Wave", "scale": 1.6, "y": 8 }]
+    },
+    "discharge": {
+      "cast": [{ "sprite": "Discharge", "scale": 0.6, "follow": true, "y": 6, "ticks": 1 }],
+      "body": [{ "sprite": "Charge_Beam_Shot", "rotate": true, "loop": true, "follow": true, "scale": 1.6, "y": 4 }],
+      "hit": [{ "sprite": "Discharge_Hit", "scale": 0.5, "y": 8, "ticks": 1 }]
+    },
+    "agility": {
+      "cast": [{ "sprite": "Tailwind", "scale": 1, "follow": true, "y": 4, "ticks": 1, "alpha": 0.9 }],
+      "body": [{ "sprite": "Stat_Blue_Line", "emit": 0.12, "scale": 1.8, "y": 4, "spread": 40 }]
+    },
+    "wild-charge": {
+      "body": [
+        { "sprite": "Spark", "loop": true, "follow": true, "scale": 0.8, "y": 6 },
+        { "sprite": "Circle_Tiny_Yellow", "emit": 0.025, "scale": 1.2, "y": 4 }
+      ],
+      "hit": [{ "sprite": "Thunder_Fang_Fang", "scale": 1.3, "y": 8 }]
+    }
+  },
+  "shared": {
+    "strike": [],
+    "ballHit": [{ "sprite": "Hit_Neutral", "scale": 0.7, "y": 4, "ticks": 1 }],
+    "ballHitBoosted": [{ "sprite": "Hit_Super_Effective", "scale": 0.9, "y": 4, "ticks": 1 }],
+    "hit": [{ "sprite": "Hit_Neutral", "scale": 0.6, "y": 8, "ticks": 1 }],
+    "ko": [{ "sprite": "Explosion", "scale": 1.2, "y": 8, "ticks": 2 }],
+    "respawn": [{ "sprite": "Materialize", "scale": 1.1, "y": 8, "follow": true }],
+    "evade": [{ "sprite": "Puff_White", "scale": 1.6, "y": 6 }],
+    "burst": [
+      { "sprite": "Wave_Circle_White", "plane": "ground", "scale": 6, "ticks": 1 },
+      { "sprite": "Circle_White_Out", "scale": 2.4, "y": 6 }
+    ],
+    "levelUp": [
+      { "sprite": "Stat_Yellow_Ring", "scale": 2, "y": 2, "follow": true },
+      { "sprite": "Event_Gather_Sparkle", "count": 6, "spread": 60, "y": 14, "follow": true, "scale": 2 }
+    ],
+    "orb": [{ "sprite": "Light_Ball_Yellow", "scale": 0.6, "y": 4, "ticks": 1 }],
+    "barrierBreak": [{ "sprite": "Wall_Break", "scale": 1.6, "y": 10 }],
+    "gateOpen": [{ "sprite": "Vault_Open", "scale": 1.6, "y": 10 }],
+    "goal": [
+      { "sprite": "Explosion", "scale": 2.4, "y": 10 },
+      { "sprite": "Circle_White_Out", "scale": 4, "y": 6 }
+    ],
+    "rescue": [{ "sprite": "Healing_Wish_Hit", "scale": 2, "y": 8 }],
+    "banish": [{ "sprite": "Dark_Void_Front", "scale": 1, "y": 6, "ticks": 1 }],
+    "ballStun": [{ "sprite": "Swift_Star", "scale": 1.6, "y": 14, "loop": true, "life": 0.5, "tint": "#fff27a", "follow": true }]
+  },
+  "status": {
+    "stun": [{ "sprite": "Swift_Star", "scale": 1.4, "y": 30, "loop": true, "count": 3, "spread": 30, "tint": "#fff27a" }],
+    "slow": [{ "sprite": "Sticky_Brown_Front", "plane": "ground", "scale": 0.45, "loop": true, "alpha": 0.6 }],
+    "speed": [{ "sprite": "Stat_Blue_Line", "emit": 0.25, "scale": 1.2, "y": 0, "spread": 30 }],
+    "power": [{ "sprite": "Stat_Red_Line", "emit": 0.25, "scale": 1.2, "y": 0, "spread": 30 }],
+    "staggered": [{ "sprite": "Circle_Tiny_Yellow", "loop": true, "scale": 1.4, "y": 28, "count": 2, "spread": 24, "tint": "#ff6a6a" }]
+  }
+}

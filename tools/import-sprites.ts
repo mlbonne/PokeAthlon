@@ -176,8 +176,11 @@ for (const mon of roster) {
 
 /** Stage art credits (M6) live next to the files; appended so CREDITS.md stays the single list. */
 function stageCredits(): string {
-  const f = join(ROOT, 'assets', 'stadium', 'CREDITS.md');
-  return existsSync(f) ? `\n${readFileSync(f, 'utf8')}` : '';
+  // Stage art (M6) and move effects (PMD effect sheets) keep their credits next to their files.
+  return [join(ROOT, 'assets', 'stadium', 'CREDITS.md'), join(ROOT, 'assets', 'fx', 'pmd', 'CREDITS.md')]
+    .filter((f) => existsSync(f))
+    .map((f) => `\n${readFileSync(f, 'utf8')}`)
+    .join('');
 }
 
 writeFileSync(

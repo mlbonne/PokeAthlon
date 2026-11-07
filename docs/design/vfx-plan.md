@@ -1,6 +1,6 @@
 # Move animations and effects: plan (stage 1 of 3)
 
-Status: plan, 2026-11-07. Nothing has been downloaded or built yet.
+Status: built, 2026-11-07 (engine, shared effects, every move). **Change from this plan, at the user's request: no bloom, no glow and no additive flashes. Effects are plain PMD sprites drawn small (`FX_SCALE` 0.6) with normal blending.**
 
 **Stages:** 1 = visual effects (this document), 2 = sound effects, 3 = music.
 

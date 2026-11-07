@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { SimEvent, World } from '@pokeathlon/sim';
+import { moveFx } from '@pokeathlon/data/fx';
 import { toThreeX, toThreeZ, WORLD_TO_THREE } from './units';
 
 const W = WORLD_TO_THREE;
@@ -10,6 +11,7 @@ interface Flash {
   life: number;
   /** Telegraphs fade in (warning) instead of out. */
   rising?: boolean;
+  strength: number;
 }
 
 /** Ground shape of an area / telegraph. */
@@ -55,7 +57,8 @@ export class MoveViews {
 
   /** Area moves flash their exact shape on the ground; telegraphs warn before delayed actions; blinks flash both ends. */
   onEvent(e: SimEvent): void {
-    if (e.type === 'area') this.flash(shapeGeometry(e), e.color, e.pos, 0.35, false);
+    // Areas keep a faint footprint under their animation (readability), full strength without one.
+    if (e.type === 'area') this.flash(shapeGeometry(e), e.color, e.pos, 0.35, false, moveFx(e.moveId)?.area.length ? 0.22 : 0.55);
     else if (e.type === 'telegraph') this.flash(shapeGeometry(e), e.color, e.pos, Math.max(0.1, e.time), true);
     else if (e.type === 'blink') {
       const ring = { shape: 'circle' as const, dir: { x: 1, y: 0 }, radius: 70, angleDeg: 0, length: 0, width: 0 };
@@ -64,15 +67,15 @@ export class MoveViews {
     }
   }
 
-  private flash(geo: THREE.BufferGeometry, color: string, pos: { x: number; y: number }, life: number, rising: boolean): void {
+  private flash(geo: THREE.BufferGeometry, color: string, pos: { x: number; y: number }, life: number, rising: boolean, strength = 0.55): void {
     const mesh = new THREE.Mesh(
       geo,
-      new THREE.MeshBasicMaterial({ color: new THREE.Color(color), transparent: true, opacity: rising ? 0.1 : 0.55, depthWrite: false, side: THREE.DoubleSide }),
+      new THREE.MeshBasicMaterial({ color: new THREE.Color(color), transparent: true, opacity: rising ? 0.1 : strength, depthWrite: false, side: THREE.DoubleSide }),
     );
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.set(toThreeX(pos.x), rising ? 0.025 : 0.03, toThreeZ(pos.y));
     this.object.add(mesh);
-    this.flashes.push({ mesh, age: 0, life, rising });
+    this.flashes.push({ mesh, age: 0, life, rising, strength });
   }
 
   update(dt: number, world: World): void {
@@ -95,6 +98,8 @@ export class MoveViews {
           new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35, depthWrite: false }),
         );
         g.add(core, glow);
+        // Moves with an animated body (render/fx.ts) don't need the placeholder sphere.
+        g.visible = !moveFx(pr.moveId)?.body.some((l) => !l.emit);
         this.projectiles.set(pr.id, g);
         this.object.add(g);
       }
@@ -260,7 +265,7 @@ export class MoveViews {
     this.flashes = this.flashes.filter((f) => {
       f.age += dt;
       const t = f.age / f.life;
-      f.mesh.material.opacity = f.rising ? 0.1 + 0.35 * t : 0.55 * (1 - t);
+      f.mesh.material.opacity = f.rising ? 0.1 + 0.35 * t : f.strength * (1 - t);
       if (t >= 1) {
         this.object.remove(f.mesh);
         f.mesh.geometry.dispose();
