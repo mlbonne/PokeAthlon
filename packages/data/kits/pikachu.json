@@ -1,12 +1,12 @@
 {
-  "$comment": "Ramping Speedster (OS Octavia model, wiki 2026-11: Sonic Boom / Flow State / Bass Drop). Electroweb = Sonic Boom: a piercing wave, NORMAL hit + 35 % slow for 1 s on the first enemy, LIGHT 50 % hits + 0.25 s slow on the rest. Charge = Flow State: +33 % speed for 2.5 s, any hit (Strike and the ball included) resets it, cooldown starts when it ends. Thunder = Bass Drop: 1 s wind-up, then 5 pulses 0.25 s apart around Pikachu (475 diameter), which moves freely meanwhile. Player knockback = OS × 1.875; power % → powerRatio. Speed and wave size aren't on the wiki: our guesses.",
+  "$comment": "Ramping Speedster (OS Octavia model, wiki 2026-11: Sonic Boom / Flow State / Bass Drop). Electroweb = Sonic Boom: a piercing wave, NORMAL hit + 35 % slow for 1 s on the first enemy, LIGHT 50 % hits + 0.25 s slow on the rest. Charge = Flow State: +25 % speed (OS 33 %, cut in balance pass 2) for 2.5 s, any hit (Strike and the ball included) resets it, cooldown starts when it ends. Thunder = Bass Drop: 1 s wind-up, then 5 pulses 0.25 s apart around Pikachu (475 diameter), which moves freely meanwhile; only the first pulse hits the ball (OS: the Core takes Bass Drop's momentum once). Player knockback = OS × 1.875; power % → powerRatio. Speed, range and wave size aren't on the wiki: our guesses. Balance pass 2: Electroweb cooldown 9 → 10 s, range 750, player knockback −15 %.",
   "pokemon": "pikachu",
   "moves": [
     {
       "id": "electroweb",
       "name": "Electroweb",
       "slot": "primary",
-      "cooldown": 9,
+      "cooldown": 10,
       "castTime": 0.25,
       "anim": "Shoot",
       "desc": "Launch a crackling web that passes through enemies. The first one hit is slowed 35 % for 1 s; the rest take LIGHT hits.",
@@ -14,23 +14,49 @@
       "actions": [
         {
           "type": "projectile",
-          "fx": { "color": "#f8d030" },
+          "fx": {
+            "color": "#f8d030"
+          },
           "speed": 1500,
-          "range": 900,
+          "range": 750,
           "radius": 70,
           "pierce": true,
           "hit": {
-            "ball": { "base": 1300, "powerRatio": 1.6 },
-            "player": { "base": 300, "powerRatio": 1.5 },
-            "damage": { "base": 160, "powerRatio": 0.8 },
-            "slow": { "pct": 35, "time": 1 }
+            "ball": {
+              "base": 1300,
+              "powerRatio": 1.6
+            },
+            "player": {
+              "base": 255,
+              "powerRatio": 1.275
+            },
+            "damage": {
+              "base": 160,
+              "powerRatio": 0.8
+            },
+            "slow": {
+              "pct": 35,
+              "time": 1
+            }
           },
           "pierceHit": {
-            "ball": { "base": 650, "powerRatio": 0.8 },
-            "player": { "base": 150, "powerRatio": 0.75 },
-            "damage": { "base": 80, "powerRatio": 0.4 },
+            "ball": {
+              "base": 650,
+              "powerRatio": 0.8
+            },
+            "player": {
+              "base": 150,
+              "powerRatio": 0.75
+            },
+            "damage": {
+              "base": 80,
+              "powerRatio": 0.4
+            },
             "light": true,
-            "slow": { "pct": 35, "time": 0.25 }
+            "slow": {
+              "pct": 35,
+              "time": 0.25
+            }
           }
         }
       ]
@@ -41,9 +67,21 @@
       "slot": "secondary",
       "cooldown": 17,
       "anim": "Charge",
-      "desc": "+33 % speed for 2.5 s. Every hit you land (Strikes on the ball too) resets the timer. The cooldown starts when it runs out.",
+      "desc": "+25 % speed for 2.5 s. Every hit you land (Strikes on the ball too) resets the timer. The cooldown starts when it runs out.",
       "bot": "chase",
-      "actions": [{ "type": "buff", "fx": { "color": "#f8d030" }, "target": "self", "duration": 2.5, "speedPct": 33, "refreshOnHit": true, "cooldownAfter": true }]
+      "actions": [
+        {
+          "type": "buff",
+          "fx": {
+            "color": "#f8d030"
+          },
+          "target": "self",
+          "duration": 2.5,
+          "speedPct": 25,
+          "refreshOnHit": true,
+          "cooldownAfter": true
+        }
+      ]
     },
     {
       "id": "thunder",
@@ -51,23 +89,60 @@
       "slot": "special",
       "cooldown": 35,
       "anim": "Pose",
-      "desc": "After 1 s, 5 thunderclaps strike around you, 0.25 s apart, blasting enemies and the ball away. You can keep moving.",
+      "desc": "After 1 s, 5 thunderclaps strike around you, 0.25 s apart, blasting enemies away (the first one also blasts the ball). You can keep moving.",
       "bot": "engage",
       "actions": [
         {
           "type": "area",
-          "fx": { "color": "#ffe14d" },
+          "fx": {
+            "color": "#ffe14d"
+          },
           "delay": 1,
           "shape": "circle",
           "radius": 237.5,
-          "repeat": 5,
-          "repeatInterval": 0.25,
+          "repeat": 1,
           "hit": {
-            "ball": { "base": 900, "powerRatio": 3.4 },
-            "player": { "base": 262.5, "powerRatio": 1.3125 },
-            "damage": { "base": 60, "powerRatio": 0.3 },
+            "ball": {
+              "base": 900,
+              "powerRatio": 3.4
+            },
+            "player": {
+              "base": 262.5,
+              "powerRatio": 1.3125
+            },
+            "damage": {
+              "base": 60,
+              "powerRatio": 0.3
+            },
             "direction": "radial"
           }
+        },
+        {
+          "type": "area",
+          "fx": {
+            "color": "#ffe14d"
+          },
+          "delay": 1.25,
+          "shape": "circle",
+          "radius": 237.5,
+          "repeat": 4,
+          "repeatInterval": 0.25,
+          "hit": {
+            "ball": {
+              "base": 900,
+              "powerRatio": 3.4
+            },
+            "player": {
+              "base": 262.5,
+              "powerRatio": 1.3125
+            },
+            "damage": {
+              "base": 60,
+              "powerRatio": 0.3
+            },
+            "direction": "radial"
+          },
+          "hitsBall": false
         }
       ]
     }

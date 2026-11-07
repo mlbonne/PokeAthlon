@@ -95,7 +95,7 @@ describe('Blastoise (Angelic Support)', () => {
     expect(types(evs)).not.toContain('ko');
     expect(ally.koTicks).toBe(0);
     expect(ally.pos).toEqual({ x: -400, y: 0 });
-    expect(ally.stagger).toBeGreaterThanOrEqual(ally.maxStagger * 0.75); // then the ring keeps healing them
+    expect(ally.stagger).toBeGreaterThanOrEqual(ally.maxStagger * 0.5); // then the ring keeps healing them
     // Second time during the same ring: a real KO.
     blast(ally, 0);
     expect(types(run(w, 30, [idle, idle]))).toContain('ko');

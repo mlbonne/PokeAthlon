@@ -49,12 +49,12 @@ describe('Pikachu (Ramping Speedster)', () => {
     expect(o.slowFrac).toBeCloseTo(0.35);
   });
 
-  it('Charge: +33 % speed, every hit resets it, and the cooldown waits until it ends', () => {
+  it('Charge: +25 % speed, every hit resets it, and the cooldown waits until it ends', () => {
     const w = sandbox([{ pokemonId: 'pikachu', team: 0, pos: { x: -500, y: 0 } }], { x: 0, y: -850 });
     const p = w.players[0]!;
     const base = effectiveSpeed(p);
     cast(w, 0, Button.Move2);
-    expect(effectiveSpeed(p)).toBeGreaterThan(base * 1.25);
+    expect(effectiveSpeed(p)).toBeGreaterThan(base * 1.2);
     const buff = p.buffs.find((b) => b.moveId === 'charge')!;
     const slot = p.moves.findIndex((m) => m.def.id === 'charge');
     const cd0 = p.moves[slot]!.cooldown;
