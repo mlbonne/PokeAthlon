@@ -12,7 +12,7 @@ import {
 } from '@pokeathlon/data';
 import { hitBall, releaseBall } from './ball';
 import { applyHit, gainEnergy } from './combat';
-import { DT, ticks } from './constants';
+import { DT, TICK_RATE, ticks } from './constants';
 import { pointInPolygon } from './geometry';
 import { AXIS_MAX, Button, type PlayerInput } from './input';
 import { frozenPhase } from './match';
@@ -101,6 +101,9 @@ export interface Buff {
   knockbackTakenPct: number;
   /** Transform: Strike also hits players with this. */
   strikeHit: MoveHit | null;
+  refreshOnHit: boolean;
+  /** The move's cooldown is held until this buff ends. */
+  cooldownAfter: boolean;
 }
 
 export interface Projectile {
@@ -119,6 +122,8 @@ export interface Projectile {
   pierce: boolean;
   hitsBall: boolean;
   hit: MoveHit;
+  /** Hit after the first player hit (piercing), or null. */
+  pierceHit: MoveHit | null;
   hitIds: number[];
   ballHit: boolean;
   /** Follow-up actions when it stops (Hyperspace Hole), or null. */
@@ -171,6 +176,8 @@ export interface PendingAction {
   mark: Vec2;
   /** For multi-shot projectiles fired one at a time. */
   single: boolean;
+  /** Tracking target areas: the enemy the target point follows (-1 = none). */
+  trackId: number;
 }
 
 /** Moves for a Pokémon (empty if it has no kit yet). */
@@ -205,7 +212,7 @@ function aimFrom(p: Player, inp: PlayerInput | undefined, range: number): Aim {
 
 /** Per tick: cooldowns, wind-ups, charges, channels, recasts and new casts from input. Call after movement. */
 export function stepMoves(world: World, p: Player, inp: PlayerInput | undefined): void {
-  for (const m of p.moves) if (m.cooldown > 0) m.cooldown--;
+  for (const m of p.moves) if (m.cooldown > 0 && !p.buffs.some((b) => b.cooldownAfter && b.moveId === m.def.id)) m.cooldown--;
   if (p.recast && --p.recast.ticks <= 0) p.recast = null;
 
   if (p.cast) {
@@ -355,8 +362,10 @@ function schedule(
   for (const raw of actions) {
     const action = scaleAction(raw, mods.power, mods.range, 1);
     const base = world.tick + ticks(action.delay);
-    const pa = { owner: p.id, moveId, action, dir, target, aimDist, mark };
-    if (action.telegraph && action.delay > 0) telegraph(world, p, pa, action);
+    const trackId = action.type === 'area' && action.at === 'target' && action.track > 0 ? trackTarget(world, p, target, action.radius + 200) : -1;
+    const pa = { owner: p.id, moveId, action, dir, target: trackId >= 0 ? { ...target } : target, aimDist, mark, trackId };
+    // A tracking area is drawn by the client from world.pending (it moves), not as a one-off flash.
+    if (action.telegraph && action.delay > 0 && trackId < 0) telegraph(world, p, pa, action);
     if (action.type === 'projectile' && action.count > 1 && action.interval > 0) {
       for (let i = 0; i < action.count; i++) world.pending.push({ ...pa, fireTick: base + ticks(action.interval * i), single: true });
     } else if (action.type === 'area' && action.repeat > 1) {
@@ -380,6 +389,35 @@ function telegraph(world: World, p: Player, pa: { moveId: string; dir: Vec2; tar
     world.events.push({ ...base, shape: 'line', pos: { ...p.pos }, radius: 0, angleDeg: 0, length: len, width: p.hurtRadius * 2 });
   } else if (a.type === 'channel') {
     world.events.push({ ...base, shape: a.shape, pos: { ...p.pos }, radius: a.radius, angleDeg: a.angleDeg, length: a.length, width: a.width });
+  }
+}
+
+/** The targetable enemy closest to `at`, within `r`, or -1. */
+function trackTarget(world: World, p: Player, at: Vec2, r: number): number {
+  let best = -1;
+  let bestD = r * r;
+  for (const o of world.players) {
+    if (o.team === p.team || !isTargetable(o)) continue;
+    const d = dist2(o.pos, at);
+    if (d <= bestD) {
+      best = o.id;
+      bestD = d;
+    }
+  }
+  return best;
+}
+
+/** Tracking target areas (Future Sight) follow their enemy. Once per tick, before stepPending. */
+export function stepTracking(world: World): void {
+  for (const pa of world.pending) {
+    if (pa.trackId < 0 || pa.action.type !== 'area') continue;
+    const o = world.players[pa.trackId];
+    if (!o || o.koTicks > 0 || o.banishTicks > 0) continue;
+    const dx = o.pos.x - pa.target.x;
+    const dy = o.pos.y - pa.target.y;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    const step = pa.action.track / TICK_RATE;
+    pa.target = d <= step ? { ...o.pos } : { x: pa.target.x + (dx / d) * step, y: pa.target.y + (dy / d) * step };
   }
 }
 
@@ -433,6 +471,7 @@ function fire(world: World, p: Player, pa: PendingAction): void {
           pierce: a.pierce,
           hitsBall: a.hitsBall,
           hit: a.hit,
+          pierceHit: a.pierceHit ?? null,
           hitIds: [],
           ballHit: false,
           onEnd: a.onEnd ? [...a.onEnd] : null,
@@ -479,6 +518,8 @@ function fire(world: World, p: Player, pa: PendingAction): void {
           powerAdd: a.powerAdd,
           knockbackTakenPct: a.knockbackTakenPct,
           strikeHit: a.strikeHit ?? null,
+          refreshOnHit: a.refreshOnHit,
+          cooldownAfter: a.cooldownAfter,
         });
         refreshBody(t);
         if (a.healPct > 0) t.stagger = Math.min(t.maxStagger, t.stagger + t.maxStagger * a.healPct);
@@ -675,8 +716,9 @@ function stepChannel(world: World, p: Player, inp: PlayerInput | undefined): voi
       hitsBall: a.hitsBall,
       hit: a.hit,
       allyHealPct: 0,
+      track: 0,
     };
-    fireArea(world, p, { owner: p.id, moveId: c.moveId, action: area, fireTick: world.tick, dir: c.dir, target: { ...p.pos }, aimDist: 0, mark: p.pos, single: false }, area);
+    fireArea(world, p, { owner: p.id, moveId: c.moveId, action: area, fireTick: world.tick, dir: c.dir, target: { ...p.pos }, aimDist: 0, mark: p.pos, single: false, trackId: -1 }, area);
     c.next = ticks(a.interval);
   }
   c.next--;
@@ -780,6 +822,7 @@ export function hitPlayer(world: World, owner: Player, target: Player, hit: Move
     ...(hit.light ? { light: true } : {}),
     ...(hit.stun ? { stun: hit.stun } : {}),
     ...(hit.banish ? { banish: hit.banish } : {}),
+    ...(hit.slow ? { slowPct: hit.slow.pct, slowTime: hit.slow.time } : {}),
     source,
   });
   if (landed && source !== 'passive') gainPassive(owner, 'moveHit');
@@ -824,15 +867,15 @@ export function stepProjectiles(world: World): void {
       }
       if (pr.hitsBall && !pr.ballHit && !ball.scored && dist2(pr.pos, ball.pos) <= (pr.radius + ball.radius) ** 2) {
         pr.ballHit = true;
-        hitBallWith(world, owner, pr.hit, pr.dir, pr.pos, pr.moveId, true);
+        hitBallWith(world, owner, pr.pierceHit && pr.hitIds.length > 0 ? pr.pierceHit : pr.hit, pr.dir, pr.pos, pr.moveId, true);
         if (!pr.pierce) dead = true;
       }
       for (const o of world.players) {
         if (dead) break;
         if (o.team === pr.team || !isTargetable(o) || pr.hitIds.includes(o.id)) continue;
         if (dist2(pr.pos, o.pos) > (pr.radius + o.hurtRadius) ** 2) continue;
+        hitPlayer(world, owner, o, pr.pierceHit && pr.hitIds.length > 0 ? pr.pierceHit : pr.hit, pr.dir, pr.pos, pr.moveId, true);
         pr.hitIds.push(o.id);
-        hitPlayer(world, owner, o, pr.hit, pr.dir, pr.pos, pr.moveId, true);
         if (!pr.pierce) dead = true;
       }
     }

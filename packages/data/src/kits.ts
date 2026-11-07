@@ -6,6 +6,7 @@ import greninja from '../kits/greninja.json' with { type: 'json' };
 import hoopa from '../kits/hoopa.json' with { type: 'json' };
 import lucario from '../kits/lucario.json' with { type: 'json' };
 import machamp from '../kits/machamp.json' with { type: 'json' };
+import pikachu from '../kits/pikachu.json' with { type: 'json' };
 import zeraora from '../kits/zeraora.json' with { type: 'json' };
 
 /**
@@ -36,6 +37,8 @@ export const MoveHit = z.object({
   direction: z.enum(['travel', 'radial', 'pull']).default('travel'),
   /** Banish (M5.1, OS Rune): removed from play this many seconds, untargetable, then back where it left. */
   banish: nonneg.optional(),
+  /** Movement slow on players hit (OS Octavia's Sonic Boom). Replaces a LIGHT hit's default slow. */
+  slow: z.object({ pct: z.number().min(0).max(90), time: pos }).optional(),
 });
 export type MoveHit = z.infer<typeof MoveHit>;
 
@@ -90,6 +93,11 @@ export const AreaAction = z.object({
   sweetSpot: SweetSpot.optional(),
   /** Heal allies inside (fraction of max Stagger). */
   allyHealPct: nonneg.default(0),
+  /**
+   * Target areas only: lock onto the enemy closest to the aim point (within radius + 200 of it) and
+   * follow them at this speed (units/s) until it fires. 0 = stays where it was placed. Evade dodges it.
+   */
+  track: nonneg.default(0),
 });
 
 export const DashAction = z.object({
@@ -129,6 +137,10 @@ export const BuffAction = z.object({
   knockbackTakenPct: z.number().min(-90).default(0),
   /** While active, Strike also hits enemy players with this hit. */
   strikeHit: MoveHit.optional(),
+  /** Any hit the holder lands (players or the ball, Strike included) resets the duration (OS Flow State). */
+  refreshOnHit: z.boolean().default(false),
+  /** The move's cooldown only runs once the buff has worn off. */
+  cooldownAfter: z.boolean().default(false),
 });
 
 export const WallAction = z.object({
@@ -200,6 +212,8 @@ export const ProjectileAction = z.object({
   pierce: z.boolean().default(false),
   hitsBall: z.boolean().default(true),
   hit: MoveHit,
+  /** Piercing projectiles: the hit used after the first player hit (OS "LIGHT hits to subsequent enemies"). */
+  pierceHit: MoveHit.optional(),
   /**
    * Follow-up when the projectile stops (hits someone, a wall, or its range): these actions are
    * scheduled from that moment with the stop point as both the aim target and the mark, so a
@@ -336,7 +350,7 @@ export function parseKit(json: unknown): KitDef {
 }
 
 export const kits: Record<string, KitDef> = Object.fromEntries(
-  [zeraora, bronzong, lucario, greninja, machamp, hoopa, blastoise, arcanineHisui].map((k) => {
+  [zeraora, bronzong, lucario, greninja, machamp, hoopa, blastoise, arcanineHisui, pikachu].map((k) => {
     const kit = parseKit(k);
     return [kit.pokemon, kit];
   }),
@@ -383,7 +397,7 @@ export function scaleAction(a: MoveAction, power: number, range: number, duratio
   const hit = <T extends { hit?: MoveHit | undefined }>(x: T): Partial<T> => (x.hit ? ({ hit: scaleHit(x.hit, power) } as Partial<T>) : {});
   switch (a.type) {
     case 'projectile':
-      return { ...a, range: a.range * range, hit: scaleHit(a.hit, power) };
+      return { ...a, range: a.range * range, hit: scaleHit(a.hit, power), ...(a.pierceHit ? { pierceHit: scaleHit(a.pierceHit, power) } : {}) };
     case 'area':
       return {
         ...a,

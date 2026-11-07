@@ -1,0 +1,75 @@
+{
+  "$comment": "Ramping Speedster (OS Octavia model, wiki 2026-11: Sonic Boom / Flow State / Bass Drop). Electroweb = Sonic Boom: a piercing wave, NORMAL hit + 35 % slow for 1 s on the first enemy, LIGHT 50 % hits + 0.25 s slow on the rest. Charge = Flow State: +33 % speed for 2.5 s, any hit (Strike and the ball included) resets it, cooldown starts when it ends. Thunder = Bass Drop: 1 s wind-up, then 5 pulses 0.25 s apart around Pikachu (475 diameter), which moves freely meanwhile. Player knockback = OS × 1.875; power % → powerRatio. Speed and wave size aren't on the wiki: our guesses.",
+  "pokemon": "pikachu",
+  "moves": [
+    {
+      "id": "electroweb",
+      "name": "Electroweb",
+      "slot": "primary",
+      "cooldown": 9,
+      "castTime": 0.25,
+      "anim": "Shoot",
+      "desc": "Launch a crackling web that passes through enemies. The first one hit is slowed 35 % for 1 s; the rest take LIGHT hits.",
+      "bot": "engage",
+      "actions": [
+        {
+          "type": "projectile",
+          "fx": { "color": "#f8d030" },
+          "speed": 1500,
+          "range": 900,
+          "radius": 70,
+          "pierce": true,
+          "hit": {
+            "ball": { "base": 1300, "powerRatio": 1.6 },
+            "player": { "base": 300, "powerRatio": 1.5 },
+            "damage": { "base": 160, "powerRatio": 0.8 },
+            "slow": { "pct": 35, "time": 1 }
+          },
+          "pierceHit": {
+            "ball": { "base": 650, "powerRatio": 0.8 },
+            "player": { "base": 150, "powerRatio": 0.75 },
+            "damage": { "base": 80, "powerRatio": 0.4 },
+            "light": true,
+            "slow": { "pct": 35, "time": 0.25 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "charge",
+      "name": "Charge",
+      "slot": "secondary",
+      "cooldown": 17,
+      "anim": "Charge",
+      "desc": "+33 % speed for 2.5 s. Every hit you land (Strikes on the ball too) resets the timer. The cooldown starts when it runs out.",
+      "bot": "chase",
+      "actions": [{ "type": "buff", "fx": { "color": "#f8d030" }, "target": "self", "duration": 2.5, "speedPct": 33, "refreshOnHit": true, "cooldownAfter": true }]
+    },
+    {
+      "id": "thunder",
+      "name": "Thunder",
+      "slot": "special",
+      "cooldown": 35,
+      "anim": "Pose",
+      "desc": "After 1 s, 5 thunderclaps strike around you, 0.25 s apart, blasting enemies and the ball away. You can keep moving.",
+      "bot": "engage",
+      "actions": [
+        {
+          "type": "area",
+          "fx": { "color": "#ffe14d" },
+          "delay": 1,
+          "shape": "circle",
+          "radius": 237.5,
+          "repeat": 5,
+          "repeatInterval": 0.25,
+          "hit": {
+            "ball": { "base": 900, "powerRatio": 3.4 },
+            "player": { "base": 262.5, "powerRatio": 1.3125 },
+            "damage": { "base": 60, "powerRatio": 0.3 },
+            "direction": "radial"
+          }
+        }
+      ]
+    }
+  ]
+}

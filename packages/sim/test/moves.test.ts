@@ -218,6 +218,27 @@ describe('Hoopa (Manipulating Mastermind)', () => {
     expect(holeHits(evs)).toHaveLength(1); // but the burst misses
   });
 
+  it('Future Sight locks onto the enemy, follows them and banishes them; Evade dodges it', () => {
+    const fsHits = (evs: ReturnType<typeof run>) =>
+      evs.filter((e): e is Extract<typeof e, { type: 'hit' }> => e.type === 'hit' && e.source === 'future-sight' && e.target === 1);
+    const away = quantizeInput(1, 0, 0, 0, 0, 0); // the enemy walks straight away
+    const w = duel('hoopa', { x: -400, y: 0 }, 'machamp', { x: 0, y: 0 });
+    const evs = [...cast(w, 0, Button.Signature, { x: 1, y: 0 }, 400)];
+    expect(w.pending.some((pa) => pa.trackId === 1)).toBe(true);
+    evs.push(...run(w, 70, [idle, away]));
+    expect(w.players[1]!.pos.x).toBeGreaterThan(350); // it walked well out of where it was marked
+    expect(fsHits(evs)).toHaveLength(1);
+    expect(w.players[1]!.banishTicks).toBeGreaterThan(0);
+
+    const w2 = duel('hoopa', { x: -400, y: 0 }, 'machamp', { x: 0, y: 0 });
+    w2.players[1]!.energy = gameplay.evade.cost;
+    const evs2 = [...cast(w2, 0, Button.Signature, { x: 1, y: 0 }, 400)];
+    evs2.push(...run(w2, 50, [idle, away]));
+    evs2.push(...run(w2, 1, [idle, quantizeInput(1, 0, 0, 0, Button.Evade, 0)]));
+    evs2.push(...run(w2, 30, [idle, away]));
+    expect(fsHits(evs2)).toHaveLength(0);
+  });
+
   it('a portal that hits nothing still takes Hoopa to where it stopped', () => {
     const w = duel('hoopa', { x: -400, y: 0 }, 'machamp', { x: 600, y: 600 });
     cast(w, 0, Button.Move2);

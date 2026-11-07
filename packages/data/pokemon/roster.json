@@ -8,6 +8,7 @@
     { "id": "blastoise", "dex": "0009", "name": "Blastoise", "archetype": "angelic-support",         "types": ["water"],              "stats": { "power": 90,  "speed": 440, "stagger": 1400, "staggerGrowth": 425, "size": "large" } },
     { "id": "arcanine-hisui", "dex": "0059/0001", "name": "Hisuian Arcanine", "archetype": "shield-user", "types": ["fire", "rock"], "stats": { "power": 105, "speed": 440, "stagger": 1400, "staggerGrowth": 425, "size": "large" } },
     { "id": "lucario",   "dex": "0448", "name": "Lucario",   "archetype": "flexible-brawler",        "types": ["fighting", "steel"],  "stats": { "power": 105, "speed": 455, "stagger": 1300, "staggerGrowth": 375, "size": "normal" } },
+    { "id": "pikachu",   "dex": "0025", "name": "Pikachu",   "archetype": "ramping-speedster",       "types": ["electric"],           "stats": { "power": 85,  "speed": 470, "stagger": 1150, "staggerGrowth": 200, "size": "normal" } },
     { "id": "machamp",   "dex": "0068", "name": "Machamp",   "archetype": "hulking-beast",           "types": ["fighting"],           "stats": { "power": 110, "speed": 445, "stagger": 1400, "staggerGrowth": 425, "size": "large" } }
   ]
 }

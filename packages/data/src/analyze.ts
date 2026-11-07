@@ -223,6 +223,8 @@ function actionStats(raw: MoveAction, def: MoveDef, p: PokemonDef, offset = 0): 
   };
   if (raw.side) base.notes.push(`own half ×${raw.side.own}, enemy half ×${raw.side.enemy}`);
   if (a.telegraph && a.delay > 0) base.notes.push(`telegraphed ${a.delay} s`);
+  const slow = 'hit' in a ? a.hit?.slow : undefined;
+  if (slow) base.notes.push(`slow ${slow.pct} % ${slow.time} s`);
   switch (a.type) {
     case 'projectile': {
       const range = projectileRange(a);
@@ -235,6 +237,7 @@ function actionStats(raw: MoveAction, def: MoveDef, p: PokemonDef, offset = 0): 
       base.sweptArea = (2 * a.radius * range + base.hitArea) * (a.spreadDeg > 0 ? a.count : 1);
       base.hits = streamed ? a.count : 1; // a fan hits one target with one shot
       base.hitsBall = a.hitsBall && (!!a.hit.ball || !!a.hit.ballStun);
+      if (a.pierce) base.notes.push(a.pierceHit ? `pierces (${a.pierceHit.light ? 'LIGHT ' : ''}follow-up hits)` : 'pierces');
       break;
     }
     case 'area': {
@@ -248,6 +251,7 @@ function actionStats(raw: MoveAction, def: MoveDef, p: PokemonDef, offset = 0): 
       base.hits = a.hit || a.sweetSpot ? a.repeat : 0;
       base.hitsBall = a.hitsBall && ((!!a.hit && (!!a.hit.ball || !!a.hit.ballStun)) || (!!a.sweetSpot && (!!a.sweetSpot.hit.ball || !!a.sweetSpot.hit.ballStun)));
       base.heal = a.allyHealPct;
+      if (a.track > 0) base.notes.push(`follows its target at ${a.track}/s`);
       if (a.sweetSpot) {
         base.hit = bestHit(base.hit, hitNumbers(a.sweetSpot.hit, p.stats.power));
         base.notes.push(`sweet spot ${Math.round(a.sweetSpot.from * 100)}–${Math.round(a.sweetSpot.to * 100)} %${a.sweetSpot.angleDeg ? ` ${a.sweetSpot.angleDeg}°` : ''}`);
@@ -280,6 +284,8 @@ function actionStats(raw: MoveAction, def: MoveDef, p: PokemonDef, offset = 0): 
       if (a.sizePct) base.notes.push(`size ${a.sizePct > 0 ? '+' : ''}${a.sizePct} %`);
       if (a.powerAdd) base.notes.push(`power ${a.powerAdd > 0 ? '+' : ''}${a.powerAdd}`);
       if (a.knockbackTakenPct) base.notes.push(`kb taken ${a.knockbackTakenPct > 0 ? '+' : ''}${a.knockbackTakenPct} %`);
+      if (a.refreshOnHit) base.notes.push('refreshed by any hit');
+      if (a.cooldownAfter) base.notes.push('cooldown after it ends');
       if (a.strikeHit) {
         // Best case: every Strike during the buff lands on one target.
         const k = 1 + a.sizePct / 100;

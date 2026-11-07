@@ -4,7 +4,7 @@ import { circleOverlapsBox, collideBox, collideCircle, collideSegment, pointInPo
 import { scoreGoal } from './match';
 import { addXp } from './progression';
 import type { Vec2 } from './vec';
-import type { World } from './world';
+import type { Player, World } from './world';
 
 /**
  * The ball is a sliding puck that behaves like the Omega Strikers Core
@@ -31,6 +31,11 @@ const SUBSTEP_FRACTION = 0.5;
  * Apply a knockback hit to the ball. `dir` must be a unit vector.
  * The ball freezes for the hitstop, then launches. Returns the launch speed.
  */
+/** Landing any hit (a player or the ball) resets buffs that refresh on hit (OS Flow State). */
+export function refreshHitBuffs(p: Player): void {
+  for (const b of p.buffs) if (b.refreshOnHit) b.ticks = b.total;
+}
+
 export function hitBall(world: World, playerId: number, dir: Vec2, knockback: number, source = 'other'): number {
   const b = world.ball;
   const p = world.players[playerId];
@@ -44,6 +49,7 @@ export function hitBall(world: World, playerId: number, dir: Vec2, knockback: nu
     p.burstBoostTicks = 0;
   }
   if (b.stunTicks > 0) return 0; // a stunned ball ignores knockback (OS)
+  if (p) refreshHitBuffs(p);
   const cur = b.hitstop > 0 ? b.launchVel : b.vel;
   const curSpeed = Math.sqrt(cur.x * cur.x + cur.y * cur.y);
   const capped = Math.min(kb, cap);

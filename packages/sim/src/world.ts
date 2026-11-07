@@ -16,6 +16,7 @@ import {
   stepCreations,
   stepMoves,
   stepPending,
+  stepTracking,
   stepProjectiles,
   type Buff,
   type CastState,
@@ -90,6 +91,8 @@ export interface Player {
   knockTicks: number;
   stunTicks: number;
   slowTicks: number;
+  /** Strength of the current slow (fraction of speed lost). */
+  slowFrac: number;
   /** Untargetable/immune from Evade or Energy Burst. */
   elusiveTicks: number;
   /** Untargetable after respawn. */
@@ -395,6 +398,7 @@ function makePlayer(id: number, s: PlayerSpawn, stage: Stage): Player {
     knockTicks: 0,
     stunTicks: 0,
     slowTicks: 0,
+    slowFrac: 0,
     elusiveTicks: 0,
     immuneTicks: 0,
     koTicks: 0,
@@ -491,6 +495,7 @@ export function step(world: World, inputs: readonly (PlayerInput | undefined)[])
   for (const p of world.players) stepStrike(world, p, inputs[p.id]);
   for (const p of world.players) stepMoves(world, p, inputs[p.id]);
   for (const p of world.players) stepEnergy(world, p, inputs[p.id]);
+  stepTracking(world);
   stepPending(world);
   stepProjectiles(world);
   stepBall(world);
