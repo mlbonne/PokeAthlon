@@ -266,9 +266,14 @@ export class FxDirector {
         if (p) this.play(moveFx(key(e.playerId, 'passive'))?.cast, { pos: p.pos, dir: p.facing, follow: follow(e.playerId) });
         break;
       }
-      case 'area':
-        this.play(moveFx(key(e.playerId, e.moveId))?.area, { pos: e.pos, dir: e.dir, radius: e.shape === 'line' ? e.length / 2 : e.radius });
+      case 'area': {
+        // Cones and lines start at the caster: their effects go in the middle of the swept area.
+        const reach = e.shape === 'cone' ? e.radius * 0.55 : e.shape === 'line' ? e.length / 2 : 0;
+        const pos = { x: e.pos.x + e.dir.x * reach, y: e.pos.y + e.dir.y * reach };
+        const radius = e.shape === 'line' ? e.length / 2 : e.shape === 'cone' ? e.radius * 0.5 : e.radius;
+        this.play(moveFx(key(e.playerId, e.moveId))?.area, { pos, dir: e.dir, radius });
         break;
+      }
       case 'hit': {
         if (e.source === 'strike') break;
         const fx = moveFx(key(e.attacker, e.source));
@@ -385,6 +390,11 @@ export class FxDirector {
       if (p.buffs.some((b) => b.speedPct > 0 && !fx(b.moveId)?.body.length) && !own.has('agility')) this.attach(`s:${p.id}:speed`, st.speed, undefined, at);
       if (p.buffs.some((b) => (b.sizePct > 0 || b.powerAdd > 0) && !fx(b.moveId)?.body.length)) this.attach(`s:${p.id}:power`, st.power, undefined, at);
     }
+    for (const pa of world.pending) {
+      if (pa.action.type !== 'area') continue;
+      const f = fx(pa.moveId);
+      if (f?.mark.length) this.attach(`pa:${pa.owner}:${pa.moveId}:${pa.fireTick}`, f.mark, undefined, { pos: { ...pa.target }, radius: 'radius' in pa.action ? pa.action.radius : 100 });
+    }
     for (const r of world.rings) {
       const f = fx(r.moveId);
       if (r.latchedAt >= 0) this.attach(`r:${r.id}`, f?.body, f?.end, { pos: r.pos, radius: r.radius });
@@ -496,7 +506,7 @@ export class FxDirector {
         // Beam along the ground from the origin to here: the body strip stretched, the head at the tip.
         const o = i.at.origin;
         const len = Math.hypot(pos.x - o.x, pos.y - o.y) * WORLD_TO_THREE;
-        const bw = (sheet.bodyW ?? 32) * PIXEL * layer.scale;
+        const bw = (sheet.bodyW ?? 32) * PIXEL * layer.scale * FX_SCALE;
         obj.position.set(toThreeX((o.x + pos.x) / 2), 0.05, toThreeZ((o.y + pos.y) / 2));
         obj.rotation.set(-Math.PI / 2, 0, angle - Math.PI / 2);
         i.extra.scale.set(bw, Math.max(0.01, len), 1);
@@ -504,8 +514,8 @@ export class FxDirector {
         mesh.visible = false;
       } else {
         // Lightning: a tall bolt standing on the spot, its head flashing on the ground.
-        const bw = (sheet.bodyW ?? 32) * PIXEL * layer.scale;
-        const bh = (sheet.bodyH ?? 128) * PIXEL * layer.scale * 2.5;
+        const bw = (sheet.bodyW ?? 32) * PIXEL * layer.scale * FX_SCALE;
+        const bh = (sheet.bodyH ?? 128) * PIXEL * layer.scale * FX_SCALE * 2.5;
         obj.position.set(x, 0, z);
         obj.quaternion.copy(this.cameraYaw());
         i.extra.scale.set(bw, bh, 1);

@@ -679,25 +679,6 @@
   "frames": 4,
   "rows": 1
  },
- "Beam_Beam": {
-  "kind": "beam",
-  "frames": 2,
-  "head": {
-   "file": "beam/Beam/Head.png",
-   "w": 64,
-   "h": 32
-  },
-  "body": {
-   "file": "beam/Beam/Body.png",
-   "w": 64,
-   "h": 1
-  },
-  "tail": {
-   "file": "beam/Beam/Tail.png",
-   "w": 84,
-   "h": 42
-  }
- },
  "Beam_Lightning": {
   "kind": "beam",
   "frames": 6,
