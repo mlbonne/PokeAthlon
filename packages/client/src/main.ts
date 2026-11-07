@@ -38,6 +38,7 @@ import { Effects } from './render/effects';
 import { facingRow, PmdSprite } from './render/pmdSprite';
 import { MoveViews } from './render/moves';
 import { Structures } from './render/structures';
+import { AURA_ALLY, AURA_ENEMY, TeamAura } from './render/teamAura';
 import { isStadium, stadiumLighting, StadiumView } from './render/stadium';
 import { toThreeX, toThreeZ, WORLD_TO_THREE } from './render/units';
 
@@ -124,6 +125,8 @@ interface MatchView {
   world: World;
   group: THREE.Group;
   sprites: PmdSprite[];
+  /** Ground auras: white = your team, red = opponents (clear even in mirror matches). */
+  auras: TeamAura[];
   ball: BallView;
   structures: Structures;
   effects: Effects;
@@ -178,12 +181,14 @@ function startMatch(online: World | null = null): void {
   overlay.object.visible = menu.visible;
   group.add(structures.object, effects.object, aim.object, ball.object, moves.object, overlay.object);
   const sprites = makeSprites(world, group);
+  const auras = makeAuras(world, sprites);
   scene.add(group);
   aim.setReach(world.players[ME]!.strikeRadius * WORLD_TO_THREE);
   view = {
     world,
     group,
     sprites,
+    auras,
     ball,
     structures,
     effects,
@@ -215,11 +220,22 @@ function makeSprites(world: World, group: THREE.Group): PmdSprite[] {
   });
 }
 
+/** One aura per player, attached to its sprite (follows it, hides with it on KO). Spectators see Blue as "your" team. */
+function makeAuras(world: World, sprites: PmdSprite[]): TeamAura[] {
+  const myTeam = SPECTATE ? 0 : world.players[ME]?.team ?? 0;
+  return world.players.map((p, i) => {
+    const a = new TeamAura(p.team === myTeam ? AURA_ALLY : AURA_ENEMY, (p.baseRadius || p.radius || 40) * WORLD_TO_THREE * 1.35);
+    sprites[i]!.object.add(a.object);
+    return a;
+  });
+}
+
 /** Players were added or removed (practice): rebuild sprites and nameplates. */
 function playersChanged(): void {
   const { world } = view;
   for (const s of view.sprites) view.group.remove(s.object);
   view.sprites = makeSprites(world, view.group);
+  view.auras = makeAuras(world, view.sprites);
   hudRoot.querySelectorAll('.scoreboard, .banner, .plate, .team-hud').forEach((e) => e.remove());
   view.hud = new Hud(hudRoot, world, SPECTATE ? -1 : ME);
   view.prevPos = world.players.map((p) => ({ ...p.pos }));
@@ -701,6 +717,7 @@ function render(dt: number, now: number, alpha: number): void {
     s.update(dt, facingRow(p.facing.x, p.facing.y), speed > 20 ? Math.max(0.6, speed / 300) : 1);
     const blink = p.immuneTicks > 0 && Math.floor(now / 90) % 2 === 0;
     s.setOpacity(p.elusiveTicks > 0 ? 0.45 : blink ? 0.35 : 1);
+    view.auras[i]?.update(dt);
     if (i === ME) {
       view.aim.object.visible = p.koTicks === 0 && !SPECTATE;
       view.aim.update(dt, toThreeX(x), toThreeZ(y), lastInput.aimX, -lastInput.aimY, p.strikeCooldown / STRIKE_COOLDOWN_TICKS);

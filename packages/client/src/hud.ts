@@ -39,8 +39,9 @@ export class Hud {
       root.append(panel);
     }
     for (const p of world.players) {
-      const plate = el('div', `plate team${p.team}`);
+      const plate = el('div', `plate team${p.team}${p.id === me ? ' me' : ''}`);
       plate.innerHTML =
+        (p.id === me ? `<div class="me-arrow" aria-label="You"></div>` : '') +
         `<div class="plate-top"><span class="lv"></span><span class="nm"></span></div>` +
         `<div class="bar"><div class="fill"></div></div><div class="pips"><i></i><i></i><i></i></div><div class="ai"></div>`;
       root.append(plate);
