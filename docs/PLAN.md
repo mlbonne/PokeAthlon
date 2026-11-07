@@ -71,7 +71,7 @@ Every hit has 3 values: `ballKB`, `playerKB`, `damage`, each `base + ratio × Po
 | Move 1, Primary (Q) | Pokémon-specific, ~10–12 s cooldown |
 | Move 2, Secondary (E) | Pokémon-specific, usually mobility, ~18–20 s cooldown |
 | Special (R) | Pokémon-specific, ~25–40 s cooldown, unlocks at level 2 |
-| Evade (Space / A) | Costs 1 Energy bar: 1.5 s untouchable. At 3 bars it becomes **Energy Burst**: push nearby enemies away, briefly control the ball, next ball hit +50 % |
+| Evade (Shift or Q / B) | Costs 1 Energy bar: 1.5 s untouchable. At 3 bars it becomes **Energy Burst**: push nearby enemies away, briefly control the ball, next ball hit +50 % |
 
 **Energy:** 3 bars (75). Start each set and each respawn with 25. +1 per light hit (Strike), +3 per normal hit, +7.5 per orb.
 
