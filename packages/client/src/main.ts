@@ -9,7 +9,6 @@ import {
   DT,
   NEUTRAL_INPUT,
   practiceClearCooldowns,
-  setPokemon,
   step,
   ticks,
   TICK_RATE,
@@ -596,16 +595,6 @@ function frame(now: number): void {
   last = now;
   fps = fps * 0.95 + (1 / Math.max(dt, 1e-4)) * 0.05;
 
-  for (const d of input.takeDigits()) {
-    const def = roster[d - 1];
-    if (!def || net) continue;
-    myPokemon = def.id;
-    config.lineup[ME] = { ...config.lineup[ME]!, pokemonId: def.id };
-    setPokemon(view.world, ME, def.id);
-    void view.sprites[ME]!.load(def.dex);
-    view.aim.setReach(view.world.players[ME]!.strikeRadius * WORLD_TO_THREE);
-    showCard(def);
-  }
   input.pollPad();
   for (const a of input.takeActions()) {
     if (a === 'debug') {

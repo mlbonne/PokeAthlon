@@ -3,7 +3,7 @@ import { TICK_RATE, type Player } from '@pokeathlon/sim';
 
 /** Button prompts per input device (keyboard + mouse, or an Xbox-layout gamepad). */
 const PROMPTS = {
-  keyboard: { strike: 'LMB', moves: ['Q', 'E', 'R'], evade: 'Space' },
+  keyboard: { strike: 'LMB', moves: ['RMB', 'Space', 'R'], evade: 'Shift' },
   pad: { strike: 'A / RT', moves: ['X', 'Y', 'LT'], evade: 'B / LB' },
 } as const;
 export type InputDevice = keyof typeof PROMPTS;

@@ -40,7 +40,7 @@ const ROLES: { id: LobbyRole; label: string }[] = [
   { id: 'flex', label: 'Flex' },
   { id: 'forward', label: 'Forward' },
 ];
-const SLOT_LABEL: Record<string, string> = { primary: 'Primary · Q / right-click', secondary: 'Secondary · E', special: 'Special · R' };
+const SLOT_LABEL: Record<string, string> = { primary: 'Primary · right-click', secondary: 'Secondary · Space', special: 'Special · R / F / side mouse button' };
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const portrait = (id: string) => `<img src="portraits/${getPokemon(id).dex}/Normal.png" alt="">`;
@@ -246,7 +246,8 @@ export class LobbyScreen {
         <div class="group"><span>Bans (custom match)</span>${tog('bans', 'off', 'Off', !p.bans)}${tog('bans', 'on', 'On', p.bans)}</div></section>
       <section><h2>Controls</h2><ul class="controls">
         <li><b>Move</b> WASD · left stick</li><li><b>Aim</b> mouse · right stick</li><li><b>Strike</b> left click · A / RT</li>
-        <li><b>Moves</b> Q or right-click, E, R · X, Y, LT</li><li><b>Evade</b> Space (full meter = Burst) · B / LB</li>
+        <li><b>Primary</b> right-click · X</li><li><b>Secondary</b> Space · Y</li><li><b>Special</b> R, F or side mouse button · LT</li>
+        <li><b>Evade</b> Shift or Q (full meter = Burst) · B / LB</li>
         <li><b>Menu</b> Esc · Start</li><li><b>Scoreboard</b> hold Tab</li><li><b>Debug</b> F3 · Back</li></ul></section>
       <section><h2>Reset</h2><button class="danger" data-act="reset">Reset level and records</button></section>
       <section class="legal"><h2>About</h2><p>PokéAthlon is a non-commercial fan game. Sprites and portraits: PMD Sprite Collab (CC BY-NC 4.0), see CREDITS.md. Pokémon © Nintendo / Creatures / GAME FREAK.</p></section>`;

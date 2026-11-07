@@ -17,10 +17,11 @@ export class InputSource {
   }
   private mouseDown = false;
   private mouseRight = false;
+  /** Side (thumb) mouse buttons: Back = 3, Forward = 4. */
+  private mouseSide = false;
   /** Mouse position in normalised device coords (-1..1). */
   readonly mouseNdc = { x: 0, y: 0 };
   private mouseActive = false;
-  private pendingDigits: number[] = [];
   private pendingActions: string[] = [];
   lastAimSource: AimSource = 'none';
   /** Last device the player touched (switches on-screen button prompts). */
@@ -37,8 +38,6 @@ export class InputSource {
         return;
       }
       this.keys.add(e.code);
-      const m = /^Digit([1-9])$/.exec(e.code);
-      if (m) this.pendingDigits.push(Number(m[1]));
       if (e.code === 'F3') {
         this.pendingActions.push('debug');
         e.preventDefault();
@@ -48,13 +47,14 @@ export class InputSource {
       const nav = { ArrowUp: 'nav-up', ArrowDown: 'nav-down', ArrowLeft: 'nav-left', ArrowRight: 'nav-right' }[e.code];
       if (nav) this.pendingActions.push(nav);
       this.device = 'keyboard';
-      if (e.code === 'Space' || e.code === 'Backspace' || e.code === 'Tab') e.preventDefault();
+      if (e.code === 'Space' || e.code === 'Backspace' || e.code === 'Tab' || e.code === 'KeyF') e.preventDefault();
     });
     target.addEventListener('keyup', (e) => this.keys.delete(e.code));
     target.addEventListener('blur', () => {
       this.keys.clear();
       this.mouseDown = false;
       this.mouseRight = false;
+      this.mouseSide = false;
     });
     canvas.addEventListener('pointermove', (e) => {
       const r = canvas.getBoundingClientRect();
@@ -65,12 +65,20 @@ export class InputSource {
     canvas.addEventListener('pointerdown', (e) => {
       if (e.button === 0) this.mouseDown = true;
       if (e.button === 2) this.mouseRight = true;
+      if (e.button === 3 || e.button === 4) this.mouseSide = true;
       this.mouseActive = true;
     });
     target.addEventListener('pointerup', (e) => {
       if (e.button === 0) this.mouseDown = false;
       if (e.button === 2) this.mouseRight = false;
+      if (e.button === 3 || e.button === 4) this.mouseSide = false;
     });
+    // The side buttons would otherwise navigate the browser back / forward.
+    for (const ev of ['mousedown', 'mouseup', 'auxclick'] as const) {
+      canvas.addEventListener(ev, (e) => {
+        if (e.button === 3 || e.button === 4) e.preventDefault();
+      });
+    }
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     // Hot-plugging: announce controllers as they come and go.
     target.addEventListener('gamepadconnected', (e) => {
@@ -118,11 +126,13 @@ export class InputSource {
     let ax = 0;
     let ay = 0;
     let buttons = 0;
-    if (this.mouseDown || this.down('KeyJ', 'KeyK')) buttons |= Button.Strike;
-    if (this.down('Space', 'ShiftLeft', 'KeyF')) buttons |= Button.Evade;
-    if (this.mouseRight || this.down('KeyQ', 'KeyU')) buttons |= Button.Move1;
-    if (this.down('KeyE', 'KeyI')) buttons |= Button.Move2;
-    if (this.down('KeyR', 'KeyO')) buttons |= Button.Signature;
+    // Keyboard + mouse (OS-style): LMB Strike · RMB Primary · Space Secondary · R / F / side mouse
+    // button Special · Shift / Q Evade (Burst when the meter is full).
+    if (this.mouseDown) buttons |= Button.Strike;
+    if (this.mouseRight) buttons |= Button.Move1;
+    if (this.down('Space')) buttons |= Button.Move2;
+    if (this.mouseSide || this.down('KeyR', 'KeyF')) buttons |= Button.Signature;
+    if (this.down('ShiftLeft', 'ShiftRight', 'KeyQ')) buttons |= Button.Evade;
 
     const pad = navigator.getGamepads?.().find((g) => g?.connected);
     if (pad) {
@@ -166,12 +176,6 @@ export class InputSource {
     if (ax === 0 && ay === 0 && !this.mouseActive) this.lastAimSource = 'none';
 
     return quantizeInput(x, y, ax, ay, buttons, aimDist);
-  }
-
-  takeDigits(): number[] {
-    const d = this.pendingDigits;
-    this.pendingDigits = [];
-    return d;
   }
 
   takeActions(): string[] {

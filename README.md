@@ -14,7 +14,7 @@ Requires Node.js 22+ (developed on v26 LTS). On the dev machine a portable Node 
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173  (WASD move, mouse aim, click Strike, Q/E/R moves, Space Evade/Burst, 1–8 Pokémon, Backspace restart, Esc match setup, F3 debug menu; gamepad: left stick move, right stick aim, A/RT Strike, X/Y/LT moves, B/LB Evade, Start setup, Back debug)
+npm run dev          # http://localhost:5173  (WASD move, mouse aim, left click Strike, right click Primary, Space Secondary, R/F/side mouse button Special, Shift/Q Evade/Burst, Backspace restart, Esc menu, F3 debug menu; gamepad: left stick move, right stick aim, A/RT Strike, X/Y/LT moves, B/LB Evade, Start setup, Back debug)
 npm run check        # typecheck + lint + tests
 npm run build        # production build → packages/client/dist
 npm run import-sprites   # re-import roster sprites from ./SpriteCollab-master and regenerate CREDITS.md
