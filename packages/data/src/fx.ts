@@ -30,6 +30,8 @@ export const FxLayer = z.object({
   /** Several copies scattered within `spread` world units. */
   count: z.number().int().min(1).default(1),
   spread: z.number().nonnegative().default(0),
+  /** Areas: scatter the copies along the move's direction (±radius) instead of around it; `spread` = sideways jitter. */
+  along: z.boolean().default(false),
   /** Seconds before it starts. */
   delay: z.number().nonnegative().default(0),
   /** Follow the anchor (caster, projectile…) instead of staying where it started. */

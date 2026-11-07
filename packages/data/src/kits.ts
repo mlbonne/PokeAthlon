@@ -2,10 +2,12 @@ import { z } from 'zod';
 import arcanineHisui from '../kits/arcanine-hisui.json' with { type: 'json' };
 import blastoise from '../kits/blastoise.json' with { type: 'json' };
 import bronzong from '../kits/bronzong.json' with { type: 'json' };
+import decidueyeHisui from '../kits/decidueye-hisui.json' with { type: 'json' };
 import greninja from '../kits/greninja.json' with { type: 'json' };
 import hoopa from '../kits/hoopa.json' with { type: 'json' };
 import lucario from '../kits/lucario.json' with { type: 'json' };
 import machamp from '../kits/machamp.json' with { type: 'json' };
+import ninetalesAlola from '../kits/ninetales-alola.json' with { type: 'json' };
 import pikachu from '../kits/pikachu.json' with { type: 'json' };
 import zeraora from '../kits/zeraora.json' with { type: 'json' };
 
@@ -221,6 +223,14 @@ export const ProjectileAction = z.object({
    * Hyperspace Hole). Delays count from the stop.
    */
   onEnd: z.array(z.discriminatedUnion('type', [AreaAction, BlinkAction])).optional(),
+  /**
+   * Homing (OS Estelle's Rose Warp thorn): on firing it locks onto the nearest enemy (or the ball,
+   * if `ball`) within `radius` of the caster and turns toward it at up to `turnDeg` per second.
+   * An untargetable (elusive) target keeps it circling; nothing in range = it flies straight.
+   */
+  homing: z.object({ radius: pos, turnDeg: pos.default(720), ball: z.boolean().default(true) }).optional(),
+  /** Volley (OS Estelle's Crystal Thorns): the shots of one cast hit each target at most once between them. */
+  volleyOnce: z.boolean().default(false),
 });
 
 /**
@@ -374,7 +384,7 @@ export function parseKit(json: unknown): KitDef {
 }
 
 export const kits: Record<string, KitDef> = Object.fromEntries(
-  [zeraora, bronzong, lucario, greninja, machamp, hoopa, blastoise, arcanineHisui, pikachu].map((k) => {
+  [zeraora, bronzong, lucario, greninja, machamp, hoopa, blastoise, arcanineHisui, pikachu, decidueyeHisui, ninetalesAlola].map((k) => {
     const kit = parseKit(k);
     return [kit.pokemon, kit];
   }),

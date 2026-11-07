@@ -23,6 +23,14 @@
   "frames": 6,
   "rows": 1
  },
+ "Arrow_Shot": {
+  "file": "particle/Arrow_Shot.Dir2.png",
+  "kind": "Dir2",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": 2
+ },
  "Aura_Sphere": {
   "file": "particle/Aura_Sphere.None.png",
   "kind": "None",
@@ -319,6 +327,86 @@
   "frames": 5,
   "rows": 1
  },
+ "Ice_Shard": {
+  "file": "particle/Ice_Shard.Dir8.png",
+  "kind": "Dir8",
+  "fw": 40,
+  "fh": 40,
+  "frames": 6,
+  "rows": 8
+ },
+ "Ice_Shard_Hit": {
+  "file": "particle/Ice_Shard_Hit.None.png",
+  "kind": "None",
+  "fw": 72,
+  "fh": 72,
+  "frames": 41,
+  "rows": 1
+ },
+ "Ice_Shard_Hit_Sparkle": {
+  "file": "particle/Ice_Shard_Hit_Sparkle.None.png",
+  "kind": "None",
+  "fw": 16,
+  "fh": 16,
+  "frames": 7,
+  "rows": 1
+ },
+ "Ice_Shard_Pieces": {
+  "file": "particle/Ice_Shard_Pieces.None.png",
+  "kind": "None",
+  "fw": 16,
+  "fh": 16,
+  "frames": 15,
+  "rows": 1
+ },
+ "Icicle_Spear": {
+  "file": "particle/Icicle_Spear.Dir8.png",
+  "kind": "Dir8",
+  "fw": 16,
+  "fh": 16,
+  "frames": 1,
+  "rows": 8
+ },
+ "Icy_Wind": {
+  "file": "particle/Icy_Wind.None.png",
+  "kind": "None",
+  "fw": 48,
+  "fh": 48,
+  "frames": 11,
+  "rows": 1
+ },
+ "Icy_Wind_Particle": {
+  "file": "particle/Icy_Wind_Particle.None.png",
+  "kind": "None",
+  "fw": 6,
+  "fh": 6,
+  "frames": 1,
+  "rows": 1
+ },
+ "Leaf_Blade": {
+  "file": "particle/Leaf_Blade.None.png",
+  "kind": "None",
+  "fw": 88,
+  "fh": 88,
+  "frames": 31,
+  "rows": 1
+ },
+ "Leaf_Storm_Hit": {
+  "file": "particle/Leaf_Storm_Hit.None.png",
+  "kind": "None",
+  "fw": 40,
+  "fh": 40,
+  "frames": 12,
+  "rows": 1
+ },
+ "Leaf_Storm_Leaf_Rotating": {
+  "file": "particle/Leaf_Storm_Leaf_Rotating.None.png",
+  "kind": "None",
+  "fw": 16,
+  "fh": 16,
+  "frames": 12,
+  "rows": 1
+ },
  "Light_Ball_Pink": {
   "file": "particle/Light_Ball_Pink.None.png",
   "kind": "None",
@@ -333,6 +421,14 @@
   "fw": 80,
   "fh": 80,
   "frames": 11,
+  "rows": 1
+ },
+ "Light_Pink": {
+  "file": "particle/Light_Pink.None.png",
+  "kind": "None",
+  "fw": 40,
+  "fh": 40,
+  "frames": 8,
   "rows": 1
  },
  "Materialize": {
@@ -407,6 +503,14 @@
   "frames": 30,
   "rows": 1
  },
+ "Puff_Pink": {
+  "file": "particle/Puff_Pink.None.png",
+  "kind": "None",
+  "fw": 32,
+  "fh": 32,
+  "frames": 7,
+  "rows": 1
+ },
  "Puff_White": {
   "file": "particle/Puff_White.None.png",
   "kind": "None",
@@ -421,6 +525,14 @@
   "fw": 104,
   "fh": 104,
   "frames": 14,
+  "rows": 1
+ },
+ "Razor_Leaf": {
+  "file": "particle/Razor_Leaf.None.png",
+  "kind": "None",
+  "fw": 32,
+  "fh": 32,
+  "frames": 8,
   "rows": 1
  },
  "Rock_Pieces": {
@@ -469,6 +581,22 @@
   "fw": 16,
   "fh": 16,
   "frames": 4,
+  "rows": 1
+ },
+ "Shadow_Ball": {
+  "file": "particle/Shadow_Ball.None.png",
+  "kind": "None",
+  "fw": 24,
+  "fh": 24,
+  "frames": 2,
+  "rows": 1
+ },
+ "Shadow_Claw_Hit": {
+  "file": "particle/Shadow_Claw_Hit.None.png",
+  "kind": "None",
+  "fw": 56,
+  "fh": 56,
+  "frames": 14,
   "rows": 1
  },
  "Shadow_Sneak_Hit": {
@@ -525,6 +653,14 @@
   "fw": 32,
   "fh": 32,
   "frames": 6,
+  "rows": 1
+ },
+ "Stat_Green_Line": {
+  "file": "particle/Stat_Green_Line.Dir1.png",
+  "kind": "Dir1",
+  "fw": 32,
+  "fh": 32,
+  "frames": 7,
   "rows": 1
  },
  "Stat_Green_Ring": {
@@ -589,6 +725,14 @@
   "fw": 48,
   "fh": 48,
   "frames": 31,
+  "rows": 1
+ },
+ "Sweet_Kiss_Angel": {
+  "file": "particle/Sweet_Kiss_Angel.None.png",
+  "kind": "None",
+  "fw": 24,
+  "fh": 24,
+  "frames": 2,
   "rows": 1
  },
  "Swift_Star": {
@@ -677,6 +821,14 @@
   "fw": 16,
   "fh": 16,
   "frames": 4,
+  "rows": 1
+ },
+ "Wind_Leaves": {
+  "file": "particle/Wind_Leaves.None.png",
+  "kind": "None",
+  "fw": 16,
+  "fh": 16,
+  "frames": 12,
   "rows": 1
  },
  "Beam_Lightning": {

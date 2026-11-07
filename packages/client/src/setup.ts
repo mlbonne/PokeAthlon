@@ -313,7 +313,7 @@ export class SetupScreen {
       `<li><b>${esc(m.name)}</b> <small>${m.slot === 'passive' ? 'passive' : `${m.slot} · ${m.cooldown} s`}</small>
         <span class="nums">reach ${n0(m.reach)} · ball ${n0(m.ballPower)} · KB ${n0(m.knockback)}${m.damagePerCast ? ` · dmg ${n0(m.damagePerCast)}` : ''}</span>
         ${m.notes ? `<span class="notes">${esc(m.notes)}</span>` : ''}</li>`;
-    box.innerHTML = `<div class="dhead"><img src="portraits/${p.dex}/Normal.png" alt=""><div><b>${esc(p.name)}</b> <small>${esc(p.archetype.replace(/-/g, ' '))}</small><br>
+    box.innerHTML = `<div class="dhead"><img src="portraits/${p.dex}/Normal.png" alt=""><div><b>${esc(p.name)}</b> ${p.bestRole === 'goalie' ? '<b class="role-tag goalie">Strong goalie</b>' : p.bestRole === 'forward' ? '<b class="role-tag brawler">Brawler</b>' : ''} <small>${esc(p.archetype.replace(/-/g, ' '))}</small><br>
         <small>Power ${p.stats.power} · Speed ${p.stats.speed} · Stagger ${p.stats.stagger} · ${p.stats.size}</small><br>
         Forward ${tierBadge(id, 'forward') || '–'} Goalie ${tierBadge(id, 'goalie') || '–'}</div></div>
       <ul class="moves">${[...(f.passive ? [f.passive] : []), ...f.moves].map(move).join('')}</ul>`;

@@ -18,7 +18,7 @@ import { availableParallelism } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMainThread, parentPort, Worker, workerData } from 'node:worker_threads';
-import { itemsFor } from '@pokeathlon/data';
+import { getPokemon, itemsFor } from '@pokeathlon/data';
 import { applyTuning } from '@pokeathlon/data/tuning';
 import { analyzeRoster, simTier, bestTier, TIERS, TIER_MEANING, type Tier } from '@pokeathlon/data/analyze';
 import { fitImpact, impactOf, impactShares, IMPACT_FEATURES, mixSeed, parseLineup, randInt, runHeadless, type PlayerSpawn } from '@pokeathlon/sim';
@@ -156,7 +156,10 @@ async function main(): Promise<void> {
       const seed = seed0 + i;
       const slot = { rng: [mixSeed(seed * 7919 + 13)] };
       const pick = () => kits[randInt(slot, 0, 0, kits.length - 1)]!;
-      const spec = `${pick()},${pick()},${pick()}/${pick()},${pick()},${pick()}`;
+      // Brawlers (bestRole 'forward') never keep goal: the last of each team is the goalie.
+      const keepers = kits.filter((k) => getPokemon(k).bestRole !== 'forward');
+      const pickGk = () => keepers[randInt(slot, 0, 0, keepers.length - 1)]!;
+      const spec = `${pick()},${pick()},${pickGk()}/${pick()},${pick()},${pickGk()}`;
       // Held items (M5.5): a random item of the player's slot, unless --items off.
       const lineup = parseLineup(spec).map((s) => {
         if (noItems) return s;

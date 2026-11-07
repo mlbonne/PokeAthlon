@@ -30,6 +30,8 @@ export const Archetype = z.enum([
   'angelic-support',
   'flexible-brawler',
   'hulking-beast',
+  'whip-fighter',
+  'tempo-sniper',
 ]);
 
 export const PokemonDef = z.object({
@@ -46,6 +48,11 @@ export const PokemonDef = z.object({
     staggerGrowth: z.number().int().min(0).max(1000),
     size: SizeClass,
   }),
+  /**
+   * The role the kit is built for (design call, 2026-11-07): `goalie` = a really good goalie,
+   * `forward` = a brawler the CPU and the balance runs never put in goal, `flex` = either.
+   */
+  bestRole: z.enum(['goalie', 'forward', 'flex']).default('flex'),
 });
 export type PokemonDef = z.infer<typeof PokemonDef>;
 

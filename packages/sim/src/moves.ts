@@ -20,7 +20,7 @@ import { specialUnlocked } from './progression';
 import { boostCreations, boostDashHaste, boostHitMul, boostPrimaryCooldown, boostProjectileRange, boostStatics } from './boosts';
 import { fx } from './items';
 import { onOwnHalf } from './stage';
-import { normalize, rotateDeg, type Vec2 } from './vec';
+import { dcos, dsin, normalize, rotateDeg, type Vec2 } from './vec';
 import { isTargetable, type Player, type World } from './world';
 
 /**
@@ -128,6 +128,11 @@ export interface Projectile {
   ballHit: boolean;
   /** Follow-up actions when it stops (Hyperspace Hole), or null. */
   onEnd: MoveAction[] | null;
+  /** Homing: target player id, -2 = the ball, -1 = none (flies straight); turn rate in rad/tick. */
+  targetId: number;
+  turn: number;
+  /** Volley id (shots of one cast share hits), -1 = none. */
+  group: number;
 }
 
 /** A ring on the ground (OS Atlas's Cosmic Expanse): grows, and if it hit an enemy, shrinks while bouncing out what enters. */
@@ -484,6 +489,21 @@ function fire(world: World, p: Player, pa: PendingAction): void {
   switch (a.type) {
     case 'projectile': {
       const n = pa.single ? 1 : a.count;
+      const group = a.volleyOnce && n > 1 ? world.nextEntityId++ : -1;
+      // Homing: the nearest targetable enemy (or the ball) within radius of the caster.
+      let targetId = -1;
+      if (a.homing) {
+        let best = a.homing.radius ** 2;
+        for (const o of world.players) {
+          if (o.team === p.team || !isTargetable(o)) continue;
+          const d2 = dist2(o.pos, p.pos);
+          if (d2 <= best) {
+            best = d2;
+            targetId = o.id;
+          }
+        }
+        if (a.homing.ball && a.hitsBall && !world.ball.scored && dist2(world.ball.pos, p.pos) < best) targetId = -2;
+      }
       for (let i = 0; i < n; i++) {
         const off = n > 1 ? -a.spreadDeg / 2 + (a.spreadDeg * i) / (n - 1) : 0;
         const d = off !== 0 ? rotateDeg(pa.dir, off) : pa.dir;
@@ -507,6 +527,9 @@ function fire(world: World, p: Player, pa: PendingAction): void {
           hitIds: [],
           ballHit: false,
           onEnd: a.onEnd ? [...a.onEnd] : null,
+          targetId,
+          turn: a.homing ? (a.homing.turnDeg * Math.PI) / 180 / TICK_RATE : 0,
+          group,
         });
       }
       break;
@@ -921,6 +944,7 @@ export function stepProjectiles(world: World): void {
     const pr = world.projectiles[i]!;
     const owner = world.players[pr.owner]!;
     const travel = pr.speed * DT;
+    if (pr.targetId !== -1) steerHoming(world, pr);
     const n = Math.max(1, Math.min(6, Math.ceil(travel / pr.radius)));
     let dead = false;
     for (let s = 0; s < n && !dead; s++) {
@@ -940,6 +964,8 @@ export function stepProjectiles(world: World): void {
         if (dist2(pr.pos, o.pos) > (pr.radius + o.hurtRadius) ** 2) continue;
         hitPlayer(world, owner, o, pr.pierceHit && pr.hitIds.length > 0 ? pr.pierceHit : pr.hit, pr.dir, pr.pos, pr.moveId, true);
         pr.hitIds.push(o.id);
+        // Volley: the other shots of this cast won't hit them again (but still stop on them).
+        if (pr.group >= 0) for (const q of world.projectiles) if (q !== pr && q.group === pr.group && !q.hitIds.includes(o.id)) q.hitIds.push(o.id);
         if (!pr.pierce) dead = true;
       }
     }
@@ -953,6 +979,26 @@ export function stepProjectiles(world: World): void {
       }
     }
   }
+}
+
+/**
+ * Turn a homing projectile toward its target (player or ball) by at most its turn rate per tick.
+ * Deterministic: dot/cross products and the sim's own dsin/dcos (no Math trig in the sim).
+ */
+function steerHoming(world: World, pr: Projectile): void {
+  const tp = pr.targetId === -2 ? null : world.players[pr.targetId];
+  const t = pr.targetId === -2 ? (world.ball.scored ? null : world.ball.pos) : tp && tp.koTicks === 0 && tp.banishTicks === 0 ? tp.pos : null;
+  if (!t) return;
+  const w = normalize({ x: t.x - pr.pos.x, y: t.y - pr.pos.y }, pr.dir);
+  const dot = pr.dir.x * w.x + pr.dir.y * w.y;
+  if (dot >= dcos(pr.turn)) {
+    pr.dir = w;
+    return;
+  }
+  const sgn = pr.dir.x * w.y - pr.dir.y * w.x >= 0 ? 1 : -1;
+  const c = dcos(pr.turn);
+  const sn = dsin(pr.turn) * sgn;
+  pr.dir = normalize({ x: pr.dir.x * c - pr.dir.y * sn, y: pr.dir.x * sn + pr.dir.y * c });
 }
 
 /** Solid things projectiles stop on: standing barriers, closed gates, creation walls. */

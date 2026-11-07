@@ -1,0 +1,84 @@
+{
+  "$comment": "Tempo Sniper (OS Estelle model; data-mined GA_SniperShot / GA_BlinkShot / Proj_BlinkShot / GA_Volley / Proj_Volley 2026-11-07, wiki for names). Ice Beam = Piercing Shot (0.4 s wind-up, 10 s; a line ~1000 long, 120 wide, hits everyone in it: 1350+185 % core, 185+92.5 % KB and dmg). Ice Shard = Rose Warp (17 s; blink ~400, then a crystal thorn at 1600/s homing on the nearest enemy or the Core within 700: 1260+140 % core, 140+70 % KB and dmg). Blizzard = Crystal Thorns (22 s, 0.15 s wind-up; 7 LIGHT thorns in a 35 degree cone at 1800/s, ~850 range, each target hit once per volley: 1240+130 % core, 130+65 % KB and dmg). Player knockback = OS x 1.875; power % -> powerRatio.",
+  "pokemon": "ninetales-alola",
+  "moves": [
+    {
+      "id": "ice-beam",
+      "name": "Ice Beam",
+      "slot": "primary",
+      "cooldown": 10,
+      "castTime": 0.4,
+      "anim": "Shoot",
+      "desc": "Wind up, then fire a long freezing beam that hits every enemy (and the ball) in a line.",
+      "bot": "ballShot",
+      "actions": [
+        {
+          "type": "area",
+          "fx": { "color": "#9fe3ff" },
+          "shape": "line",
+          "length": 1000,
+          "width": 120,
+          "hit": {
+            "ball": { "base": 1350, "powerRatio": 1.85 },
+            "player": { "base": 346.9, "powerRatio": 1.734 },
+            "damage": { "base": 185, "powerRatio": 0.925 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "ice-shard",
+      "name": "Ice Shard",
+      "slot": "secondary",
+      "cooldown": 17,
+      "castTime": 0.25,
+      "anim": "Hop",
+      "desc": "Blink a short way, then fire an ice shard that homes in on the nearest enemy or the ball. It never misses.",
+      "bot": "engage",
+      "actions": [
+        { "type": "blink", "fx": { "color": "#e6f6ff" }, "to": "aim", "distance": 400 },
+        {
+          "type": "projectile",
+          "fx": { "color": "#bfeaff" },
+          "speed": 1600,
+          "range": 1400,
+          "radius": 30,
+          "homing": { "radius": 700, "turnDeg": 900, "ball": true },
+          "hit": {
+            "ball": { "base": 1260, "powerRatio": 1.4 },
+            "player": { "base": 262.5, "powerRatio": 1.3125 },
+            "damage": { "base": 140, "powerRatio": 0.7 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "blizzard",
+      "name": "Blizzard",
+      "slot": "special",
+      "cooldown": 22,
+      "castTime": 0.15,
+      "anim": "Attack",
+      "desc": "Fire a fan of 7 icicles (LIGHT). Each enemy can only be hit by one of them.",
+      "bot": "ballShot",
+      "actions": [
+        {
+          "type": "projectile",
+          "fx": { "color": "#cfefff" },
+          "count": 7,
+          "spreadDeg": 35,
+          "speed": 1800,
+          "range": 850,
+          "radius": 20,
+          "volleyOnce": true,
+          "hit": {
+            "ball": { "base": 1240, "powerRatio": 1.3 },
+            "player": { "base": 243.75, "powerRatio": 1.219 },
+            "damage": { "base": 130, "powerRatio": 0.65 },
+            "light": true
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -226,7 +226,15 @@ export class FxDirector {
       age: -layer.delay,
       life,
       persistent,
-      offset: { x: Math.cos(ang) * r, y: Math.sin(ang) * r },
+      offset:
+        layer.along && at.dir && at.radius
+          ? // Spread along the move's direction (lines: beams, slashes), a little to the sides.
+            (() => {
+              const t = (Math.random() * 2 - 1) * at.radius!;
+              const side = (Math.random() * 2 - 1) * layer.spread;
+              return { x: at.dir!.x * t - at.dir!.y * side, y: at.dir!.y * t + at.dir!.x * side };
+            })()
+          : { x: Math.cos(ang) * r, y: Math.sin(ang) * r },
       w,
       h,
       dead: false,

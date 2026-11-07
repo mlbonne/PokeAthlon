@@ -74,6 +74,20 @@ The bracketed tags are the license labels recorded per contribution in SpriteCol
 - Portraits:
   - CHUNSOFT (https://www.spike-chunsoft.com/) [Unspecified]
 
+### Hisuian Decidueye (#0724/0001)
+- Sprites:
+  - baronessfaron [CC_BY-NC_4]
+- Portraits:
+  - Reimu\_needs\_$$$ [PMDCollab_1]
+
+### Alolan Ninetales (#0038/0001)
+- Sprites:
+  - NeroIntruder (https://twitter.com/NeroIntruder) [PMDCollab_1]
+  - baronessfaron [PMDCollab_1]
+- Portraits:
+  - NeroIntruder (https://twitter.com/NeroIntruder) [PMDCollab_1]
+  - Ichor [PMDCollab_1]
+
 ### Machamp (#0068)
 - Sprites:
   - CHUNSOFT (https://www.spike-chunsoft.com/) [Unspecified]

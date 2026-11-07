@@ -4,7 +4,7 @@ import { getKit, getPokemon, kits } from '../src/index';
 
 describe('kits', () => {
   it('the kits exist with one move per slot', () => {
-    expect(Object.keys(kits).sort()).toEqual(['arcanine-hisui', 'blastoise', 'bronzong', 'greninja', 'hoopa', 'lucario', 'machamp', 'pikachu', 'zeraora']);
+    expect(Object.keys(kits).sort()).toEqual(['arcanine-hisui', 'blastoise', 'bronzong', 'decidueye-hisui', 'greninja', 'hoopa', 'lucario', 'machamp', 'ninetales-alola', 'pikachu', 'zeraora']);
     for (const k of Object.values(kits)) {
       expect(k.moves.map((m) => m.slot).sort()).toEqual(['primary', 'secondary', 'special']);
       expect(() => getPokemon(k.pokemon)).not.toThrow();

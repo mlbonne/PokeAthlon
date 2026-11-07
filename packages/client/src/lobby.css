@@ -818,3 +818,24 @@ body.lobby-open #results {
 .credits-full a {
   color: #9cc4ff;
 }
+
+/* Role label (roster bestRole): a really good goalie, or a brawler that never keeps goal. */
+.role-tag {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+.role-tag.goalie {
+  background: #3e8bff;
+  color: #fff;
+}
+.role-tag.brawler {
+  background: #ff7a1a;
+  color: #fff;
+}

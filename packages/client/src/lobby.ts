@@ -50,6 +50,11 @@ const SLOT_LABEL: Record<string, string> = { primary: 'Primary · right-click', 
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const portrait = (id: string) => `<img src="portraits/${getPokemon(id).dex}/Normal.png" alt="">`;
+/** Role label from the roster's design call (bestRole). */
+export const roleTag = (id: string): string => {
+  const r = getPokemon(id).bestRole;
+  return r === 'goalie' ? '<b class="role-tag goalie">Strong goalie</b>' : r === 'forward' ? '<b class="role-tag brawler">Brawler</b>' : '';
+};
 const pct = (w: number, g: number) => (g ? `${Math.round((100 * w) / g)} %` : '–');
 function tierBadge(id: string, role: 'forward' | 'goalie'): string {
   const r = tierSnapshot.entries.find((x) => x.pokemon === id)?.[role];
@@ -145,7 +150,7 @@ export class LobbyScreen {
       </div>
       <div class="hero-name">
         <button class="switch" data-page="custom" title="Change your main Pokémon">${ICON.swap}<b>${esc(mon.name)}</b></button>
-        <small>${esc(mon.archetype.replace(/-/g, ' '))} · Forward ${tierBadge(mon.id, 'forward')} · Goalie ${tierBadge(mon.id, 'goalie')}</small>
+        <small>${roleTag(mon.id)} ${esc(mon.archetype.replace(/-/g, ' '))} · Forward ${tierBadge(mon.id, 'forward')} · Goalie ${tierBadge(mon.id, 'goalie')}</small>
       </div>
       <div class="play-block">
         <div class="seg roles">${ROLES.map((r) => `<button class="${p.role === r.id ? 'on' : ''}" data-role="${r.id}"><span>${r.label}</span></button>`).join('')}</div>
@@ -202,7 +207,7 @@ export class LobbyScreen {
     const passive = kit?.passive ? `<li class="passive"><div class="mv-head"><b>${esc(kit.passive.name)}</b><small>Passive</small></div><p>${esc(kit.passive.desc)}</p></li>` : '';
     return `${this.monGrid(id, 'dex')}
       <article class="dex-card">
-        <div class="dex-head">${portrait(id)}<div><h2>${esc(mon.name)}</h2><small>${esc(mon.archetype.replace(/-/g, ' '))} · ${mon.types.join(' / ')} · ${mon.stats.size}</small>
+        <div class="dex-head">${portrait(id)}<div><h2>${esc(mon.name)} ${roleTag(id)}</h2><small>${esc(mon.archetype.replace(/-/g, ' '))} · ${mon.types.join(' / ')} · ${mon.stats.size}</small>
           <div class="statline"><span>Power <b>${mon.stats.power}</b></span><span>Speed <b>${mon.stats.speed}</b></span><span>Stagger <b>${mon.stats.stagger}</b> <small>+${mon.stats.staggerGrowth}/lv</small></span><span>Forward ${tierBadge(id, 'forward')}</span><span>Goalie ${tierBadge(id, 'goalie')}</span></div></div>
           ${id === this.p.main ? '<span class="main-tag big">Your main</span>' : `<button class="cta" data-main="${id}">Set as main</button>`}</div>
         <h3>Moves</h3><ul class="dex-moves">${passive}${moves}</ul>
