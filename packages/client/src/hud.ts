@@ -38,8 +38,9 @@ export class Hud {
       }
       root.append(panel);
     }
+    const myTeam = world.players[me]?.team ?? 0;
     for (const p of world.players) {
-      const plate = el('div', `plate team${p.team}${p.id === me ? ' me' : ''}`);
+      const plate = el('div', `plate team${p.team}${p.id === me ? ' me' : ''}${p.team !== myTeam ? ' enemy' : ''}`);
       plate.innerHTML =
         (p.id === me ? `<div class="me-arrow" aria-label="You"></div>` : '') +
         `<div class="plate-top"><span class="lv"></span><span class="nm"></span></div>` +

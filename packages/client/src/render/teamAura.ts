@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 
 /**
- * Ground aura under a player that tells sides apart even in mirror matches: white for your team,
- * red for opponents. A soft glowing disc plus a thin pulsing rim, sized to the body.
+ * Ground aura under the players of your team, so sides stay clear even in mirror matches
+ * (opponents have none; their names are bright red). A soft glowing disc plus a thin pulsing rim.
  */
 let glowTexture: THREE.Texture | null = null;
 function glow(): THREE.Texture {
@@ -23,7 +23,6 @@ function glow(): THREE.Texture {
 }
 
 export const AURA_ALLY = 0xffffff;
-export const AURA_ENEMY = 0xff2a3d;
 
 export class TeamAura {
   readonly object = new THREE.Group();
