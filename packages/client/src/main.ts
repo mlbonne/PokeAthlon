@@ -43,6 +43,7 @@ import { FxDirector } from './render/fx';
 import { AimPreview, pokemonColor } from './render/aimPreview';
 import { audio, MatchSounds } from './audio';
 import { isStadium, stadiumLighting, StadiumView } from './render/stadium';
+import { brawlLighting, isBrawl, StadiumBrawlView } from './render/stadiumBrawl';
 import { toThreeX, toThreeZ, WORLD_TO_THREE } from './render/units';
 
 // ---------- Three.js setup ----------
@@ -190,7 +191,9 @@ interface MatchView {
 
 let arena: THREE.Group | null = null;
 /** Stadium surroundings (M6 stage 1): stands, crowd, screen, lights, skyline. */
-let stadium: StadiumView | null = null;
+let stadium: StadiumView | StadiumBrawlView | null = null;
+/** True when the current stage uses the Brawl art set (needs a longer view distance). */
+let brawlStage = false;
 let view!: MatchView;
 
 function dexOf(id: string): string {
@@ -214,10 +217,15 @@ function startMatch(online: World | null = null): void {
   if (!arena) {
     arena = buildArena(world.stage);
     scene.add(arena);
+    brawlStage = isBrawl(world.stage);
     if (isStadium(world.stage) && params.get('gfx') !== 'low') {
       stadium = new StadiumView(world.stage);
       scene.add(stadium.object);
       stadiumLighting(scene, hemi, sun);
+    } else if (brawlStage && params.get('gfx') !== 'low') {
+      stadium = new StadiumBrawlView(world.stage);
+      scene.add(stadium.object);
+      brawlLighting(scene, hemi, sun);
     }
   }
   const group = new THREE.Group();
@@ -639,6 +647,9 @@ if (import.meta.env.DEV) {
       get stadium() {
         return stadium;
       },
+      /** Dev: the live scene/camera, for visual checks. */
+      scene,
+      camera,
       THREE,
       /** Run `n` sim ticks with a fixed input for the human player (bots keep playing). */
       run(n: number, inp: Partial<PlayerInput> = {}): void {
@@ -877,9 +888,10 @@ function render(dt: number, now: number, alpha: number): void {
   // Fog only hides the far void; keep it beyond the arena at any zoom.
   const fog = scene.fog as THREE.Fog;
   // The stadium has scenery out to ~120 units; push the haze back so the stands and skyline show.
-  fog.near = dist * (stadium ? 1.6 : 1.1);
-  fog.far = dist * (stadium ? 5 : 2.2);
-  camera.far = dist * (stadium ? 6 : 3);
+  // The Brawl set is much larger: stands reach ~240 units and the sky backdrop ~800.
+  fog.near = dist * (brawlStage ? 4 : stadium ? 1.6 : 1.1);
+  fog.far = dist * (brawlStage ? 35 : stadium ? 5 : 2.2);
+  camera.far = dist * (brawlStage ? 45 : stadium ? 6 : 3);
   camera.updateProjectionMatrix();
   camera.position.set(fx, Math.sin(CAMERA_PITCH) * dist, fz + Math.cos(CAMERA_PITCH) * dist);
   camera.lookAt(fx, 0, fz);

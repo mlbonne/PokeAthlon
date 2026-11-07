@@ -295,6 +295,7 @@ export class LobbyScreen {
           <li><b>Move effects:</b> Pokémon Mystery Dungeon effect sheets via PMDCollab RawAsset / PMD: Origins</li>
           <li><b>Sounds:</b> Pokémon Mystery Dungeon sounds via PMD: Origins; Pokémon cries via PokeAPI</li>
           <li><b>Stadium:</b> models from Poly Pizza (CC0 / CC BY) and PokéBonk art by Charcher</li>
+          <li><b>Pokémon Stadium 2 stage:</b> Super Smash Bros. Brawl rip © Nintendo / HAL Laboratory (non-commercial fan use)</li>
         </ul>
         <details class="credits-full"><summary>Full credits (every artist)</summary><div>${creditsHtml()}</div></details></section>`;
   }

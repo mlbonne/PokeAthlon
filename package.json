@@ -22,6 +22,7 @@
     "lint": "eslint .",
     "check": "npm run typecheck && npm run lint && npm run test",
     "import-sprites": "tsx tools/import-sprites.ts",
+    "stage:convert": "vite --config tools/stage/vite.config.ts",
     "record": "tsx tools/record-match.ts",
     "sim": "tsx tools/sim-batch.ts",
     "ladder": "tsx tools/sim-batch.ts --ladder",
