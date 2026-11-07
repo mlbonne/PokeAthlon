@@ -1,0 +1,720 @@
+{
+ "Aqua_Ring": {
+  "file": "particle/Aqua_Ring.None.png",
+  "kind": "None",
+  "fw": 64,
+  "fh": 64,
+  "frames": 21,
+  "rows": 1
+ },
+ "Aqua_Tail_Wave": {
+  "file": "particle/Aqua_Tail_Wave.None.png",
+  "kind": "None",
+  "fw": 48,
+  "fh": 48,
+  "frames": 7,
+  "rows": 1
+ },
+ "Arm_Thrust": {
+  "file": "particle/Arm_Thrust.None.png",
+  "kind": "None",
+  "fw": 48,
+  "fh": 48,
+  "frames": 6,
+  "rows": 1
+ },
+ "Aura_Sphere": {
+  "file": "particle/Aura_Sphere.None.png",
+  "kind": "None",
+  "fw": 32,
+  "fh": 32,
+  "frames": 6,
+  "rows": 1
+ },
+ "Aura_Sphere_Shoot": {
+  "file": "particle/Aura_Sphere_Shoot.Dir8.png",
+  "kind": "Dir8",
+  "fw": 32,
+  "fh": 32,
+  "frames": 6,
+  "rows": 8
+ },
+ "Aura_Sphere_Shot": {
+  "file": "particle/Aura_Sphere_Shot.Dir8.png",
+  "kind": "Dir8",
+  "fw": 32,
+  "fh": 32,
+  "frames": 3,
+  "rows": 8
+ },
+ "Brine_Splashes": {
+  "file": "particle/Brine_Splashes.None.png",
+  "kind": "None",
+  "fw": 72,
+  "fh": 72,
+  "frames": 31,
+  "rows": 1
+ },
+ "Bubble_Pop_Blue": {
+  "file": "particle/Bubble_Pop_Blue.None.png",
+  "kind": "None",
+  "fw": 24,
+  "fh": 24,
+  "frames": 13,
+  "rows": 1
+ },
+ "Bubbles_Blue": {
+  "file": "particle/Bubbles_Blue.None.png",
+  "kind": "None",
+  "fw": 16,
+  "fh": 16,
+  "frames": 8,
+  "rows": 1
+ },
+ "Charge_Beam_Charge": {
+  "file": "particle/Charge_Beam_Charge.None.png",
+  "kind": "None",
+  "fw": 80,
+  "fh": 80,
+  "frames": 30,
+  "rows": 1
+ },
+ "Charge_Beam_Shot": {
+  "file": "particle/Charge_Beam_Shot.Dir8.png",
+  "kind": "Dir8",
+  "fw": 32,
+  "fh": 32,
+  "frames": 2,
+  "rows": 8
+ },
+ "Charge_Up": {
+  "file": "particle/Charge_Up.None.png",
+  "kind": "None",
+  "fw": 96,
+  "fh": 96,
+  "frames": 7,
+  "rows": 1
+ },
+ "Circle_Tiny_Yellow": {
+  "file": "particle/Circle_Tiny_Yellow.None.png",
+  "kind": "None",
+  "fw": 16,
+  "fh": 16,
+  "frames": 11,
+  "rows": 1
+ },
+ "Circle_White_Out": {
+  "file": "particle/Circle_White_Out.None.png",
+  "kind": "None",
+  "fw": 64,
+  "fh": 64,
+  "frames": 8,
+  "rows": 1
+ },
+ "Close_Combat": {
+  "file": "particle/Close_Combat.None.png",
+  "kind": "None",
+  "fw": 64,
+  "fh": 64,
+  "frames": 13,
+  "rows": 1
+ },
+ "Cross_Chop": {
+  "file": "particle/Cross_Chop.None.png",
+  "kind": "None",
+  "fw": 48,
+  "fh": 48,
+  "frames": 6,
+  "rows": 1
+ },
+ "Dark_Void_Back": {
+  "file": "particle/Dark_Void_Back.None.png",
+  "kind": "None",
+  "fw": 64,
+  "fh": 64,
+  "frames": 40,
+  "rows": 1
+ },
+ "Dark_Void_Front": {
+  "file": "particle/Dark_Void_Front.None.png",
+  "kind": "None",
+  "fw": 64,
+  "fh": 64,
+  "frames": 40,
+  "rows": 1
+ },
+ "Discharge": {
+  "file": "particle/Discharge.None.png",
+  "kind": "None",
+  "fw": 120,
+  "fh": 120,
+  "frames": 13,
+  "rows": 1
+ },
+ "Discharge_Hit": {
+  "file": "particle/Discharge_Hit.None.png",
+  "kind": "None",
+  "fw": 96,
+  "fh": 96,
+  "frames": 10,
+  "rows": 1
+ },
+ "Event_Gather_Sparkle": {
+  "file": "particle/Event_Gather_Sparkle.None.png",
+  "kind": "None",
+  "fw": 8,
+  "fh": 8,
+  "frames": 6,
+  "rows": 1
+ },
+ "Explosion": {
+  "file": "particle/Explosion.None.png",
+  "kind": "None",
+  "fw": 88,
+  "fh": 88,
+  "frames": 15,
+  "rows": 1
+ },
+ "Fire_Spin_Back": {
+  "file": "particle/Fire_Spin_Back.None.png",
+  "kind": "None",
+  "fw": 88,
+  "fh": 88,
+  "frames": 57,
+  "rows": 1
+ },
+ "Fire_Spin_Front": {
+  "file": "particle/Fire_Spin_Front.None.png",
+  "kind": "None",
+  "fw": 88,
+  "fh": 88,
+  "frames": 57,
+  "rows": 1
+ },
+ "Flamethrower": {
+  "file": "particle/Flamethrower.None.png",
+  "kind": "None",
+  "fw": 54,
+  "fh": 54,
+  "frames": 12,
+  "rows": 1
+ },
+ "Flamethrower_2": {
+  "file": "particle/Flamethrower_2.None.png",
+  "kind": "None",
+  "fw": 32,
+  "fh": 32,
+  "frames": 6,
+  "rows": 1
+ },
+ "Flare_Blitz_Charge_Back": {
+  "file": "particle/Flare_Blitz_Charge_Back.None.png",
+  "kind": "None",
+  "fw": 56,
+  "fh": 56,
+  "frames": 12,
+  "rows": 1
+ },
+ "Flare_Blitz_Charge_Front": {
+  "file": "particle/Flare_Blitz_Charge_Front.None.png",
+  "kind": "None",
+  "fw": 56,
+  "fh": 56,
+  "frames": 12,
+  "rows": 1
+ },
+ "Flare_Blitz_Hit_Back": {
+  "file": "particle/Flare_Blitz_Hit_Back.None.png",
+  "kind": "None",
+  "fw": 72,
+  "fh": 72,
+  "frames": 13,
+  "rows": 1
+ },
+ "Flare_Blitz_Hit_Front": {
+  "file": "particle/Flare_Blitz_Hit_Front.None.png",
+  "kind": "None",
+  "fw": 72,
+  "fh": 72,
+  "frames": 13,
+  "rows": 1
+ },
+ "Focus_Energy": {
+  "file": "particle/Focus_Energy.None.png",
+  "kind": "None",
+  "fw": 16,
+  "fh": 16,
+  "frames": 5,
+  "rows": 1
+ },
+ "Giga_Impact_Back": {
+  "file": "particle/Giga_Impact_Back.None.png",
+  "kind": "None",
+  "fw": 72,
+  "fh": 72,
+  "frames": 23,
+  "rows": 1
+ },
+ "Giga_Impact_Front": {
+  "file": "particle/Giga_Impact_Front.None.png",
+  "kind": "None",
+  "fw": 72,
+  "fh": 72,
+  "frames": 23,
+  "rows": 1
+ },
+ "Gyro_Ball": {
+  "file": "particle/Gyro_Ball.None.png",
+  "kind": "None",
+  "fw": 40,
+  "fh": 40,
+  "frames": 37,
+  "rows": 1
+ },
+ "Gyro_Ball_Hit": {
+  "file": "particle/Gyro_Ball_Hit.None.png",
+  "kind": "None",
+  "fw": 64,
+  "fh": 64,
+  "frames": 15,
+  "rows": 1
+ },
+ "Hammer_Arm_Smoke": {
+  "file": "particle/Hammer_Arm_Smoke.None.png",
+  "kind": "None",
+  "fw": 72,
+  "fh": 72,
+  "frames": 6,
+  "rows": 1
+ },
+ "Healing_Wish_Hit": {
+  "file": "particle/Healing_Wish_Hit.None.png",
+  "kind": "None",
+  "fw": 40,
+  "fh": 40,
+  "frames": 8,
+  "rows": 1
+ },
+ "Hit_Neutral": {
+  "file": "particle/Hit_Neutral.None.png",
+  "kind": "None",
+  "fw": 64,
+  "fh": 64,
+  "frames": 4,
+  "rows": 1
+ },
+ "Hit_Super_Effective": {
+  "file": "particle/Hit_Super_Effective.None.png",
+  "kind": "None",
+  "fw": 64,
+  "fh": 64,
+  "frames": 6,
+  "rows": 1
+ },
+ "Hydro_Cannon": {
+  "file": "particle/Hydro_Cannon.None.png",
+  "kind": "None",
+  "fw": 32,
+  "fh": 32,
+  "frames": 5,
+  "rows": 1
+ },
+ "Light_Ball_Pink": {
+  "file": "particle/Light_Ball_Pink.None.png",
+  "kind": "None",
+  "fw": 80,
+  "fh": 80,
+  "frames": 11,
+  "rows": 1
+ },
+ "Light_Ball_Yellow": {
+  "file": "particle/Light_Ball_Yellow.None.png",
+  "kind": "None",
+  "fw": 80,
+  "fh": 80,
+  "frames": 11,
+  "rows": 1
+ },
+ "Materialize": {
+  "file": "particle/Materialize.None.png",
+  "kind": "None",
+  "fw": 64,
+  "fh": 64,
+  "frames": 15,
+  "rows": 1
+ },
+ "Miracle_Eye_Eye": {
+  "file": "particle/Miracle_Eye_Eye.None.png",
+  "kind": "None",
+  "fw": 32,
+  "fh": 32,
+  "frames": 21,
+  "rows": 1
+ },
+ "Night_Slash": {
+  "file": "particle/Night_Slash.Dir1.png",
+  "kind": "Dir1",
+  "fw": 72,
+  "fh": 72,
+  "frames": 50,
+  "rows": 1
+ },
+ "Night_Slash_Hit": {
+  "file": "particle/Night_Slash_Hit.None.png",
+  "kind": "None",
+  "fw": 72,
+  "fh": 72,
+  "frames": 35,
+  "rows": 1
+ },
+ "Psycho_Boost_Back": {
+  "file": "particle/Psycho_Boost_Back.None.png",
+  "kind": "None",
+  "fw": 72,
+  "fh": 72,
+  "frames": 23,
+  "rows": 1
+ },
+ "Psycho_Boost_Front": {
+  "file": "particle/Psycho_Boost_Front.None.png",
+  "kind": "None",
+  "fw": 72,
+  "fh": 72,
+  "frames": 23,
+  "rows": 1
+ },
+ "Psycho_Cut_Hole": {
+  "file": "particle/Psycho_Cut_Hole.None.png",
+  "kind": "None",
+  "fw": 56,
+  "fh": 56,
+  "frames": 18,
+  "rows": 1
+ },
+ "Psycho_Shift_Charge": {
+  "file": "particle/Psycho_Shift_Charge.None.png",
+  "kind": "None",
+  "fw": 56,
+  "fh": 56,
+  "frames": 34,
+  "rows": 1
+ },
+ "Psycho_Shift_Hit": {
+  "file": "particle/Psycho_Shift_Hit.None.png",
+  "kind": "None",
+  "fw": 56,
+  "fh": 56,
+  "frames": 30,
+  "rows": 1
+ },
+ "Puff_White": {
+  "file": "particle/Puff_White.None.png",
+  "kind": "None",
+  "fw": 32,
+  "fh": 32,
+  "frames": 7,
+  "rows": 1
+ },
+ "Rage": {
+  "file": "particle/Rage.None.png",
+  "kind": "None",
+  "fw": 104,
+  "fh": 104,
+  "frames": 14,
+  "rows": 1
+ },
+ "Rock_Pieces": {
+  "file": "particle/Rock_Pieces.None.png",
+  "kind": "None",
+  "fw": 16,
+  "fh": 16,
+  "frames": 15,
+  "rows": 1
+ },
+ "Rock_Slide_Back": {
+  "file": "particle/Rock_Slide_Back.79.png",
+  "kind": "79",
+  "fw": 80,
+  "fh": 256,
+  "frames": 79,
+  "rows": 1
+ },
+ "Rock_Slide_Front": {
+  "file": "particle/Rock_Slide_Front.62.png",
+  "kind": "62",
+  "fw": 80,
+  "fh": 256,
+  "frames": 62,
+  "rows": 1
+ },
+ "Rock_Smash": {
+  "file": "particle/Rock_Smash.None.png",
+  "kind": "None",
+  "fw": 72,
+  "fh": 72,
+  "frames": 11,
+  "rows": 1
+ },
+ "Screen_RSE_Yellow": {
+  "file": "particle/Screen_RSE_Yellow.None.png",
+  "kind": "None",
+  "fw": 64,
+  "fh": 64,
+  "frames": 8,
+  "rows": 1
+ },
+ "Screen_Sparkle_RSE": {
+  "file": "particle/Screen_Sparkle_RSE.None.png",
+  "kind": "None",
+  "fw": 16,
+  "fh": 16,
+  "frames": 4,
+  "rows": 1
+ },
+ "Shadow_Sneak_Hit": {
+  "file": "particle/Shadow_Sneak_Hit.None.png",
+  "kind": "None",
+  "fw": 48,
+  "fh": 48,
+  "frames": 18,
+  "rows": 1
+ },
+ "Shadow_Sneak_Shadow": {
+  "file": "particle/Shadow_Sneak_Shadow.None.png",
+  "kind": "None",
+  "fw": 32,
+  "fh": 32,
+  "frames": 1,
+  "rows": 1
+ },
+ "Shock_Wave": {
+  "file": "particle/Shock_Wave.None.png",
+  "kind": "None",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": 1
+ },
+ "Slash_RSE": {
+  "file": "particle/Slash_RSE.None.png",
+  "kind": "None",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": 1
+ },
+ "Spark": {
+  "file": "particle/Spark.None.png",
+  "kind": "None",
+  "fw": 72,
+  "fh": 72,
+  "frames": 4,
+  "rows": 1
+ },
+ "Stat_Blue_Line": {
+  "file": "particle/Stat_Blue_Line.Dir1.png",
+  "kind": "Dir1",
+  "fw": 32,
+  "fh": 32,
+  "frames": 7,
+  "rows": 1
+ },
+ "Stat_Blue_Ring": {
+  "file": "particle/Stat_Blue_Ring.None.png",
+  "kind": "None",
+  "fw": 32,
+  "fh": 32,
+  "frames": 6,
+  "rows": 1
+ },
+ "Stat_Green_Ring": {
+  "file": "particle/Stat_Green_Ring.None.png",
+  "kind": "None",
+  "fw": 32,
+  "fh": 32,
+  "frames": 6,
+  "rows": 1
+ },
+ "Stat_Red_Line": {
+  "file": "particle/Stat_Red_Line.Dir1.png",
+  "kind": "Dir1",
+  "fw": 32,
+  "fh": 32,
+  "frames": 7,
+  "rows": 1
+ },
+ "Stat_Yellow_Ring": {
+  "file": "particle/Stat_Yellow_Ring.None.png",
+  "kind": "None",
+  "fw": 32,
+  "fh": 32,
+  "frames": 6,
+  "rows": 1
+ },
+ "Sticky_Brown_Front": {
+  "file": "particle/Sticky_Brown_Front.None.png",
+  "kind": "None",
+  "fw": 128,
+  "fh": 128,
+  "frames": 18,
+  "rows": 1
+ },
+ "Stone_Edge": {
+  "file": "particle/Stone_Edge.38.png",
+  "kind": "38",
+  "fw": 48,
+  "fh": 248,
+  "frames": 38,
+  "rows": 1
+ },
+ "Stone_Edge_Rock": {
+  "file": "particle/Stone_Edge_Rock.None.png",
+  "kind": "None",
+  "fw": 32,
+  "fh": 32,
+  "frames": 18,
+  "rows": 1
+ },
+ "String_Shot_Web": {
+  "file": "particle/String_Shot_Web.None.png",
+  "kind": "None",
+  "fw": 40,
+  "fh": 40,
+  "frames": 7,
+  "rows": 1
+ },
+ "Superpower": {
+  "file": "particle/Superpower.None.png",
+  "kind": "None",
+  "fw": 48,
+  "fh": 48,
+  "frames": 31,
+  "rows": 1
+ },
+ "Swift_Star": {
+  "file": "particle/Swift_Star.None.png",
+  "kind": "None",
+  "fw": 16,
+  "fh": 16,
+  "frames": 2,
+  "rows": 1
+ },
+ "Tailwind": {
+  "file": "particle/Tailwind.Dir1.png",
+  "kind": "Dir1",
+  "fw": 64,
+  "fh": 64,
+  "frames": 25,
+  "rows": 1
+ },
+ "Thunder_Fang_Fang": {
+  "file": "particle/Thunder_Fang_Fang.None.png",
+  "kind": "None",
+  "fw": 56,
+  "fh": 56,
+  "frames": 7,
+  "rows": 1
+ },
+ "U_Turn_Travel": {
+  "file": "particle/U_Turn_Travel.None.png",
+  "kind": "None",
+  "fw": 24,
+  "fh": 24,
+  "frames": 7,
+  "rows": 1
+ },
+ "Vault_Open": {
+  "file": "particle/Vault_Open.None.png",
+  "kind": "None",
+  "fw": 56,
+  "fh": 56,
+  "frames": 21,
+  "rows": 1
+ },
+ "Wall_Break": {
+  "file": "particle/Wall_Break.None.png",
+  "kind": "None",
+  "fw": 72,
+  "fh": 72,
+  "frames": 11,
+  "rows": 1
+ },
+ "Water_Spout_Splash": {
+  "file": "particle/Water_Spout_Splash.None.png",
+  "kind": "None",
+  "fw": 32,
+  "fh": 32,
+  "frames": 4,
+  "rows": 1
+ },
+ "Water_Spout_Up": {
+  "file": "particle/Water_Spout_Up.None.png",
+  "kind": "None",
+  "fw": 160,
+  "fh": 160,
+  "frames": 20,
+  "rows": 1
+ },
+ "Wave_Circle_Blue": {
+  "file": "particle/Wave_Circle_Blue.Dir5.png",
+  "kind": "Dir5",
+  "fw": 32,
+  "fh": 32,
+  "frames": 11,
+  "rows": 5
+ },
+ "Wave_Circle_White": {
+  "file": "particle/Wave_Circle_White.Dir5.png",
+  "kind": "Dir5",
+  "fw": 32,
+  "fh": 32,
+  "frames": 11,
+  "rows": 5
+ },
+ "Wind_Bubbles": {
+  "file": "particle/Wind_Bubbles.None.png",
+  "kind": "None",
+  "fw": 16,
+  "fh": 16,
+  "frames": 4,
+  "rows": 1
+ },
+ "Beam_Beam": {
+  "kind": "beam",
+  "frames": 2,
+  "head": {
+   "file": "beam/Beam/Head.png",
+   "w": 64,
+   "h": 32
+  },
+  "body": {
+   "file": "beam/Beam/Body.png",
+   "w": 64,
+   "h": 1
+  },
+  "tail": {
+   "file": "beam/Beam/Tail.png",
+   "w": 84,
+   "h": 42
+  }
+ },
+ "Beam_Lightning": {
+  "kind": "beam",
+  "frames": 6,
+  "head": {
+   "file": "beam/Lightning/Head.png",
+   "w": 192,
+   "h": 32
+  },
+  "body": {
+   "file": "beam/Lightning/Body.png",
+   "w": 192,
+   "h": 128
+  },
+  "tail": {
+   "file": "beam/Lightning/Tail.png",
+   "w": 6,
+   "h": 1
+  }
+ }
+}

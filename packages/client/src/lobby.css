@@ -773,3 +773,48 @@ body.lobby-open #results {
   border-right: 8px solid transparent;
   border-top: 11px solid var(--me-arrow);
 }
+
+/* Settings → Credits (moved out of the lobby and the match HUD) */
+.credit-sum {
+  margin: 6px 0 10px;
+  padding-left: 18px;
+  color: var(--muted);
+}
+.credits-full summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+.credits-full > div {
+  max-height: 340px;
+  overflow: auto;
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.credits-full h3,
+.credits-full h4,
+.credits-full h5 {
+  margin: 12px 0 4px;
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.credits-full ul {
+  margin: 2px 0;
+  padding-left: 16px;
+}
+.credits-full table {
+  border-collapse: collapse;
+  margin: 6px 0;
+}
+.credits-full td {
+  padding: 3px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  vertical-align: top;
+}
+.credits-full a {
+  color: #9cc4ff;
+}

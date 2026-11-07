@@ -39,6 +39,7 @@ import { facingRow, PmdSprite } from './render/pmdSprite';
 import { MoveViews } from './render/moves';
 import { Structures } from './render/structures';
 import { AURA_ALLY, TeamAura } from './render/teamAura';
+import { FxDirector } from './render/fx';
 import { isStadium, stadiumLighting, StadiumView } from './render/stadium';
 import { toThreeX, toThreeZ, WORLD_TO_THREE } from './render/units';
 
@@ -58,8 +59,15 @@ sun.position.set(-10, 25, 12);
 scene.add(sun);
 
 const CAMERA_PITCH = THREE.MathUtils.degToRad(55);
+/** Dev hook state (window.__game.pause). */
+let devPause = false;
+let devFxSpeed = 1;
 const CAM_ZOOM = Math.max(0.5, Math.min(4, Number(new URLSearchParams(location.search).get('zoom') ?? 1) || 1));
 const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 400);
+/** Move animations (PMD effect sheets, docs/design/vfx-plan.md). */
+const moveFx = new FxDirector(camera);
+scene.add(moveFx.object);
+void moveFx.load();
 const hudRoot = document.querySelector<HTMLElement>('#hud')!;
 
 // ---------- Match ----------
@@ -207,6 +215,7 @@ function startMatch(online: World | null = null): void {
     $portrait.src = `portraits/${dexOf(myPokemon)}/Normal.png`;
   } else showCard(roster.find((r) => r.id === myPokemon)!);
   results.reset(world, SPECTATE ? -1 : ME);
+  moveFx.reset();
   myMatch.goals = myMatch.kos = 0;
   myMatch.recorded = false;
 }
@@ -410,6 +419,7 @@ const teamColor = (t: number) => (t === 0 ? 0x3d7bff : 0xff4d5e);
 function onEvent(e: SimEvent): void {
   const { world, effects, hud, sprites } = view;
   view.moves.onEvent(e);
+  moveFx.onEvent(e, world);
   stadium?.onEvent(e);
   const at = (p: Vec2, h = 1.2) => project(p.x, p.y, h);
   switch (e.type) {
@@ -590,6 +600,11 @@ if (import.meta.env.DEV) {
         for (let i = 0; i < n; i++) simStep(mine);
       },
       restart: startMatch,
+      /** Dev: freeze the sim (effects keep animating at `fxSpeed`) to inspect moves. */
+      pause(on = true, fxSpeed = 1): void {
+        devPause = on;
+        devFxSpeed = fxSpeed;
+      },
     },
   });
 }
@@ -618,7 +633,7 @@ if (params.get('meter') === '1') {
 }
 
 function frame(now: number): void {
-  const dt = Math.min(0.25, (now - last) / 1000);
+  const dt = Math.min(0.25, (now - last) / 1000) * (devPause ? devFxSpeed : 1);
   last = now;
   fps = fps * 0.95 + (1 / Math.max(dt, 1e-4)) * 0.05;
 
@@ -662,7 +677,7 @@ function frame(now: number): void {
 
   // Fixed-step simulation (paused while a menu is open, except online where the match goes on).
   const online = !!net?.session;
-  acc += online ? dt : setup.visible || onlineScreen.visible || lobby.visible ? 0 : dt;
+  acc += online ? dt : setup.visible || onlineScreen.visible || lobby.visible || devPause ? 0 : dt;
   let steps = 0;
   while (acc >= DT && steps < 5) {
     // Online pacing: usually 1 tick, now and then 0 when ahead of the others, more to catch up.
@@ -753,6 +768,7 @@ function render(dt: number, now: number, alpha: number): void {
   );
   view.structures.update(dt, world);
   view.moves.update(dt, world);
+  moveFx.update(dt, world);
   if (!SPECTATE) view.bar.update(world.players[ME]!, input.device);
   view.effects.update(dt);
 

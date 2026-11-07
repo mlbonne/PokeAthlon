@@ -1,4 +1,5 @@
 import './lobby.css';
+import { creditsHtml } from './credits';
 import { getItem, getKit, getPokemon, itemsFor, type SpriteManifest } from '@pokeathlon/data';
 import { analyzeRoster, simTier, tierSnapshot, type FighterStats } from '@pokeathlon/data/analyze';
 import { pickable } from './cpuDraft';
@@ -145,8 +146,7 @@ export class LobbyScreen {
         <div class="seg roles">${ROLES.map((r) => `<button class="${p.role === r.id ? 'on' : ''}" data-role="${r.id}"><span>${r.label}</span></button>`).join('')}</div>
         <div class="seg modes">${MODES.map((m) => `<button class="${p.mode === m.id ? 'on' : ''}" data-mode="${m.id}" title="${m.hint}"><span>${m.label}</span></button>`).join('')}</div>
         <button class="play" data-act="play"><span>${p.mode === 'online' ? 'Go online' : 'Play'}</span><small>${esc(mode.hint)}${p.mode === 'watch' || p.mode === 'online' ? '' : ` · ${p.role === 'flex' ? 'Flex role' : p.role === 'goalie' ? 'Goalie' : 'Forward'} · CPU ${p.diff}`}</small></button>
-      </div>
-      <p class="lobby-legal">Fan game, non-commercial · Sprites: PMD Sprite Collab (CC BY-NC 4.0) · Pokémon © Nintendo / Creatures / GAME FREAK</p>`;
+      </div>`;
     void this.hero.load(mon.dex);
   }
 
@@ -266,7 +266,14 @@ export class LobbyScreen {
         <li><b>Evade</b> Shift or Q (full meter = Burst) · B / LB</li>
         <li><b>Menu</b> Esc · Start</li><li><b>Scoreboard</b> hold Tab</li><li><b>Debug</b> F3 · Back</li></ul></section>
       <section><h2>Reset</h2><button class="danger" data-act="reset">Reset level and records</button></section>
-      <section class="legal"><h2>About</h2><p>PokéAthlon is a non-commercial fan game. Sprites and portraits: PMD Sprite Collab (CC BY-NC 4.0), see CREDITS.md. Pokémon © Nintendo / Creatures / GAME FREAK.</p></section>`;
+      <section class="legal"><h2>Credits</h2>
+        <p>PokéAthlon is a free, non-commercial fan game. Pokémon © Nintendo / Creatures / GAME FREAK; not affiliated with them.</p>
+        <ul class="credit-sum">
+          <li><b>Pokémon sprites and portraits:</b> PMD Sprite Collab (CC BY-NC 4.0)</li>
+          <li><b>Move effects:</b> Pokémon Mystery Dungeon effect sheets via PMDCollab RawAsset / PMD: Origins</li>
+          <li><b>Stadium:</b> models from Poly Pizza (CC0 / CC BY) and PokéBonk art by Charcher</li>
+        </ul>
+        <details class="credits-full"><summary>Full credits (every artist)</summary><div>${creditsHtml()}</div></details></section>`;
   }
 
   // ---------------------------------------------------------------- input
