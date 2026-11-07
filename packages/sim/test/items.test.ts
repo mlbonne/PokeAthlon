@@ -167,6 +167,7 @@ describe('goalie items', () => {
     expect(w.projectiles.filter((pr) => pr.moveId === 'item:zoom-lens')).toHaveLength(0); // on cooldown
     run(w, 60, [idle]);
     tick(w, 0, press(Button.Move1, { x: 0, y: 1 }));
-    expect(w.projectiles.find((pr) => pr.moveId === 'discharge')?.range).toBeCloseTo(800 * 1.35);
+    run(w, 12, [idle]); // Discharge's 0.15 s wind-up
+    expect(w.projectiles.find((pr) => pr.moveId === 'discharge')?.range).toBeCloseTo(900 * 1.35);
   });
 });

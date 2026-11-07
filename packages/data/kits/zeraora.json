@@ -1,5 +1,5 @@
 {
-  "$comment": "Speedy Skirmisher (OS Kai model). Numbers start from Kai's Barrage / Blazing Pace / Giga Blast. Was Pikachu's kit until 2026-11 (Discharge = Thunder Shock, Wild Charge = Volt Tackle).",
+  "$comment": "Speedy Skirmisher (OS Kai model). Numbers start from Kai's Barrage / Blazing Pace / Giga Blast. Was Pikachu's kit until 2026-11 (Discharge = Thunder Shock, Wild Charge = Volt Tackle). Pass 5 (2026-11-07, data-mined GA_Blast = Kai's Barrage: 5 fireballs 0.125 s apart, 1725/s, radius 25, LIGHT, 700+32.5 % core, 60+25 % KB and dmg): Discharge now 5 bolts 0.125 s apart after a 0.15 s wind-up, range 900, hovering 0.25 s at the end (linger), player knockback +30 % (146+61 %), ball 750+35 %.",
   "pokemon": "zeraora",
   "moves": [
     {
@@ -8,25 +8,38 @@
       "slot": "primary",
       "cooldown": 11,
       "anim": "Attack",
-      "desc": "Fire 4 quick LIGHT bolts that nudge the ball and chip enemies.",
+      "desc": "After a short wind-up, fire 5 LIGHT bolts one after another. They hover for a moment at the end of their range, batting away the ball and enemies that touch them.",
       "bot": "ballShot",
       "actions": [
         {
           "type": "projectile",
-          "fx": { "color": "#ffe14d" },
-          "count": 4,
-          "interval": 0.09,
-          "speed": 1800,
-          "range": 800,
+          "fx": {
+            "color": "#ffe14d"
+          },
+          "count": 5,
+          "interval": 0.125,
+          "speed": 1725,
+          "range": 900,
           "radius": 32,
           "hit": {
-            "ball": { "base": 700, "powerRatio": 0.32 },
-            "player": { "base": 112, "powerRatio": 0.468 },
-            "damage": { "base": 75, "powerRatio": 0.3125 },
+            "ball": {
+              "base": 750,
+              "powerRatio": 0.35
+            },
+            "player": {
+              "base": 146,
+              "powerRatio": 0.61
+            },
+            "damage": {
+              "base": 75,
+              "powerRatio": 0.3125
+            },
             "light": true
-          }
+          },
+          "linger": 0.25
         }
-      ]
+      ],
+      "castTime": 0.15
     },
     {
       "id": "agility",
@@ -36,7 +49,17 @@
       "anim": "Charge",
       "desc": "+30% speed for 5 s. Castable while firing.",
       "bot": "chase",
-      "actions": [{ "type": "buff", "fx": { "color": "#ffe14d" }, "target": "self", "duration": 5, "speedPct": 30 }]
+      "actions": [
+        {
+          "type": "buff",
+          "fx": {
+            "color": "#ffe14d"
+          },
+          "target": "self",
+          "duration": 5,
+          "speedPct": 30
+        }
+      ]
     },
     {
       "id": "wild-charge",
@@ -50,13 +73,24 @@
       "actions": [
         {
           "type": "dash",
-          "fx": { "color": "#ffe14d" },
+          "fx": {
+            "color": "#ffe14d"
+          },
           "distance": 650,
           "time": 0.3,
           "hit": {
-            "ball": { "base": 1400, "powerRatio": 2.1 },
-            "player": { "base": 450, "powerRatio": 2.25 },
-            "damage": { "base": 240, "powerRatio": 1.2 },
+            "ball": {
+              "base": 1400,
+              "powerRatio": 2.1
+            },
+            "player": {
+              "base": 450,
+              "powerRatio": 2.25
+            },
+            "damage": {
+              "base": 240,
+              "powerRatio": 1.2
+            },
             "direction": "travel"
           }
         }

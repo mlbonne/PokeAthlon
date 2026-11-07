@@ -279,7 +279,10 @@ export class LobbyScreen {
         </div>
         <button data-act="display-reset">Reset match display</button>
         <p class="hint">Trainer names: yours, the players' names in online rooms, and "CPU" for bots.</p></section>
-      <section><h2>Controls</h2><ul class="controls">
+      <section><h2>Controls</h2>
+        <div class="group"><span>Moves</span>${tog('aim', 'hold', 'Hold to aim, cast on release', d.holdToAim)}${tog('aim', 'press', 'Cast on press', !d.holdToAim)}</div>
+        <p class="hint">Hold to aim shows where the move will go while you hold its key (in your Pokémon's colour); letting go casts it. Charge moves (Hydro Cannon) still charge while held.</p>
+        <ul class="controls">
         <li><b>Move</b> WASD · left stick</li><li><b>Aim</b> mouse · right stick</li><li><b>Strike</b> left click · A / RT</li>
         <li><b>Primary</b> right-click · X</li><li><b>Secondary</b> Space · Y</li><li><b>Special</b> R, F or side mouse button · LT</li>
         <li><b>Evade</b> Shift or Q (full meter = Burst) · B / LB</li>
@@ -331,6 +334,7 @@ export class LobbyScreen {
       if (k === 'bans') p.bans = v === 'on';
       if (k === 'auras') p.display.auras = v === 'on';
       if (k === 'names') p.display.names = v as Profile['display']['names'];
+      if (k === 'aim') p.display.holdToAim = v === 'hold';
       if (k === 'mute') {
         p.audio.mute = v === 'on';
         audio.apply(p.audio);
