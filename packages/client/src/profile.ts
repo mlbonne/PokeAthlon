@@ -53,6 +53,8 @@ export interface Profile {
   display: DisplayPrefs;
   /** Volumes (Settings → Sound). */
   audio: AudioPrefs;
+  /** Sound defaults revision (2 = Effects default 15 %). */
+  audioRev?: number;
 }
 
 const STORE = 'pokeathlon.profile';
@@ -76,6 +78,9 @@ export function loadProfile(): Profile {
   try {
     const s = JSON.parse(localStorage.getItem(STORE) ?? 'null') as Partial<Profile> | null;
     if (s) p = { ...p, ...s, loadout: { ...s.loadout }, records: { ...s.records }, display: { ...DEFAULT_DISPLAY, ...s.display }, audio: { ...DEFAULT_AUDIO, ...s.audio } };
+    // 2026-11-07: the Effects default dropped from 80 % to 15 %. Profiles still on the old default move to the new one.
+    if (s?.audio && s.audio.sfx === 0.8 && !s.audioRev) p.audio.sfx = DEFAULT_AUDIO.sfx;
+    p.audioRev = 2;
   } catch {
     /* storage blocked or corrupt: defaults */
   }
