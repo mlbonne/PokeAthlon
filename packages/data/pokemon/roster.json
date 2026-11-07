@@ -5,10 +5,10 @@
     { "id": "greninja",  "dex": "0658", "name": "Greninja",  "archetype": "flashy-swordsman",        "types": ["water", "dark"],      "stats": { "power": 115, "speed": 460, "stagger": 1100, "staggerGrowth": 250, "size": "normal" } },
     { "id": "hoopa",     "dex": "0720", "name": "Hoopa",     "archetype": "manipulating-mastermind", "types": ["psychic", "ghost"],   "stats": { "power": 115, "speed": 465, "stagger": 1250, "staggerGrowth": 350, "size": "normal" } },
     { "id": "bronzong",  "dex": "0437", "name": "Bronzong",  "archetype": "stalwart-protector",      "types": ["steel", "psychic"],   "stats": { "power": 100, "speed": 435, "stagger": 1350, "staggerGrowth": 400, "size": "large" } },
-    { "id": "blastoise", "dex": "0009", "name": "Blastoise", "archetype": "angelic-support",         "types": ["water"],              "stats": { "power": 90,  "speed": 440, "stagger": 1400, "staggerGrowth": 375, "size": "large" } },
+    { "id": "blastoise", "dex": "0009", "name": "Blastoise", "archetype": "angelic-support",         "types": ["water"],              "stats": { "power": 90,  "speed": 440, "stagger": 1350, "staggerGrowth": 375, "size": "large" } },
     { "id": "arcanine-hisui", "dex": "0059/0001", "name": "Hisuian Arcanine", "archetype": "shield-user", "types": ["fire", "rock"], "stats": { "power": 105, "speed": 440, "stagger": 1400, "staggerGrowth": 375, "size": "large" } },
     { "id": "lucario",   "dex": "0448", "name": "Lucario",   "archetype": "flexible-brawler",        "types": ["fighting", "steel"],  "stats": { "power": 105, "speed": 455, "stagger": 1300, "staggerGrowth": 375, "size": "normal" } },
-    { "id": "pikachu",   "dex": "0025", "name": "Pikachu",   "archetype": "ramping-speedster",       "types": ["electric"],           "stats": { "power": 85,  "speed": 470, "stagger": 1150, "staggerGrowth": 200, "size": "normal" } },
+    { "id": "pikachu",   "dex": "0025", "name": "Pikachu",   "archetype": "ramping-speedster",       "types": ["electric"],           "stats": { "power": 80,  "speed": 470, "stagger": 1150, "staggerGrowth": 200, "size": "normal" } },
     { "id": "machamp",   "dex": "0068", "name": "Machamp",   "archetype": "hulking-beast",           "types": ["fighting"],           "stats": { "power": 110, "speed": 445, "stagger": 1400, "staggerGrowth": 375, "size": "large" } }
   ]
 }
