@@ -1,6 +1,6 @@
 # Sound effects: plan (stage 2 of 3)
 
-Status: plan, 2026-11-07. Nothing has been downloaded or built yet.
+Status: built, 2026-11-07 (engine, Settings → Sound, every move, shared moments, cries, menus). Changes from the plan: Rock Slide's stone sound plays when its pulse lands; long sounds can be cut with `dur` (goal applause 3 s / 2.2 s, Burst wind 1.2 s).
 
 **Stages:** stage 1 (move animations) is done, see [vfx-plan.md](vfx-plan.md). Stage 3 is music.
 

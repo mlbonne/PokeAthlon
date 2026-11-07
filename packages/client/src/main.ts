@@ -40,6 +40,7 @@ import { MoveViews } from './render/moves';
 import { Structures } from './render/structures';
 import { AURA_ALLY, TeamAura } from './render/teamAura';
 import { FxDirector } from './render/fx';
+import { audio, MatchSounds } from './audio';
 import { isStadium, stadiumLighting, StadiumView } from './render/stadium';
 import { toThreeX, toThreeZ, WORLD_TO_THREE } from './render/units';
 
@@ -68,6 +69,40 @@ const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 400);
 const moveFx = new FxDirector(camera);
 scene.add(moveFx.object);
 void moveFx.load();
+/** Sound effects (docs/design/sfx-plan.md): pan from the screen position, quieter off-screen. */
+const matchSounds = new MatchSounds(
+  (pos) => {
+    const s = project(pos.x, pos.y, 0.5);
+    const nx = (s.x / window.innerWidth) * 2 - 1;
+    const ny = (s.y / window.innerHeight) * 2 - 1;
+    return { pan: Math.max(-1, Math.min(1, nx * 0.8)), vol: Math.max(0.35, Math.min(1, 1.25 - Math.hypot(nx, ny) * 0.6)) };
+  },
+  () => (SPECTATE ? -1 : ME),
+);
+// Browsers only allow sound after a user gesture: start the audio on the first click or key.
+for (const ev of ['pointerdown', 'keydown'] as const) window.addEventListener(ev, () => audio.unlock(), { capture: true });
+// Menu sounds: every button in a menu screen (lobby, pick screen, online, results, boost draft).
+document.addEventListener(
+  'click',
+  (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
+    if (!b || !b.closest('#lobby, #setup, #online, #results, #draft')) return;
+    const d = b.dataset;
+    const kind = b.disabled
+      ? 'error'
+      : d.act === 'back' || d.go === 'back' || b.classList.contains('back')
+        ? 'cancel'
+        : b.classList.contains('play') || d.go || d.main || b.classList.contains('cta')
+          ? 'confirm'
+          : d.set || b.classList.contains('tog')
+            ? 'toggle'
+            : d.role || d.mode || d.page || d.slot || d.pick || d.dex || d.item
+              ? 'select'
+              : 'click';
+    audio.ui(kind);
+  },
+  { capture: true },
+);
 const hudRoot = document.querySelector<HTMLElement>('#hud')!;
 
 // ---------- Match ----------
@@ -217,6 +252,7 @@ function startMatch(online: World | null = null): void {
   } else showCard(roster.find((r) => r.id === myPokemon)!);
   results.reset(world, SPECTATE ? -1 : ME);
   moveFx.reset();
+  matchSounds.reset();
   myMatch.goals = myMatch.kos = 0;
   myMatch.recorded = false;
 }
@@ -307,6 +343,7 @@ const lobby = new LobbyScreen(document.body, {
   },
 });
 applyDisplay(lobby.p.display);
+audio.apply(lobby.p.audio);
 /** Trainer names per player: room members online (by seat), else you and "CPU" for bots. */
 function trainerNames(world: World): string[] {
   const names = world.players.map(() => 'CPU');
@@ -421,6 +458,7 @@ function onEvent(e: SimEvent): void {
   const { world, effects, hud, sprites } = view;
   view.moves.onEvent(e);
   moveFx.onEvent(e, world);
+  matchSounds.onEvent(e, world);
   stadium?.onEvent(e);
   const at = (p: Vec2, h = 1.2) => project(p.x, p.y, h);
   switch (e.type) {
@@ -796,6 +834,7 @@ function render(dt: number, now: number, alpha: number): void {
   view.structures.update(dt, world);
   view.moves.update(dt, world);
   moveFx.update(dt, world);
+  matchSounds.update(world);
   if (!SPECTATE) view.bar.update(world.players[ME]!, input.device);
   view.effects.update(dt);
 

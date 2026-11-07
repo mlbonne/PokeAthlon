@@ -1,10 +1,15 @@
 import './lobby.css';
 import { creditsHtml } from './credits';
+import { audio } from './audio';
+import { sfxData } from '@pokeathlon/data/sfx';
 import { getItem, getKit, getPokemon, itemsFor, type SpriteManifest } from '@pokeathlon/data';
 import { analyzeRoster, simTier, tierSnapshot, type FighterStats } from '@pokeathlon/data/analyze';
 import { pickable } from './cpuDraft';
 import { navigateButtons } from './nav';
 import { applyDisplay, DEFAULT_DISPLAY, itemFor, levelOf, loadProfile, saveProfile, totals, type LobbyMode, type LobbyRole, type Profile } from './profile';
+
+/** Picking a new main: a short swap sound plus its cry. */
+const sfxPick = sfxData.shared.pickMain;
 
 /**
  * Main menu (design.md): a Pokémon UNITE-style lobby with Omega Strikers' menu items. Your main
@@ -246,6 +251,15 @@ export class LobbyScreen {
       <section><h2>Matches vs CPU</h2>
         <div class="group"><span>CPU skill</span>${(['easy', 'normal', 'hard'] as const).map((d) => tog('diff', d, d[0]!.toUpperCase() + d.slice(1), p.diff === d)).join('')}</div>
         <div class="group"><span>Bans (custom match)</span>${tog('bans', 'off', 'Off', !p.bans)}${tog('bans', 'on', 'On', p.bans)}</div></section>
+      <section><h2>Sound</h2>
+        ${(['master', 'sfx', 'voice', 'ui'] as const)
+          .map((k) => {
+            const label = { master: 'Master', sfx: 'Effects', voice: 'Pokémon cries', ui: 'Menus' }[k];
+            const v = Math.round(p.audio[k] * 100);
+            return `<div class="group"><span>${label}</span><input type="range" name="vol-${k}" min="0" max="100" step="5" value="${v}"><output>${v} %</output></div>`;
+          })
+          .join('')}
+        <div class="group"><span>Mute</span>${tog('mute', 'off', 'Sound on', !p.audio.mute)}${tog('mute', 'on', 'Muted', p.audio.mute)}</div></section>
       <section><h2>Match display</h2>
         <div class="group"><span>Team auras</span>${tog('auras', 'on', 'On', d.auras)}${tog('auras', 'off', 'Off', !d.auras)}</div>
         <div class="group"><span>Aura opacity</span><input type="range" name="auraOpacity" min="10" max="100" step="5" value="${Math.round(d.auraOpacity * 100)}" ${d.auras ? '' : 'disabled'}><output>${Math.round(d.auraOpacity * 100)} %</output></div>
@@ -271,6 +285,7 @@ export class LobbyScreen {
         <ul class="credit-sum">
           <li><b>Pokémon sprites and portraits:</b> PMD Sprite Collab (CC BY-NC 4.0)</li>
           <li><b>Move effects:</b> Pokémon Mystery Dungeon effect sheets via PMDCollab RawAsset / PMD: Origins</li>
+          <li><b>Sounds:</b> Pokémon Mystery Dungeon sounds via PMD: Origins; Pokémon cries via PokeAPI</li>
           <li><b>Stadium:</b> models from Poly Pizza (CC0 / CC BY) and PokéBonk art by Charcher</li>
         </ul>
         <details class="credits-full"><summary>Full credits (every artist)</summary><div>${creditsHtml()}</div></details></section>`;
@@ -294,6 +309,10 @@ export class LobbyScreen {
     if (d.mode) p.mode = d.mode as LobbyMode;
     if (d.dex) this.dexSel = d.dex;
     if (d.main) {
+      if (p.main !== d.main) {
+        audio.play(sfxPick);
+        audio.cry(d.main, { force: true });
+      }
       p.main = d.main;
       this.dexSel = d.main;
     }
@@ -307,6 +326,10 @@ export class LobbyScreen {
       if (k === 'bans') p.bans = v === 'on';
       if (k === 'auras') p.display.auras = v === 'on';
       if (k === 'names') p.display.names = v as Profile['display']['names'];
+      if (k === 'mute') {
+        p.audio.mute = v === 'on';
+        audio.apply(p.audio);
+      }
     }
     if (d.act === 'display-reset') {
       p.display = { ...DEFAULT_DISPLAY };
@@ -343,7 +366,17 @@ export class LobbyScreen {
       d[t.name] = t.value;
       applyDisplay(d);
     }
-    if (t.name === 'auraOpacity' || t.name.endsWith('Color')) {
+    if (t.name.startsWith('vol-')) {
+      const k = t.name.slice(4) as 'master' | 'sfx' | 'voice' | 'ui';
+      this.p.audio[k] = Math.min(1, Math.max(0, Number(t.value) / 100));
+      const out = t.nextElementSibling;
+      if (out) out.textContent = `${Math.round(this.p.audio[k] * 100)} %`;
+      audio.apply(this.p.audio);
+      if (e.type === 'change' && k !== 'ui') audio.play(k === 'voice' ? undefined : [{ s: 'pmd/Battle/DUN_Hit_Neutral', vol: 1, pitch: 1 }]);
+      if (e.type === 'change' && k === 'voice') audio.cry(this.p.main, { force: true });
+      if (e.type === 'change' && k === 'ui') audio.ui('click');
+    }
+    if (t.name === 'auraOpacity' || t.name.endsWith('Color') || t.name.startsWith('vol-')) {
       saveProfile(this.p);
       return;
     }

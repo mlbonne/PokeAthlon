@@ -1,4 +1,5 @@
 import { roster } from '@pokeathlon/data';
+import { DEFAULT_AUDIO, type AudioPrefs } from './audio';
 
 /** Lobby roles: Flex picks one at random for each match (OS role select). */
 export type LobbyRole = 'forward' | 'flex' | 'goalie';
@@ -50,6 +51,8 @@ export interface Profile {
   loadout: Record<string, { forward: string; goalie: string }>;
   records: Record<string, MonRecord>;
   display: DisplayPrefs;
+  /** Volumes (Settings → Sound). */
+  audio: AudioPrefs;
 }
 
 const STORE = 'pokeathlon.profile';
@@ -65,13 +68,14 @@ const DEFAULTS: Profile = {
   loadout: {},
   records: {},
   display: { ...DEFAULT_DISPLAY },
+  audio: { ...DEFAULT_AUDIO },
 };
 
 export function loadProfile(): Profile {
   let p: Profile = structuredClone(DEFAULTS);
   try {
     const s = JSON.parse(localStorage.getItem(STORE) ?? 'null') as Partial<Profile> | null;
-    if (s) p = { ...p, ...s, loadout: { ...s.loadout }, records: { ...s.records }, display: { ...DEFAULT_DISPLAY, ...s.display } };
+    if (s) p = { ...p, ...s, loadout: { ...s.loadout }, records: { ...s.records }, display: { ...DEFAULT_DISPLAY, ...s.display }, audio: { ...DEFAULT_AUDIO, ...s.audio } };
   } catch {
     /* storage blocked or corrupt: defaults */
   }
