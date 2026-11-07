@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PokéAthlon stage converter</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font: 14px/1.5 system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        background: #0b1230;
+        color: #e8ecff;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 20px;
+        color: #ffd23f;
+      }
+      p {
+        margin: 0 0 16px;
+        color: #aab4d8;
+      }
+      button {
+        border: 0;
+        border-radius: 6px;
+        padding: 10px 18px;
+        font: inherit;
+        font-weight: 700;
+        color: #1a1030;
+        background: #ffd23f;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      pre {
+        margin-top: 16px;
+        padding: 14px;
+        min-height: 240px;
+        max-height: 70vh;
+        overflow: auto;
+        border-radius: 6px;
+        background: #060a1c;
+        color: #b7c4ea;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Pokémon Stadium 2 (Brawl) → GLB</h1>
+    <p>Reads <code>stage-assets/_dae14/</code> and writes <code>assets/stadium/brawl/</code>. Dev-only.</p>
+    <button id="run">Convert everything</button>
+    <pre id="log"></pre>
+    <script type="module" src="/convert.ts"></script>
+  </body>
+</html>

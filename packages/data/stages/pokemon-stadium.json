@@ -4,7 +4,8 @@
   "name": "Pokémon Stadium",
   "biome": "stadium",
   "frame": "standard",
-  "theme": "stadium",
+  "theme": "stadium-brawl",
+  "floor": "normal",
   "spawns": {
     "forwards": [
       {

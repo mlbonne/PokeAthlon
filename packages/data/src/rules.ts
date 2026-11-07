@@ -147,6 +147,10 @@ export type FrameDef = z.infer<typeof FrameDef>;
 
 const Rect = z.object({ x: z.number(), y: z.number(), hx: pos, hy: pos });
 
+/** Brawl floor variants. Visual only; the sim never reads them. */
+export const FLOORS = ['normal', 'electric', 'ice', 'flying', 'ground'] as const;
+export type Floor = (typeof FLOORS)[number];
+
 /** Per-map terrain: spawns, orbs, barriers. Positions for team 0 (left); team 1 is the point mirror. */
 export const TerrainDef = z.object({
   id: z.string(),
@@ -155,6 +159,10 @@ export const TerrainDef = z.object({
   frame: z.string(),
   /** Client art set (M6). `plain` = the old flat arena. Never read by the sim. */
   theme: z.string().default('plain'),
+  /** Pokémon Stadium 2 (Brawl) floor variant. */
+  floor: z.enum(FLOORS).default('normal'),
+  /** If set, the client cycles these floors after each set. */
+  floorCycle: z.array(z.enum(FLOORS)).default([]),
   spawns: z.object({
     forwards: z.array(Point).length(2),
     goalie: Point,

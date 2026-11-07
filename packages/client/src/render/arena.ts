@@ -71,14 +71,18 @@ function lineLoop(pts: Vec2[], color: number, y: number, opacity = 1): THREE.Lin
 export function buildArena(stage: Stage): THREE.Group {
   const g = new THREE.Group();
   const stadium = stage.theme === 'stadium';
+  const brawl = stage.theme === 'stadium-brawl';
 
   // Floor where players can stand (outline = KO edge). Stadium: Pokébonk's pixel grass tile.
+  // Brawl: the ripped arena floor GLB provides the ground, so skip ours and keep only the markings.
   const grass = stadium ? tex('stadium/pokebonk/grass.png', 0.55) : null;
-  const floor = new THREE.Mesh(
-    new THREE.ShapeGeometry(shapeOf(stage.playerOutline)),
-    new THREE.MeshStandardMaterial(grass ? { map: grass, color: 0xd8ecd0, roughness: 1 } : { color: 0x4f9d52, roughness: 1 }),
-  );
-  g.add(flat(floor, 0));
+  if (!brawl) {
+    const floor = new THREE.Mesh(
+      new THREE.ShapeGeometry(shapeOf(stage.playerOutline)),
+      new THREE.MeshStandardMaterial(grass ? { map: grass, color: 0xd8ecd0, roughness: 1 } : { color: 0x4f9d52, roughness: 1 }),
+    );
+    g.add(flat(floor, 0));
+  }
 
   // Goal pockets (net floor) — the ball can go deeper than players.
   const F = getFrame('standard').field;
@@ -105,19 +109,21 @@ export function buildArena(stage: Stage): THREE.Group {
     : new THREE.MeshStandardMaterial({ color: 0x58a85a, roughness: 1 });
   const hl = toThreeX(F.cornerStartX);
   const hw = toThreeX(F.sideY);
-  for (let i = 0; i < 8; i += 2) {
-    const sw = (2 * hl) / 8;
-    const pg = new THREE.PlaneGeometry(sw, 2 * hw);
-    if (grass) {
-      // World-aligned UVs so the stripe's grass lines up with the floor's.
-      const uv = pg.attributes.uv!;
-      const pos = pg.attributes.position!;
-      const x0 = -hl + sw * (i + 0.5);
-      for (let k = 0; k < uv.count; k++) uv.setXY(k, pos.getX(k) + x0, pos.getY(k));
+  if (!brawl) {
+    for (let i = 0; i < 8; i += 2) {
+      const sw = (2 * hl) / 8;
+      const pg = new THREE.PlaneGeometry(sw, 2 * hw);
+      if (grass) {
+        // World-aligned UVs so the stripe's grass lines up with the floor's.
+        const uv = pg.attributes.uv!;
+        const pos = pg.attributes.position!;
+        const x0 = -hl + sw * (i + 0.5);
+        for (let k = 0; k < uv.count; k++) uv.setXY(k, pos.getX(k) + x0, pos.getY(k));
+      }
+      const m = new THREE.Mesh(pg, stripeMat);
+      flat(m, 0.002).position.set(-hl + sw * (i + 0.5), 0.002, 0);
+      g.add(m);
     }
-    const m = new THREE.Mesh(pg, stripeMat);
-    flat(m, 0.002).position.set(-hl + sw * (i + 0.5), 0.002, 0);
-    g.add(m);
   }
 
   // Markings.
@@ -185,7 +191,7 @@ export function buildArena(stage: Stage): THREE.Group {
   }
 
   // Slab + void so the KO edge reads as a drop.
-  if (!stadium) {
+  if (!stadium && !brawl) {
     const slab = new THREE.Mesh(
       new THREE.ExtrudeGeometry(shapeOf(stage.playerOutline), { depth: 1.5, bevelEnabled: false }),
       new THREE.MeshStandardMaterial({ color: 0x6b4f3a, roughness: 1 }),
@@ -197,6 +203,9 @@ export function buildArena(stage: Stage): THREE.Group {
     g.add(flat(voidMesh, -2));
     return g;
   }
+
+  // Brawl: the ripped floor GLB already has the platform body.
+  if (!stadium) return g;
 
   // Stadium platform (Smash's floating stage): a grey brick rim a step below the KO edge, then a deep basalt body.
   // Covers the player outline and the goal pockets (ball outline).

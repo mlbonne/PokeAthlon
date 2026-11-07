@@ -30,8 +30,12 @@ export interface TeamSpawns {
 export interface Stage {
   id: string;
   name: string;
-  /** Client art set (`plain`, `stadium`); visual only. */
+  /** Client art set (`plain`, `stadium`, `stadium-brawl`); visual only. */
   theme: string;
+  /** Pokémon Stadium 2 (Brawl) floor variant; visual only. */
+  floor: string;
+  /** Floors the client cycles after each set; empty = stay on `floor`. */
+  floorCycle: string[];
   /** Outline the ball bounces inside (includes both goal pockets). */
   ballOutline: Vec2[];
   ballWalls: Segment[];
@@ -125,6 +129,8 @@ export function buildStage(terrainId: string): Stage {
     id: t.id,
     name: t.name,
     theme: t.theme,
+    floor: t.floor,
+    floorCycle: [...t.floorCycle],
     ballOutline,
     ballWalls: polygonSegments(ballOutline),
     playerOutline,
