@@ -1,5 +1,5 @@
 {
-  "$comment": "Stalwart Protector (OS Dubu model). Numbers start from Dubu's Rollout / Somerassault / Tofu Fortress. Was Snorlax's kit until 2026-11 (Gyro Ball = Rollout, Heavy Slam = Body Slam, Light Screen = Block).",
+  "$comment": "Stalwart Protector (OS Dubu model). Numbers start from Dubu's Rollout / Somerassault / Tofu Fortress. Was Snorlax's kit until 2026-11 (Gyro Ball = Rollout, Heavy Slam = Body Slam, Light Screen = Block). Pass 3 (2026-11-07): Gyro Ball stun 0.3 → 0.2 s, Heavy Slam 20 → 23 s.",
   "pokemon": "bronzong",
   "moves": [
     {
@@ -23,7 +23,7 @@
             "ball": { "base": 1320, "powerRatio": 1.7 },
             "player": { "base": 318, "powerRatio": 1.462 },
             "damage": { "base": 170, "powerRatio": 0.78 },
-            "stun": 0.3
+            "stun": 0.2
           }
         }
       ]
@@ -32,7 +32,7 @@
       "id": "heavy-slam",
       "name": "Heavy Slam",
       "slot": "secondary",
-      "cooldown": 20,
+      "cooldown": 23,
       "anim": "Hop",
       "desc": "Leap forward and slam down with all your weight, stunning nearby enemies and the ball.",
       "bot": "engage",

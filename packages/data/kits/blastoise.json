@@ -1,12 +1,12 @@
 {
-  "$comment": "Angelic Support (OS Atlas model, wiki 2026-11). Surf = Astral Projection (10 s; decelerating arc barrier, 600 range at 2286/s, hits each enemy once: 1330+175 % core, 170+85 % player KB, 120+60 % dmg). Whirlpool = Cosmic Expanse (20 s; data-mined HV_Halo 2026-11-07: a ring around Atlas that grows from 150 to 300 radius in ~0.1 s hitting everything inside, 1340+179 % core, 180+89 % KB, 180+89 % dmg; with no enemy hit it vanishes 0.35 s later; if it hits one it stays where it was cast and shrinks to 60 over 1.9 s, and the Core or enemies entering it are bounced out at 75 % core / 50 % player KB and dmg, enemies inside re-hit every 0.25 s). Aqua Ring = Celestial Intervention (35 s; guardian for 2 s, heals 5 % of max Stagger every 0.25 s, size 450 → radius 225; any ally who would be KO'd is pulled to it with 75 % Stagger, once per ally). Was the Asher kit until 2026-11-06 (now Hisuian Arcanine). Balance pass 2026-11-06 (bots made it 68 % / 85 %): Surf 12 s, radius 65, ×0.8 ball and ×0.85 player KB; Whirlpool one follow-up hit (replaced by the real ring on 2026-11-07); Aqua Ring 45 s, 4 % per pulse; Stagger growth 425. Pass 2 (2026-11-07): Aqua Ring 55 s, rescue at 50 % Stagger, Stagger growth 375. Player knockback = OS × 1.875; power % → powerRatio.",
+  "$comment": "Angelic Support (OS Atlas model, wiki 2026-11). Surf = Astral Projection (10 s; decelerating arc barrier, 600 range at 2286/s, hits each enemy once: 1330+175 % core, 170+85 % player KB, 120+60 % dmg). Whirlpool = Cosmic Expanse (20 s; data-mined HV_Halo 2026-11-07: a ring around Atlas that grows from 150 to 300 radius in ~0.1 s hitting everything inside, 1340+179 % core, 180+89 % KB, 180+89 % dmg; with no enemy hit it vanishes 0.35 s later; if it hits one it stays where it was cast and shrinks to 60 over 1.9 s, and the Core or enemies entering it are bounced out at 75 % core / 50 % player KB and dmg, enemies inside re-hit every 0.25 s). Aqua Ring = Celestial Intervention (35 s; guardian for 2 s, heals 5 % of max Stagger every 0.25 s, size 450 → radius 225; any ally who would be KO'd is pulled to it with 75 % Stagger, once per ally). Was the Asher kit until 2026-11-06 (now Hisuian Arcanine). Balance pass 2026-11-06 (bots made it 68 % / 85 %): Surf 12 s, radius 65, ×0.8 ball and ×0.85 player KB; Whirlpool one follow-up hit (replaced by the real ring on 2026-11-07); Aqua Ring 45 s, 4 % per pulse; Stagger growth 425. Pass 2 (2026-11-07): Aqua Ring 55 s, rescue at 50 % Stagger, Stagger growth 375. Pass 3 (2026-11-07): Stagger 1350, Surf 14 s and ×0.85 ball KB. Player knockback = OS × 1.875; power % → powerRatio.",
   "pokemon": "blastoise",
   "moves": [
     {
       "id": "surf",
       "name": "Surf",
       "slot": "primary",
-      "cooldown": 12,
+      "cooldown": 14,
       "anim": "Shoot",
       "desc": "Send out a slowing wave that passes through enemies, hitting each one (and the ball) once.",
       "bot": "ballShot",
@@ -23,8 +23,8 @@
           "pierce": true,
           "hit": {
             "ball": {
-              "base": 1064,
-              "powerRatio": 1.4
+              "base": 904,
+              "powerRatio": 1.19
             },
             "player": {
               "base": 271,
