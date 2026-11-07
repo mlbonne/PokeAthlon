@@ -6,7 +6,7 @@ const AIM_DEADZONE = 0.35;
 export type AimSource = 'stick' | 'mouse' | 'none';
 
 /** Standard-mapping gamepad buttons used outside the match input. */
-const PAD = { A: 0, BACK: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 } as const;
+const PAD = { A: 0, B: 1, BACK: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 } as const;
 
 /** Keyboard + mouse + first gamepad → quantized PlayerInput. */
 export class InputSource {
@@ -30,6 +30,12 @@ export class InputSource {
   constructor(target: Window, canvas: HTMLCanvasElement) {
     target.addEventListener('keydown', (e) => {
       if (e.repeat) return;
+      // Typing in a text field (trainer name, room code): only Esc reaches the game.
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) {
+        if (e.code === 'Escape') this.pendingActions.push('menu');
+        return;
+      }
       this.keys.add(e.code);
       const m = /^Digit([1-9])$/.exec(e.code);
       if (m) this.pendingDigits.push(Number(m[1]));
@@ -94,6 +100,7 @@ export class InputSource {
     if (edge(PAD.LEFT)) this.pendingActions.push('nav-left');
     if (edge(PAD.RIGHT)) this.pendingActions.push('nav-right');
     if (edge(PAD.A)) this.pendingActions.push('nav-press');
+    if (edge(PAD.B)) this.pendingActions.push('nav-back');
     if (now.some(Boolean) || pad.axes.some((a) => Math.abs(a) > 0.5)) this.device = 'pad';
     this.padPrev = now;
   }

@@ -138,6 +138,8 @@ export class SetupScreen {
     root: HTMLElement,
     private readonly onStart: (c: MatchConfig) => void,
     private readonly onOnline: () => void = () => {},
+    private readonly onBack: () => void = () => {},
+    private readonly onPrefs: (diff: Saved['diff'], bans: boolean) => void = () => {},
   ) {
     this.el = document.createElement('div');
     this.el.id = 'setup';
@@ -167,6 +169,28 @@ export class SetupScreen {
 
   hide(): void {
     this.el.hidden = true;
+  }
+
+  /** The lobby's choices: your Pokémon, role, item and match settings (the rest of the picks stay). */
+  preset(o: { main: string; role: Saved['role']; item: string; diff: Saved['diff']; bans: boolean }): void {
+    const s = this.s;
+    const j = s.blue.indexOf(o.main);
+    if (j > 0) s.blue[j] = AUTO;
+    if (s.bans && s.ban === o.main) s.ban = '';
+    s.blue[0] = o.main;
+    if (s.role !== o.role) s.items = [AUTO, AUTO, AUTO];
+    s.role = o.role;
+    s.items[0] = o.item;
+    s.diff = o.diff;
+    s.bans = o.bans;
+    this.sel = { team: 'blue', i: 0 };
+    save(s);
+  }
+
+  /** Start straight away with the current picks (lobby Quick match / Practice / Watch). */
+  launch(go: 'play' | 'spectate' | 'practice'): void {
+    save(this.s);
+    this.onStart(this.config(go));
   }
 
   /** Gamepad / arrow-key focus movement between the screen's buttons. */
@@ -238,7 +262,7 @@ export class SetupScreen {
     const toggle = (key: string, value: string, label: string, on: boolean) => `<button class="tog ${on ? 'on' : ''}" data-set="${key}:${value}">${label}</button>`;
     this.el.innerHTML = `
       <div class="setup-card pick">
-        <h1>PokéAthlon <small>pick your team</small></h1>
+        <h1><button class="back" data-go="back" title="Back to the lobby (Esc)">‹ Lobby</button> PokéAthlon <small>pick your team</small></h1>
         <div class="row">
           <div class="group"><span>Your role</span>${toggle('role', 'forward', 'Forward', s.role === 'forward')}${toggle('role', 'goalie', 'Goalie', s.role === 'goalie')}</div>
           <div class="group"><span>CPU skill</span>${(['easy', 'normal', 'hard'] as const).map((d) => toggle('diff', d, d[0]!.toUpperCase() + d.slice(1), s.diff === d)).join('')}</div>
@@ -325,7 +349,12 @@ export class SetupScreen {
         this.sel = s.bans ? { team: 'ban', i: 0 } : { team: 'blue', i: 0 };
       }
       if (key === 'reroll') s.seed = (s.seed * 48271 + 11) % 2147483647;
+      if (key === 'diff' || key === 'bans') this.onPrefs(s.diff, s.bans);
       focus = `[data-set="${t.dataset.set}"]`;
+    } else if (t.dataset.go === 'back') {
+      save(s);
+      this.onBack();
+      return;
     } else if (t.dataset.go === 'online') {
       save(s);
       this.onOnline();
